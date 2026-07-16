@@ -47,6 +47,41 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
+    const staff = await prisma.staff.findFirst({
+      where: { email: identifier },
+    });
+
+    if (staff) {
+      if (!staff.isActive) {
+        return NextResponse.json({ error: "Account is deactivated" }, { status: 403 });
+      }
+
+      const valid = await bcrypt.compare(password, staff.password);
+      if (!valid) {
+        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      }
+
+      const token = await createToken({ id: staff.id, role: staff.role });
+
+      const response = NextResponse.json({
+        id: staff.id,
+        name: staff.name,
+        email: staff.email,
+        role: staff.role,
+        clusterId: staff.clusterId,
+      });
+
+      response.cookies.set("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 86400,
+        path: "/",
+      });
+
+      return response;
+    }
+
     const admin = await prisma.admin.findFirst({
       where: { OR: [{ username: identifier }, { email: identifier }] },
     });

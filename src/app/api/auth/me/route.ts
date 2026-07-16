@@ -9,21 +9,34 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.role === "admin") {
+    if (session.role === "super_admin" || session.role === "admin" || session.role === "coordinator") {
       const admin = await prisma.admin.findUnique({ where: { id: session.id } });
       return NextResponse.json({
         id: admin?.id,
         username: admin?.username,
         email: admin?.email,
-        role: "admin",
+        role: admin?.role,
+      });
+    }
+
+    if (session.role === "staff") {
+      const staff = await prisma.staff.findUnique({
+        where: { id: session.id },
+        include: { cluster: true },
+      });
+      return NextResponse.json({
+        id: staff?.id,
+        name: staff?.name,
+        email: staff?.email,
+        role: staff?.role,
+        clusterId: staff?.clusterId,
+        clusterName: staff?.cluster?.name,
       });
     }
 
     const student = await prisma.student.findUnique({
       where: { id: session.id },
-      include: { applications: { include: { 
-        // include names via raw lookup later if needed 
-      } } },
+      include: { applications: { include: { allocations: { include: { phase: true } } } } },
     });
 
     if (!student) {

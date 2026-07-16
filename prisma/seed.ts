@@ -11,14 +11,18 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Seeding database...");
 
-  const existingAdmin = await prisma.admin.findFirst({ where: { username: "admin" } });
-  if (existingAdmin) {
+  const existingSuper = await prisma.admin.findFirst({ where: { username: "superadmin" } });
+  if (existingSuper) {
     console.log("Data already seeded — skipping.");
     return;
   }
 
   console.log("Clearing existing data...");
 
+  await prisma.waitlistEntry.deleteMany();
+  await prisma.phaseAllocation.deleteMany();
+  await prisma.phase.deleteMany();
+  await prisma.iptSession.deleteMany();
   await prisma.application.deleteMany();
   await prisma.staff.deleteMany();
   await prisma.clusterProgram.deleteMany();
@@ -31,11 +35,23 @@ async function main() {
 
   const studentHashedPassword = await bcrypt.hash("Student@123", 12);
   const adminHashedPassword = await bcrypt.hash("Admin@123", 12);
+  const superHashedPassword = await bcrypt.hash("SuperAdmin@123", 12);
+  const staffHashedPassword = await bcrypt.hash("Staff@123", 12);
+
+  await prisma.admin.create({
+    data: { username: "superadmin", email: "superadmin@ipt.university.ac.ke", password: superHashedPassword, role: "super_admin" },
+  });
+  console.log('Super Admin created — username: superadmin / password: SuperAdmin@123');
 
   await prisma.admin.create({
     data: { username: "admin", email: "admin@ipt.university.ac.ke", password: adminHashedPassword, role: "admin" },
   });
   console.log("Admin created — username: admin / password: Admin@123");
+
+  await prisma.admin.create({
+    data: { username: "coordinator", email: "coordinator@ipt.university.ac.ke", password: adminHashedPassword, role: "coordinator" },
+  });
+  console.log("Coordinator created — username: coordinator / password: Admin@123");
 
   const deptMap: Record<string, number> = {};
   for (const dept of DEPARTMENTS) {
@@ -93,10 +109,46 @@ async function main() {
     }
 
     for (const s of cd.staff) {
-      await prisma.staff.create({ data: { name: s.name, email: s.email, clusterId: cluster.id } });
+      await prisma.staff.create({
+        data: {
+          name: s.name,
+          email: s.email,
+          password: staffHashedPassword,
+          role: "staff",
+          clusterId: cluster.id,
+        },
+      });
     }
     console.log(`Cluster "${cluster.name}" — ${Object.keys(cd.programSlots).length} programs, ${cd.staff.length} staff`);
   }
+  console.log("Staff accounts created — password: Staff@123 for all staff emails");
+
+  const session = await prisma.iptSession.create({
+    data: {
+      name: "IPT 2025/2026",
+      startDate: new Date("2026-08-10"),
+      endDate: new Date("2026-10-16"),
+      weeksPerPhase: 5,
+      isActive: true,
+    },
+  });
+  console.log(`IPT Session created: ${session.name} (${session.startDate.toDateString()} – ${session.endDate.toDateString()})`);
+
+  const clusters = await prisma.cluster.findMany();
+  const p1Start = new Date("2026-08-10");
+  const p1End = new Date("2026-09-13");
+  const p2Start = new Date("2026-09-14");
+  const p2End = new Date("2026-10-16");
+
+  for (const cluster of clusters) {
+    await prisma.phase.create({
+      data: { sessionId: session.id, phaseNumber: 1, clusterId: cluster.id, startDate: p1Start, endDate: p1End },
+    });
+    await prisma.phase.create({
+      data: { sessionId: session.id, phaseNumber: 2, clusterId: cluster.id, startDate: p2Start, endDate: p2End },
+    });
+  }
+  console.log(`Phases created: Phase 1 (${p1Start.toDateString()} – ${p1End.toDateString()}), Phase 2 (${p2Start.toDateString()} – ${p2End.toDateString()}) for ${clusters.length} clusters`);
 
   console.log("Seeding complete!");
 }

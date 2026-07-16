@@ -35,6 +35,24 @@ export async function requireAuth() {
 
 export async function requireAdmin() {
   const session = await requireAuth();
-  if (session.role !== "admin") throw new Error("Forbidden");
+  if (!["admin", "coordinator", "super_admin"].includes(session.role)) throw new Error("Forbidden");
+  return session;
+}
+
+export async function requireSuperAdmin() {
+  const session = await requireAuth();
+  if (session.role !== "super_admin") throw new Error("Forbidden");
+  return session;
+}
+
+export async function requireCoordinatorOrAbove() {
+  const session = await requireAuth();
+  if (!["coordinator", "super_admin"].includes(session.role)) throw new Error("Forbidden");
+  return session;
+}
+
+export async function requireStaff() {
+  const session = await requireAuth();
+  if (session.role !== "staff") throw new Error("Forbidden");
   return session;
 }

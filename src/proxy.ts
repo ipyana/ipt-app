@@ -12,6 +12,8 @@ async function isValidToken(token: string): Promise<{ id: number; role: string }
   }
 }
 
+const ADMIN_LIKE_ROLES = ["super_admin", "admin", "coordinator"];
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token")?.value;
@@ -20,6 +22,8 @@ export async function proxy(request: NextRequest) {
   const isPublicAuth = pathname === "/api/auth/login" || pathname === "/api/auth/register";
   const isProtectedAuth = pathname === "/api/auth/me" || pathname === "/api/auth/logout";
   const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
+  const isSuperAdminRoute = pathname.startsWith("/super-admin") || pathname.startsWith("/api/super-admin");
+  const isStaffRoute = pathname.startsWith("/staff") || pathname.startsWith("/api/staff");
   const isApiRoute = pathname.startsWith("/api/");
 
   if (isPublicAuth) {
@@ -54,13 +58,28 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isLoginPage) {
-    return NextResponse.redirect(
-      new URL(session.role === "admin" ? "/admin/dashboard" : "/student/dashboard", request.url)
-    );
+    if (session.role === "super_admin") {
+      return NextResponse.redirect(new URL("/super-admin", request.url));
+    }
+    if (ADMIN_LIKE_ROLES.includes(session.role)) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
+    if (session.role === "staff") {
+      return NextResponse.redirect(new URL("/staff", request.url));
+    }
+    return NextResponse.redirect(new URL("/student/dashboard", request.url));
   }
 
-  if (isAdminRoute && session.role !== "admin") {
-    return NextResponse.redirect(new URL("/student/dashboard", request.url));
+  if (isSuperAdminRoute && session.role !== "super_admin") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (isAdminRoute && !ADMIN_LIKE_ROLES.includes(session.role)) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (isStaffRoute && session.role !== "staff") {
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   const response = NextResponse.next();

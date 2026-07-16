@@ -170,7 +170,6 @@ export default function AdminAllocations() {
                       <div className="space-y-0.5 text-xs">
                         <p><span className="text-amber-600 font-semibold">1:</span> {app.pref1Name}</p>
                         <p className="text-slate-400">2: {app.pref2Name}</p>
-                        <p className="text-slate-400">3: {app.pref3Name}</p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -189,7 +188,7 @@ export default function AdminAllocations() {
                           className="w-40 text-xs h-8"
                         >
                           <option value="">Allocate to...</option>
-                          {[app.clusterPref1, app.clusterPref2, app.clusterPref3].map((cid: number) => {
+                          {[app.clusterPref1, app.clusterPref2].map((cid: number) => {
                             const c = clusters.find((x: any) => x.id === cid);
                             return c ? (
                               <option key={cid} value={cid}>{c.name.slice(0, 25)}</option>
