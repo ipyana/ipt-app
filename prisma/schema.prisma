@@ -132,6 +132,20 @@ model WaitlistEntry {
   @@index([clusterId, status, position])
 }
 
+model TransferRequest {
+  id            Int         @id @default(autoincrement())
+  applicationId Int         @map("application_id")
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromClusterId Int         @map("from_cluster_id")
+  toClusterId   Int         @map("to_cluster_id")
+  reason        String
+  status        String      @default("pending")
+  reviewNotes   String?     @map("review_notes")
+  reviewedById  Int?        @map("reviewed_by_id")
+  reviewedAt    DateTime?   @map("reviewed_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+}
+
 model Application {
   id               Int               @id @default(autoincrement())
   studentId        Int               @map("student_id")
@@ -146,6 +160,7 @@ model Application {
   updatedAt        DateTime          @updatedAt @map("updated_at")
   allocations      PhaseAllocation[]
   waitlistEntries  WaitlistEntry[]
+  transferRequests TransferRequest[]
 
   @@unique([studentId])
 }

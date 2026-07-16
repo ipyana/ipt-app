@@ -19,6 +19,7 @@ import {
   Shield,
   List,
   Settings,
+  Move,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -51,6 +52,7 @@ const superAdminNav = [
   { label: "Admins", href: "/super-admin/admins", icon: Shield },
   { label: "Staff", href: "/super-admin/staff", icon: Users },
   { label: "Waitlist", href: "/super-admin/waitlist", icon: List },
+  { label: "Transfers", href: "/super-admin/transfers", icon: Move },
   { label: "Settings", href: "/super-admin/settings", icon: Settings },
   { label: "Allocations", href: "/admin/allocations", icon: Target },
   { label: "Clusters", href: "/admin/clusters", icon: Layers },

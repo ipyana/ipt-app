@@ -188,6 +188,82 @@ export async function sendAllocationEmail(params: AllocationEmailParams) {
   }
 }
 
+interface TransferEmailParams {
+  studentName: string;
+  studentEmail: string;
+  studentId: string;
+  clusterName: string;
+  clusterLocation?: string;
+  reason?: string;
+}
+
+export async function sendTransferApprovedEmail(params: TransferEmailParams) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #059669; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 20px;">✅ Transfer Approved</h1>
+      </div>
+      <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+        <p>Dear <strong>${params.studentName}</strong> (${params.studentId}),</p>
+        <p>Your cluster transfer request has been <strong style="color: #059669;">approved</strong>.</p>
+        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+          <p style="margin: 0; font-size: 18px; font-weight: bold; color: #059669;">${params.clusterName}</p>
+          ${params.clusterLocation ? `<p style="margin: 8px 0 0; color: #64748b;">Location: ${params.clusterLocation}</p>` : ""}
+        </div>
+        <p style="color: #64748b; font-size: 14px;">Please report to your new cluster immediately.</p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="color: #94a3b8; font-size: 12px;">This is an automated message from the IPT Application System.</p>
+      </div>
+    </div>
+  `;
+
+  if (!resend) {
+    console.log("[EMAIL] Transfer approved email to:", params.studentEmail, "→", params.clusterName);
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || "IPT System <noreply@ipt.university.ac.ke>",
+      to: params.studentEmail,
+      subject: `✅ Transfer Approved — ${params.clusterName}`,
+      html,
+    });
+  } catch (e) { console.error("[EMAIL] Failed:", e); }
+}
+
+export async function sendTransferRejectedEmail(params: TransferEmailParams) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #dc2626; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 20px;">❌ Transfer Not Approved</h1>
+      </div>
+      <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+        <p>Dear <strong>${params.studentName}</strong> (${params.studentId}),</p>
+        <p>Your cluster transfer request has been <strong style="color: #dc2626;">not approved</strong>.</p>
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
+          <p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>Reason:</strong> ${params.reason || "No specific reason provided"}</p>
+        </div>
+        <p style="color: #64748b; font-size: 14px;">You will remain in your current cluster: <strong>${params.clusterName}</strong>.</p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="color: #94a3b8; font-size: 12px;">This is an automated message from the IPT Application System.</p>
+      </div>
+    </div>
+  `;
+
+  if (!resend) {
+    console.log("[EMAIL] Transfer rejected email to:", params.studentEmail);
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || "IPT System <noreply@ipt.university.ac.ke>",
+      to: params.studentEmail,
+      subject: `❌ Transfer Request Update`,
+      html,
+    });
+  } catch (e) { console.error("[EMAIL] Failed:", e); }
+}
+
 export async function sendReportReminderEmail(params: {
   studentName: string;
   studentEmail: string;
