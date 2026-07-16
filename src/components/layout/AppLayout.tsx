@@ -9,8 +9,10 @@ import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  role: "student" | "admin";
+  role: "student" | "admin" | "staff" | "super_admin";
 }
+
+const ADMIN_ROLES = ["admin", "super_admin", "coordinator"];
 
 export function AppLayout({ children, role }: AppLayoutProps) {
   const router = useRouter();
@@ -23,7 +25,8 @@ export function AppLayout({ children, role }: AppLayoutProps) {
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data) => {
-        if (data.error || data.role !== role) {
+        const expectedRole = role === "admin" ? ADMIN_ROLES : [role];
+        if (data.error || !expectedRole.includes(data.role)) {
           router.push("/");
         } else {
           setUser(data);

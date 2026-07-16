@@ -16,11 +16,14 @@ import {
   Building2,
   BookOpen,
   Layers,
+  Shield,
+  List,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MobileNavProps {
-  role: "student" | "admin";
+  role: string;
   open: boolean;
   onClose: () => void;
   onLogout: () => void;
@@ -43,10 +46,29 @@ const adminNav = [
   { label: "Export Data", href: "/admin/export", icon: Download },
 ];
 
+const superAdminNav = [
+  { label: "Overview", href: "/super-admin", icon: BarChart3 },
+  { label: "Admins", href: "/super-admin/admins", icon: Shield },
+  { label: "Staff", href: "/super-admin/staff", icon: Users },
+  { label: "Waitlist", href: "/super-admin/waitlist", icon: List },
+  { label: "Settings", href: "/super-admin/settings", icon: Settings },
+  { label: "Allocations", href: "/admin/allocations", icon: Target },
+  { label: "Clusters", href: "/admin/clusters", icon: Layers },
+  { label: "Students", href: "/admin/students", icon: BookOpen },
+];
+
+const staffNav = [
+  { label: "Dashboard", href: "/staff", icon: LayoutDashboard },
+];
+
 export function MobileNav({ role, open, onClose, onLogout }: MobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const items = role === "student" ? studentNav : adminNav;
+
+  const items = role === "student" ? studentNav
+    : role === "super_admin" ? superAdminNav
+    : role === "staff" ? staffNav
+    : adminNav;
 
   return (
     <>

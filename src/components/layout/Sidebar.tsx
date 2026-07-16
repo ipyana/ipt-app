@@ -16,8 +16,10 @@ import {
   Building2,
   BookOpen,
   Layers,
+  Shield,
+  List,
+  Settings,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface NavItem {
   label: string;
@@ -42,8 +44,23 @@ const adminNav: NavItem[] = [
   { label: "Export Data", href: "/admin/export", icon: Download },
 ];
 
+const superAdminNav: NavItem[] = [
+  { label: "Overview", href: "/super-admin", icon: BarChart3 },
+  { label: "Admins", href: "/super-admin/admins", icon: Shield },
+  { label: "Staff", href: "/super-admin/staff", icon: Users },
+  { label: "Waitlist", href: "/super-admin/waitlist", icon: List },
+  { label: "Settings", href: "/super-admin/settings", icon: Settings },
+  { label: "Allocations", href: "/admin/allocations", icon: Target },
+  { label: "Clusters", href: "/admin/clusters", icon: Layers },
+  { label: "Students", href: "/admin/students", icon: BookOpen },
+];
+
+const staffNav: NavItem[] = [
+  { label: "Dashboard", href: "/staff", icon: LayoutDashboard },
+];
+
 interface SidebarProps {
-  role: "student" | "admin";
+  role: string;
   collapsed: boolean;
   onToggle: () => void;
   onLogout: () => void;
@@ -52,7 +69,11 @@ interface SidebarProps {
 export function Sidebar({ role, collapsed, onToggle, onLogout }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const items = role === "student" ? studentNav : adminNav;
+
+  const items = role === "student" ? studentNav
+    : role === "super_admin" ? superAdminNav
+    : role === "staff" ? staffNav
+    : adminNav;
 
   return (
     <aside

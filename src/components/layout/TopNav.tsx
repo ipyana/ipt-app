@@ -78,7 +78,9 @@ export function TopNav({ user, collapsed, onMenuToggle }: TopNavProps) {
             )}
           </div>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-xs font-bold dark:bg-primary-900/40 dark:text-primary-400">
-            {user?.role === "admin" ? "A" : displayName.charAt(0)}
+            {["admin", "super_admin", "coordinator"].includes(user?.role || "") ? (
+              user?.role === "super_admin" ? "SA" : user?.role === "coordinator" ? "C" : "A"
+            ) : displayName.charAt(0)}
           </div>
         </div>
       </div>
