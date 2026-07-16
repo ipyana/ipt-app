@@ -17,11 +17,10 @@ export const applicationSchema = z
   .object({
     pref1: z.number().int().positive("First preference is required"),
     pref2: z.number().int().positive("Second preference is required"),
-    pref3: z.number().int().positive("Third preference is required"),
   })
   .refine(
-    (data) => new Set([data.pref1, data.pref2, data.pref3]).size === 3,
-    { message: "Preferences must be 3 distinct clusters" }
+    (data) => data.pref1 !== data.pref2,
+    { message: "Preferences must be 2 distinct clusters" }
   );
 
 export const allocationSchema = z.object({

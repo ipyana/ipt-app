@@ -23,7 +23,6 @@ export async function GET() {
       ...app,
       pref1Name: clusterMap[app.clusterPref1] || "Unknown",
       pref2Name: clusterMap[app.clusterPref2] || "Unknown",
-      pref3Name: clusterMap[app.clusterPref3] || "Unknown",
       allocatedName: app.allocatedCluster ? clusterMap[app.allocatedCluster] : null,
     }));
 

@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     if (!application) return err("Application not found", 404);
     if (application.status === "allocated") return err("Already allocated", 409);
 
-    const prefs = [application.clusterPref1, application.clusterPref2, application.clusterPref3];
-    if (!prefs.includes(clusterId)) return err("Allocation must be one of the student's 3 preferences", 400);
+    const prefs = [application.clusterPref1, application.clusterPref2];
+    if (!prefs.includes(clusterId)) return err("Allocation must be one of the student's 2 preferences", 400);
 
     const cluster = await prisma.cluster.findUnique({
       where: { id: clusterId },
@@ -101,7 +101,7 @@ export async function PUT() {
     let allocated = 0;
 
     for (const app of pending) {
-      const prefs = [app.clusterPref1, app.clusterPref2, app.clusterPref3];
+      const prefs = [app.clusterPref1, app.clusterPref2];
 
       for (const clusterId of prefs) {
         const key = `${clusterId}:${app.student.program}`;

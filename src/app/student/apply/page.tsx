@@ -26,7 +26,6 @@ export default function StudentApply() {
   const [existingApp, setExistingApp] = useState<any>(null);
   const [pref1, setPref1] = useState<number>(0);
   const [pref2, setPref2] = useState<number>(0);
-  const [pref3, setPref3] = useState<number>(0);
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,7 +41,7 @@ export default function StudentApply() {
       .then(([u, c, a]) => {
         setUser(u);
         setClusters(Array.isArray(c) ? c : []);
-        if (a && a.id) { setExistingApp(a); setPref1(a.clusterPref1); setPref2(a.clusterPref2); setPref3(a.clusterPref3); }
+        if (a && a.id) { setExistingApp(a); setPref1(a.clusterPref1); setPref2(a.clusterPref2); }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -55,7 +54,7 @@ export default function StudentApply() {
     return cluster.allowedPrograms?.find((cp) => cp.program.name === user?.program) || null;
   }
 
-  const selectedIds = [pref1, pref2, pref3].filter(Boolean);
+  const selectedIds = [pref1, pref2].filter(Boolean);
 
   function getAvailableFor(current: number) {
     return eligibleClusters.filter((c) => !selectedIds.includes(c.id) || c.id === current);
@@ -63,14 +62,13 @@ export default function StudentApply() {
 
   function currentPref() {
     if (step === 1) return { val: pref1, set: setPref1, label: "First Preference" };
-    if (step === 2) return { val: pref2, set: setPref2, label: "Second Preference" };
-    return { val: pref3, set: setPref3, label: "Third Preference" };
+    return { val: pref2, set: setPref2, label: "Second Preference" };
   }
 
   function selectAndAdvance(clusterId: number) {
     const { set } = currentPref();
     set(clusterId);
-    if (step < 3) setTimeout(() => setStep(step + 1), 200);
+    if (step < 2) setTimeout(() => setStep(step + 1), 200);
   }
 
   function goToStep(s: number) {
@@ -78,13 +76,13 @@ export default function StudentApply() {
   }
 
   async function handleSubmit() {
-    if (!pref1 || !pref2 || !pref3) { setError("Select all 3 preferences before submitting."); return; }
+    if (!pref1 || !pref2) { setError("Select both preferences before submitting."); return; }
     setError(""); setSuccess(""); setSubmitting(true);
     try {
       const res = await fetch("/api/applications", {
         method: existingApp ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pref1, pref2, pref3 }),
+        body: JSON.stringify({ pref1, pref2 }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
@@ -126,7 +124,6 @@ export default function StudentApply() {
   const preferences = [
     { label: "1st Choice", value: pref1 },
     { label: "2nd Choice", value: pref2 },
-    { label: "3rd Choice", value: pref3 },
   ];
 
   return (
@@ -139,7 +136,7 @@ export default function StudentApply() {
           </p>
         </div>
 
-        <Steps steps={[{ label: "1st Choice", description: "Most preferred" }, { label: "2nd Choice", description: "Second option" }, { label: "3rd Choice", description: "Final choice" }]} current={step - 1} className="mb-8" />
+        <Steps steps={[{ label: "1st Choice", description: "Most preferred" }, { label: "2nd Choice", description: "Second option" }]} current={step - 1} className="mb-8" />
 
         {error && <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"><AlertTriangle className="h-4 w-4 shrink-0" />{error}</div>}
         {success && <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400"><Check className="h-4 w-4 shrink-0" />{success}</div>}
@@ -196,10 +193,10 @@ export default function StudentApply() {
               </button>
             ))}
           </div>
-          {step < 3 ? (
+          {step < 2 ? (
             <Button onClick={() => val && setStep(step + 1)} disabled={!val}>Next <ArrowRight className="h-4 w-4" /></Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={submitting || !pref3}>{submitting ? "Submitting..." : existingApp ? "Update" : "Submit"}</Button>
+            <Button onClick={handleSubmit} disabled={submitting || !pref2}>{submitting ? "Submitting..." : existingApp ? "Update" : "Submit"}</Button>
           )}
         </div>
       </div>

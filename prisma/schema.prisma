@@ -84,7 +84,6 @@ model Application {
   student          Student  @relation(fields: [studentId], references: [id])
   clusterPref1     Int      @map("cluster_pref_1")
   clusterPref2     Int      @map("cluster_pref_2")
-  clusterPref3     Int      @map("cluster_pref_3")
   status           String   @default("pending")
   allocatedCluster Int?     @map("allocated_cluster")
   reportUrl        String?  @map("report_url")

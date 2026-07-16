@@ -70,7 +70,6 @@ export default function StudentStatus() {
   const preferences = [
     { label: "1st Choice", key: "clusterPref1", color: "text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400" },
     { label: "2nd Choice", key: "clusterPref2", color: "text-slate-600 bg-slate-50 dark:bg-slate-700/50 dark:text-slate-300" },
-    { label: "3rd Choice", key: "clusterPref3", color: "text-slate-500 bg-slate-50 dark:bg-slate-700/50 dark:text-slate-300" },
   ];
 
   return (

@@ -109,7 +109,7 @@ export default function StudentDashboard() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No Application Yet</h3>
               <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                Browse the available IPT clusters for your program ({user?.program}) and select your top 3 preferences.
+                Browse the available IPT clusters for your program ({user?.program}) and select your top 2 preferences.
               </p>
               <Button className="mt-6" size="lg" onClick={() => router.push("/student/apply")}>
                 <ClipboardList className="h-4 w-4" /> Select Clusters

@@ -36,19 +36,19 @@ export async function POST(request: NextRequest) {
     const parsed = applicationSchema.safeParse(body);
     if (!parsed.success) return err(parsed.error.issues[0].message, 400);
 
-    const { pref1, pref2, pref3 } = parsed.data;
+    const { pref1, pref2 } = parsed.data;
 
     const student = await prisma.student.findUnique({ where: { id: session.id } });
     if (!student) return err("Student not found", 404);
 
     const clusters = await prisma.cluster.findMany({
-      where: { id: { in: [pref1, pref2, pref3] } },
+      where: { id: { in: [pref1, pref2] } },
       include: {
         allowedPrograms: { include: { program: true } },
       },
     });
 
-    if (clusters.length !== 3) return err("One or more selected clusters do not exist", 400);
+    if (clusters.length !== 2) return err("One or more selected clusters do not exist", 400);
 
     for (const cluster of clusters) {
       const cp = cluster.allowedPrograms.find(
@@ -67,7 +67,6 @@ export async function POST(request: NextRequest) {
         studentId: session.id,
         clusterPref1: pref1,
         clusterPref2: pref2,
-        clusterPref3: pref3,
         status: "pending",
       },
       include: {
@@ -90,7 +89,7 @@ export async function PUT(request: NextRequest) {
     const parsed = applicationSchema.safeParse(body);
     if (!parsed.success) return err(parsed.error.issues[0].message, 400);
 
-    const { pref1, pref2, pref3 } = parsed.data;
+    const { pref1, pref2 } = parsed.data;
 
     const application = await prisma.application.findUnique({
       where: { studentId: session.id },
@@ -102,13 +101,13 @@ export async function PUT(request: NextRequest) {
     if (!student) return err("Student not found", 404);
 
     const clusters = await prisma.cluster.findMany({
-      where: { id: { in: [pref1, pref2, pref3] } },
+      where: { id: { in: [pref1, pref2] } },
       include: {
         allowedPrograms: { include: { program: true } },
       },
     });
 
-    if (clusters.length !== 3) return err("Invalid cluster selection", 400);
+    if (clusters.length !== 2) return err("Invalid cluster selection", 400);
 
     for (const cluster of clusters) {
       const cp = cluster.allowedPrograms.find(
@@ -124,7 +123,7 @@ export async function PUT(request: NextRequest) {
 
     const updated = await prisma.application.update({
       where: { studentId: session.id },
-      data: { clusterPref1: pref1, clusterPref2: pref2, clusterPref3: pref3 },
+      data: { clusterPref1: pref1, clusterPref2: pref2 },
       include: { student: { select: { fullName: true, department: true, program: true } } },
     });
 
