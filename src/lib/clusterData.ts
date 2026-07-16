@@ -78,6 +78,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     programSlots: {
       "BSc. Informatics": 35,
       "BSc. Information Science and Technology": 35,
+      "BSc. Business Information Systems": 35,
       "BSc. Computer Science and Engineering": 35,
       "BSc. Computer Systems and Technology": 35,
     },
@@ -109,9 +110,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 150,
     location: "Business IT Lab",
     programSlots: {
-      "BSc. Information Science and Technology": 50,
-      "BSc. Informatics": 50,
-      "BSc. Computer Systems and Technology": 50,
+      "BSc. Information Science and Technology": 30,
+      "BSc. Business Information Systems": 40,
+      "BSc. Informatics": 40,
+      "BSc. Computer Systems and Technology": 40,
     },
     staff: [
       { name: "Prof. Henry Kiplagat", email: "h.kiplagat@university.ac.ke" },
