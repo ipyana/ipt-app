@@ -57,6 +57,7 @@ jobs:
               sh -c "npx prisma migrate deploy && echo 'Migrations done'"
 
             cd ${{ env.VPS_DIR }}
+            curl -sO https://raw.githubusercontent.com/${{ github.repository }}/main/${{ env.COMPOSE_FILE }}
             export IMAGE_TAG=$FULL_IMAGE
             docker compose -f ${{ env.COMPOSE_FILE }} up -d
             docker image prune -f
