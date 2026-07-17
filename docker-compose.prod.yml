@@ -1,12 +1,13 @@
 services:
   ipt-app:
-    image: ${IMAGE_TAG:-harbor.herpydevs.com/ipt_app/ipt-app:latest}
+    image: ${IMAGE_TAG:-harbor.iventika.co.tz/ipt_app/ipt-app:latest}
     container_name: ipt_app
     restart: unless-stopped
     env_file: .env.production
     environment:
       NODE_ENV: production
       PORT: "3000"
+      HOSTNAME: "0.0.0.0"
       NEXT_TELEMETRY_DISABLED: "1"
     expose:
       - "3000"
@@ -19,7 +20,32 @@ services:
       retries: 3
       start_period: 30s
 
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: ipt_db
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: ipt_db
+    volumes:
+      - ipt_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ipt_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shared-proxy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
 networks:
   shared-proxy:
     name: shared-proxy
     external: true
+
+volumes:
+  ipt_pgdata:

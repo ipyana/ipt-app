@@ -2,14 +2,16 @@ name: Deploy IPT App
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
 
 env:
-  HARBOR_REGISTRY: harbor.herpydevs.com
+  HARBOR_REGISTRY: harbor.iventika.co.tz
   HARBOR_PROJECT: ipt_app
   IMAGE_NAME: ipt-app
+  TAG: production
   VPS_HOST: 109.123.241.223
   VPS_DIR: /opt/ipt-app
+  COMPOSE_FILE: docker-compose.prod.yml
 
 jobs:
   build-and-deploy:
@@ -17,17 +19,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set image tag
-        id: vars
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "tag=production" >> $GITHUB_OUTPUT
-            echo "compose_file=docker-compose.prod.yml" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "compose_file=docker-compose.staging.yml" >> $GITHUB_OUTPUT
-          fi
 
       - name: Log in to Harbor
         uses: docker/login-action@v3
@@ -42,7 +33,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}
+            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
             ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
@@ -54,8 +45,19 @@ jobs:
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            FULL_IMAGE=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+
+            docker pull $FULL_IMAGE
+
+            # Run database migrations in a temporary container
+            docker run --rm \
+              --network=shared-proxy \
+              --env-file ${{ env.VPS_DIR }}/.env.${{ env.TAG }} \
+              $FULL_IMAGE \
+              sh -c "npx prisma migrate deploy && echo 'Migrations done'"
+
+            # Update compose file with latest image
             cd ${{ env.VPS_DIR }}
-            export IMAGE_TAG=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}
-            docker compose -f ${{ steps.vars.outputs.compose_file }} pull
-            docker compose -f ${{ steps.vars.outputs.compose_file }} up -d
+            export IMAGE_TAG=$FULL_IMAGE
+            docker compose -f ${{ env.COMPOSE_FILE }} up -d
             docker image prune -f
