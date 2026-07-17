@@ -1,7 +1,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -28,7 +28,16 @@ COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build --chown=nextjs:nodejs /app/src/generated ./src/generated
 COPY --from=build --chown=nextjs:nodejs /app/package.json ./package.json
 
-RUN npm install prisma@7.8.0 tsx dotenv --save-dev 2>&1 | tail -2
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma/config ./node_modules/@prisma/config
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma/engines-version ./node_modules/@prisma/engines-version
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma/get-platform ./node_modules/@prisma/get-platform
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/dotenv ./node_modules/dotenv
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/tsx ./node_modules/tsx
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/esbuild ./node_modules/esbuild
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/resolve-pkg-maps ./node_modules/resolve-pkg-maps
 
 USER nextjs
 EXPOSE 3000
