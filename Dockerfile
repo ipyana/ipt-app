@@ -20,16 +20,17 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=build --chown=nextjs:nodejs /app/public ./public
-COPY --from=build --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build --chown=nextjs:nodejs /app/src/generated ./src/generated
-COPY --from=build --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
+COPY --from=build /app/src/generated ./src/generated
+COPY --from=build /app/package.json ./package.json
 
-RUN npm install -g prisma@7.8.0 tsx dotenv 2>&1 | tail -3
+RUN npm install prisma@7.8.0 tsx dotenv 2>&1 | tail -3
 
+RUN chown -R nextjs:nodejs /app
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]
