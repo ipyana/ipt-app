@@ -62,3 +62,4 @@ jobs:
             export IMAGE_TAG=$FULL_IMAGE
             docker compose -f ${{ env.COMPOSE_FILE }} up -d
             docker image prune -f
+
