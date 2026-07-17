@@ -47,16 +47,17 @@ jobs:
           script: |
             FULL_IMAGE=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
+            echo "${{ secrets.HARBOR_PASSWORD }}" | docker login ${{ env.HARBOR_REGISTRY }} \
+              -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+
             docker pull $FULL_IMAGE
 
-            # Run database migrations in a temporary container
             docker run --rm \
               --network=shared-proxy \
-              --env-file ${{ env.VPS_DIR }}/.env.${{ env.TAG }} \
+              --env-file ${{ env.VPS_DIR }}/.env.production \
               $FULL_IMAGE \
               sh -c "npx prisma migrate deploy && echo 'Migrations done'"
 
-            # Update compose file with latest image
             cd ${{ env.VPS_DIR }}
             export IMAGE_TAG=$FULL_IMAGE
             docker compose -f ${{ env.COMPOSE_FILE }} up -d
