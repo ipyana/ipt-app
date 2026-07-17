@@ -1,7 +1,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --include=dev
+RUN npm ci
 
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -16,21 +16,18 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build /app/src/generated ./src/generated
-COPY --from=build /app/package.json ./package.json
+COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=build --chown=nextjs:nodejs /app/public ./public
+COPY --from=build --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --from=build --chown=nextjs:nodejs /app/src/generated ./src/generated
 
-RUN npm install prisma@7.8.0 tsx dotenv 2>&1 | tail -3
-
-RUN chown -R nextjs:nodejs /app
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]

@@ -50,11 +50,12 @@ jobs:
 
             docker pull $FULL_IMAGE
 
+            # Run migrations using npx (downloads prisma on demand)
             docker run --rm \
               --network=shared-proxy \
               --env-file ${{ env.VPS_DIR }}/.env.production \
               $FULL_IMAGE \
-              sh -c "npx prisma migrate deploy && echo 'Migrations done'"
+              sh -c "cd /app && npx prisma@7.8.0 migrate deploy 2>&1 | tail -5"
 
             cd ${{ env.VPS_DIR }}
             curl -sO https://raw.githubusercontent.com/${{ github.repository }}/main/${{ env.COMPOSE_FILE }}
