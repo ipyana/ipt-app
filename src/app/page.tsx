@@ -47,7 +47,9 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
-      if (data.role === "admin") router.push("/admin/dashboard");
+      if (data.role === "super_admin") router.push("/super-admin");
+      else if (["admin", "coordinator"].includes(data.role)) router.push("/admin/dashboard");
+      else if (data.role === "staff") router.push("/staff");
       else router.push("/student/dashboard");
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
