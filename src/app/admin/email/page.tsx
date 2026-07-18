@@ -33,7 +33,7 @@ export default function AdminEmail() {
   }
 
   async function loadSettings() {
-    const res = await fetch("/api/admin/email", { method: "DELETE" });
+    const res = await fetch("/api/admin/email?tab=settings");
     setSettings(await res.json());
   }
 

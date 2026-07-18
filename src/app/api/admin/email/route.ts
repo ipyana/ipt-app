@@ -13,6 +13,15 @@ export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
     const { searchParams } = new URL(request.url);
+    const tab = searchParams.get("tab") || "logs";
+
+    if (tab === "settings") {
+      const keys = ["smtp_host", "smtp_port", "smtp_secure", "smtp_user", "smtp_pass", "smtp_from", "smtp_sender_name"];
+      const settings = await prisma.setting.findMany({ where: { key: { in: keys } } });
+      const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+      return NextResponse.json(map);
+    }
+
     const status = searchParams.get("status") || undefined;
     const search = searchParams.get("search") || undefined;
     const limit = parseInt(searchParams.get("limit") || "50", 10);
@@ -67,22 +76,6 @@ export async function PUT(request: NextRequest) {
       create: { key, value: value ?? "" },
     });
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    if (e.message === "Unauthorized") return err("Unauthorized", 401);
-    if (e.message === "Forbidden") return err("Forbidden", 403);
-    return err("Failed", 500);
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    await requireAdmin();
-    const body = await request.json();
-    const settings = await prisma.setting.findMany({
-      where: { key: { in: ["smtp_host", "smtp_port", "smtp_secure", "smtp_user", "smtp_pass", "smtp_from", "smtp_sender_name"] } },
-    });
-    const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
-    return NextResponse.json(map);
   } catch (e: any) {
     if (e.message === "Unauthorized") return err("Unauthorized", 401);
     if (e.message === "Forbidden") return err("Forbidden", 403);
