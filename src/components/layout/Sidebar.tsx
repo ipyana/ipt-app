@@ -90,7 +90,7 @@ export function Sidebar({ role, collapsed, onToggle, onLogout }: SidebarProps) {
       <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-4 dark:border-slate-700">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/must-logo.png" alt="MUST Logo" className="h-9 w-9 object-contain" />
+          <img src="/must_Logo.png" alt="MUST Logo" className="h-9 w-9 object-contain" />
         </div>
         {!collapsed && (
           <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">

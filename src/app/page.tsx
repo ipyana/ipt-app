@@ -4,19 +4,21 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Label } from "@/components/ui/form";
-import { LogIn, UserPlus, Shield, ArrowRight } from "lucide-react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Mode = "student" | "register" | "admin";
+type Mode = "login" | "register";
 
 interface Program { id: number; name: string; department: { code: string; name: string } }
 interface GroupedPrograms { [dept: string]: Program[] }
 
 export default function HomePage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("student");
+  const [mode, setMode] = useState<Mode>("login");
+  const [loginType, setLoginType] = useState<"student" | "admin">("student");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [studentId, setStudentId] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -84,120 +86,138 @@ export default function HomePage() {
     setSelectedDept("");
   }
 
-  const tabs = [
-    { mode: "student" as const, label: "Student", icon: LogIn },
-    { mode: "register" as const, label: "Register", icon: UserPlus },
-    { mode: "admin" as const, label: "Admin", icon: Shield },
-  ];
+  function switchMode(m: Mode) {
+    setMode(m);
+    setError("");
+  }
 
   return (
-    <div className="flex min-h-screen bg-surface">
-      <div className="hidden lg:flex lg:w-1/2 bg-primary-600 items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900" />
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent-400 rounded-full blur-3xl" />
-        </div>
-        <div className="relative z-10 text-center px-12">
-          <div className="flex justify-center mb-6">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur p-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/must-logo.png" alt="MUST Logo" className="h-16 w-16 object-contain" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-3">CoICT — IPT 2025/2026</h1>
-          <p className="text-lg text-primary-100/80 leading-relaxed">
-            Industrial Practical Training<br />Cluster Selection Portal
-          </p>
-          <p className="mt-8 text-sm text-primary-200/60">Mbeya University of Science and Technology</p>
-        </div>
-      </div>
-
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-12">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
         <AnimatePresence mode="wait">
           <motion.div
-            key={mode}
-            initial={{ opacity: 0, y: 12 }}
+            key={mode + loginType}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-md"
+            className="w-full max-w-sm"
           >
-            <div className="lg:hidden text-center mb-8">
-              <div className="flex justify-center mb-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600 p-1.5">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/must-logo.png" alt="MUST Logo" className="h-12 w-12 object-contain brightness-0 invert" />
-                </div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
+              <div className="flex justify-center mb-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/must_Logo.png" alt="MUST Logo" className="h-16 w-16 object-contain" />
               </div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">CoICT — IPT</h1>
-              <p className="text-sm text-slate-500">Industrial Practical Training</p>
-            </div>
 
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white text-center">
+              <h1 className="text-xl font-semibold text-slate-900 dark:text-white text-center">
                 {mode === "register" ? "Create Account" : "Sign In"}
-              </h2>
-              <p className="text-sm text-slate-500 text-center mt-1">
-                {mode === "register" ? "Select your program of study" : mode === "admin" ? "Administrator access" : "Use your registration number to sign in"}
+              </h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">
+                {mode === "register"
+                  ? "Register for your IPT account"
+                  : "Enter your credentials to continue"}
               </p>
-            </div>
 
-            <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 mb-8">
-              {tabs.map((t) => (
-                <button key={t.mode} onClick={() => { setMode(t.mode); setError(""); }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-all duration-200 ${
-                    mode === t.mode ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                  }`}>
-                  <t.icon className="h-4 w-4" />{t.label}
-                </button>
-              ))}
-            </div>
+              {error && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>
+              )}
 
-            {error && (
-              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>
-            )}
-
-            {mode === "register" ? (
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-1.5"><Label>Registration Number</Label><Input value={studentId} onChange={(e) => setStudentId(e.target.value)} required placeholder="e.g. 20252025" /></div>
-                <div className="space-y-1.5"><Label>Full Name</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} required /></div>
-                <div className="space-y-1.5">
-                  <Label>Program of Study</Label>
-                  <Select value={programId || ""} onChange={(e) => handleProgramChange(Number(e.target.value))} required>
-                    <option value="">Select your program...</option>
-                    {Object.entries(programs).map(([dept, progs]) => (
-                      <optgroup key={dept} label={dept}>
-                        {progs.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                      </optgroup>
-                    ))}
-                  </Select>
+              {mode === "login" && (
+                <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 mb-6">
+                  {(["student", "admin"] as const).map((t) => (
+                    <button key={t} onClick={() => { setLoginType(t); setError(""); }}
+                      className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
+                        loginType === t ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      }`}>
+                      {t === "student" ? "Student" : "Admin"}
+                    </button>
+                  ))}
                 </div>
-                {selectedDept && (
-                  <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 text-sm">
-                    <span className="text-slate-500">Department: </span>
-                    <span className="font-medium text-slate-900 dark:text-white">{selectedDept}</span>
+              )}
+
+              {mode === "register" ? (
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label>Registration Number</Label>
+                    <Input value={studentId} onChange={(e) => setStudentId(e.target.value)} required placeholder="e.g. 20252025" className="h-10" />
                   </div>
-                )}
-                <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-                <div className="space-y-1.5"><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} /></div>
-                <Button type="submit" disabled={loading} className="w-full" size="lg">
-                  {loading ? "Creating account..." : "Create Account"}<ArrowRight className="h-4 w-4" />
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5"><Label>{mode === "admin" ? "Username or Email" : "Registration Number or Email"}</Label>
-                  <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder={mode === "admin" ? "admin" : "20250001"} /></div>
-                <div className="space-y-1.5"><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-                <Button type="submit" disabled={loading} className="w-full" size="lg">
-                  {loading ? "Signing in..." : "Sign In"}<ArrowRight className="h-4 w-4" />
-                </Button>
-                <p className="text-xs text-center text-slate-400 mt-4">
-                  {mode === "admin" ? "Demo: admin / Admin@123" : "Demo: 20250001 / Student@123"}
-                </p>
-              </form>
-            )}
+                  <div className="space-y-1.5">
+                    <Label>Full Name</Label>
+                    <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Doe" className="h-10" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Program of Study</Label>
+                    <Select value={programId || ""} onChange={(e) => handleProgramChange(Number(e.target.value))} required className="h-10">
+                      <option value="">Select your program...</option>
+                      {Object.entries(programs).map(([dept, progs]) => (
+                        <optgroup key={dept} label={dept}>
+                          {progs.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                        </optgroup>
+                      ))}
+                    </Select>
+                  </div>
+                  {selectedDept && (
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 text-sm">
+                      <span className="text-slate-500">Department: </span>
+                      <span className="font-medium text-slate-900 dark:text-white">{selectedDept}</span>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label>Email</Label>
+                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" className="h-10" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Password</Label>
+                    <div className="relative">
+                      <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className="h-10 pr-10" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
+                    {loading ? "Creating account..." : "Create Account"}
+                  </Button>
+                  <p className="text-center text-sm text-slate-500 mt-4">
+                    Already have an account?{" "}
+                    <button type="button" onClick={() => switchMode("login")} className="font-medium text-primary-600 hover:text-primary-700">Sign in</button>
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label>{loginType === "admin" ? "Username or Email" : "Registration Number or Email"}</Label>
+                    <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required
+                      placeholder={loginType === "admin" ? "admin" : "20250001"} className="h-10" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label>Password</Label>
+                      {loginType === "admin" && (
+                        <span className="text-xs text-slate-400">admin / Admin@123</span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required
+                        placeholder="Enter your password" className="h-10 pr-10" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  {loginType === "student" && (
+                    <p className="text-xs text-slate-400 -mt-2">Demo: 20250001 / Student@123</p>
+                  )}
+                  <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
+                    {loading ? "Signing in..." : "Sign In"}
+                  </Button>
+                  <p className="text-center text-sm text-slate-500 mt-4">
+                    Don't have an account?{" "}
+                    <button type="button" onClick={() => switchMode("register")} className="font-medium text-primary-600 hover:text-primary-700">Sign up</button>
+                  </p>
+                </form>
+              )}
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>

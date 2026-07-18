@@ -41,7 +41,7 @@ export function TopNav({ user, collapsed, onMenuToggle }: TopNavProps) {
         </Button>
         <div className="hidden sm:flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/must-logo.png" alt="MUST Logo" className="h-7 w-7 object-contain shrink-0" />
+          <img src="/must_Logo.png" alt="MUST Logo" className="h-7 w-7 object-contain shrink-0" />
           <div>
             <h1 className="text-sm font-bold text-slate-900 dark:text-white">
               CoICT — IPT 2025/2026

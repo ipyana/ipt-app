@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CoICT — IPT 2025/2026",
   description: "Industrial Practical Training cluster selection portal — Mbeya University of Science and Technology",
+  icons: { icon: "/favicon.png", apple: "/favicon.png" },
 };
 
 export default function RootLayout({
