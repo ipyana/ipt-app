@@ -20,6 +20,7 @@ import {
   List,
   Settings,
   Move,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,6 +46,7 @@ const adminNav = [
   { label: "Allocations", href: "/admin/allocations", icon: Target },
   { label: "Students", href: "/admin/students", icon: Users },
   { label: "Export Data", href: "/admin/export", icon: Download },
+  { label: "Email", href: "/admin/email", icon: Mail },
 ];
 
 const superAdminNav = [

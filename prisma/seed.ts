@@ -150,6 +150,12 @@ async function main() {
   }
   console.log(`Phases created: Phase 1 (${p1Start.toDateString()} – ${p1End.toDateString()}), Phase 2 (${p2Start.toDateString()} – ${p2End.toDateString()}) for ${clusters.length} clusters`);
 
+  console.log("Seeding email templates...");
+  const { syncDefaultTemplates, syncDefaultSettings } = await import("../src/lib/email/templates");
+  await syncDefaultTemplates();
+  await syncDefaultSettings();
+  console.log("Email templates and settings seeded.");
+
   console.log("Seeding complete!");
 }
 

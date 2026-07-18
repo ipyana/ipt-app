@@ -164,3 +164,37 @@ model Application {
 
   @@unique([studentId])
 }
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String?
+  type      String   @default("string")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model EmailTemplate {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  name      String
+  category  String   @default("general")
+  subject   String
+  body      String
+  variables String   @default("[]")
+  enabled   Boolean  @default(true)
+  required  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model EmailLog {
+  id        Int      @id @default(autoincrement())
+  recipient String
+  subject   String
+  template  String?
+  status    String   @default("pending")
+  error     String?
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime @default(now()) @map("created_at")
+}
