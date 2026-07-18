@@ -29,18 +29,21 @@ export default function AdminEmail() {
 
   async function loadTemplates() {
     const res = await fetch("/api/admin/email/templates");
-    setTemplates(Array.isArray(await res.json()) ? await res.json() : []);
+    const data = await res.json();
+    setTemplates(Array.isArray(data) ? data : []);
   }
 
   async function loadSettings() {
     const res = await fetch("/api/admin/email?tab=settings");
-    setSettings(await res.json());
+    const data = await res.json();
+    setSettings(data || {});
   }
 
   async function loadLogs() {
     const params = new URLSearchParams();
     if (logFilter) params.set("status", logFilter);
     const res = await fetch(`/api/admin/email?${params}`);
+    if (!res.ok) return;
     const data = await res.json();
     setLogs(data.items || []);
     setLogTotal(data.total || 0);
