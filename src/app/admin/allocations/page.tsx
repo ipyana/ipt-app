@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select as UISelect } from "@/components/ui/form";
+import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Zap, User, Filter } from "lucide-react";
 
@@ -124,7 +124,7 @@ export default function AdminAllocations() {
           ))}
           <div className="flex items-center gap-2 ml-auto">
             <Filter className="h-4 w-4 text-slate-400" />
-            <UISelect
+            <Select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value)}
               className="w-40"
@@ -133,7 +133,7 @@ export default function AdminAllocations() {
               {departments.map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
-            </UISelect>
+            </Select>
           </div>
         </div>
 
@@ -181,7 +181,7 @@ export default function AdminAllocations() {
                     </TableCell>
                     <TableCell>
                       {app.status !== "allocated" ? (
-                        <UISelect
+                        <Select
                           value={app.allocatedCluster || ""}
                           onChange={(e) => handleAllocate(app.id, Number(e.target.value))}
                           disabled={allocating === app.id}
@@ -194,7 +194,7 @@ export default function AdminAllocations() {
                               <option key={cid} value={cid}>{c.name.slice(0, 25)}</option>
                             ) : null;
                           })}
-                        </UISelect>
+                        </Select>
                       ) : (
                         <span className="text-xs text-emerald-600 font-medium">{app.allocatedName}</span>
                       )}

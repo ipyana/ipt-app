@@ -35,22 +35,21 @@ export function Dialog({ open, onClose, children }: DialogProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             onClick={onClose}
-            aria-hidden="true"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
+            exit={{ opacity: 0, scale: 0.98, y: 8 }}
+            transition={{ duration: 0.15, ease: "easeInOut" }}
+            className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-lg border border-border bg-panel shadow-xl"
             role="dialog"
             aria-modal="true"
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+              className="absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-sidebar-hover hover:text-slate-600 transition-colors"
               aria-label="Close dialog"
             >
               <X className="h-4 w-4" />
@@ -67,7 +66,7 @@ export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLD
   return (
     <div
       className={cn(
-        "flex flex-col space-y-1.5 px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800",
+        "flex flex-col space-y-1 px-5 pt-5 pb-3 border-b border-border",
         className
       )}
       {...props}
@@ -78,7 +77,7 @@ export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLD
 export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-lg font-semibold leading-none tracking-tight text-slate-900 dark:text-white", className)}
+      className={cn("text-base font-semibold text-foreground", className)}
       {...props}
     />
   );
@@ -86,19 +85,19 @@ export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHe
 
 export function DialogDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("text-sm text-slate-500 dark:text-slate-400", className)} {...props} />
+    <p className={cn("text-sm text-slate-500", className)} {...props} />
   );
 }
 
 export function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-6 py-5 space-y-4", className)} {...props} />;
+  return <div className={cn("px-5 py-4 space-y-3", className)} {...props} />;
 }
 
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800",
+        "flex items-center justify-end gap-3 px-5 py-4 border-t border-border",
         className
       )}
       {...props}
@@ -134,13 +133,13 @@ export function ConfirmDialog({
       <DialogFooter>
         <button
           onClick={onClose}
-          className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+          className="inline-flex items-center justify-center h-9 px-4 rounded-md text-sm font-medium text-slate-600 hover:bg-sidebar-hover dark:text-slate-300 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={() => { onConfirm(); onClose(); }}
-          className={`inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-semibold text-white transition-colors ${
+          className={`inline-flex items-center justify-center h-9 px-4 rounded-md text-sm font-semibold text-white transition-colors ${
             variant === "danger"
               ? "bg-red-600 hover:bg-red-700"
               : "bg-primary-600 hover:bg-primary-700"

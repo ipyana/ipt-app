@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { IconBar } from "@/components/layout/IconBar";
+import { ContextSidebar } from "@/components/layout/ContextSidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { cn } from "@/lib/utils";
@@ -44,27 +45,28 @@ export function AppLayout({ children, role }: AppLayoutProps) {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-surface">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-          <p className="text-sm text-slate-500">Loading...</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+          <p className="text-xs text-slate-500">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface dark:bg-slate-950">
-      <Sidebar role={role} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} onLogout={handleLogout} />
+    <div className="min-h-screen bg-surface">
+      <IconBar role={role} />
+      <ContextSidebar role={role} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} onLogout={handleLogout} />
       <MobileNav role={role} open={mobileOpen} onClose={() => setMobileOpen(false)} onLogout={handleLogout} />
-      <TopNav user={user} collapsed={collapsed} onMenuToggle={() => setMobileOpen(true)} />
+      <TopNav user={user} onMenuToggle={() => setMobileOpen(true)} />
       <main
         className={cn(
-          "pt-16 transition-all duration-300",
-          collapsed ? "pl-[72px]" : "pl-64",
-          "max-lg:pl-0"
+          "pt-12 transition-all duration-200 ease-in-out",
+          collapsed ? "pl-14" : "pl-[190px]",
+          "max-lg:pl-14"
         )}
       >
-        <div className="p-6 animate-fade-in">{children}</div>
+        <div className="animate-fade-in">{children}</div>
       </main>
     </div>
   );

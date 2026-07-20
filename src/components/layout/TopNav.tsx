@@ -1,88 +1,105 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Sun, Moon, Menu, Bell } from "lucide-react";
+import { Menu, Bell, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 
 interface TopNavProps {
   user: { fullName?: string; username?: string; studentId?: string; role: string } | null;
-  collapsed: boolean;
   onMenuToggle: () => void;
 }
 
-export function TopNav({ user, collapsed, onMenuToggle }: TopNavProps) {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+const routeLabels: Record<string, string> = {
+  dashboard: "Dashboard",
+  apply: "Select Clusters",
+  status: "My Application",
+  report: "Upload Report",
+  overview: "Overview",
+  departments: "Departments",
+  programs: "Programs",
+  clusters: "Clusters",
+  allocations: "Allocations",
+  students: "Students",
+  export: "Export Data",
+  email: "Email",
+  admins: "Admins",
+  staff: "Staff",
+  waitlist: "Waitlist",
+  transfers: "Transfers",
+  settings: "Settings",
+};
 
+function getBreadcrumb(pathname: string): string[] {
+  const parts = pathname.split("/").filter(Boolean);
+  const crumbs: string[] = [];
+  for (const p of parts) {
+    if (p === "admin") crumbs.push("Admin");
+    else if (p === "super-admin") crumbs.push("Super Admin");
+    else if (p === "student") crumbs.push("Student");
+    else if (routeLabels[p]) crumbs.push(routeLabels[p]);
+    else crumbs.push(p.charAt(0).toUpperCase() + p.slice(1));
+  }
+  return crumbs;
+}
+
+export function TopNav({ user, onMenuToggle }: TopNavProps) {
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const displayName = user?.fullName || user?.username || "User";
   const displayId = user?.studentId || "";
-  const isDark = resolvedTheme === "dark";
+  const breadcrumbs = getBreadcrumb(pathname);
 
   return (
-    <header
-      className={cn(
-        "fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 transition-all duration-300 dark:border-slate-700 dark:bg-slate-900/80",
-        collapsed ? "left-[72px]" : "left-64"
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onMenuToggle}
-          className="lg:hidden"
-          aria-label="Toggle mobile menu"
-        >
-          <Menu className="h-5 w-5" />
+    <header className="fixed top-0 right-0 z-30 flex h-12 items-center justify-between border-b border-border bg-panel/80 backdrop-blur-md px-4 left-14">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={onMenuToggle} className="lg:hidden h-8 w-8">
+          <Menu className="h-4 w-4" />
         </Button>
-        <div className="hidden sm:flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/must_Logo.png" alt="MUST Logo" className="h-7 w-7 object-contain shrink-0" />
-          <div>
-            <h1 className="text-sm font-bold text-slate-900 dark:text-white">
-              CoICT — IPT 2025/2026
-            </h1>
-            <p className="text-[10px] text-slate-400">Industrial Practical Training</p>
-          </div>
-        </div>
+        <nav className="flex items-center gap-1.5 text-sm">
+          {breadcrumbs.map((crumb, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              {i > 0 && <ChevronRight className="h-3 w-3 text-slate-400" />}
+              <span className={cn(
+                "font-medium",
+                i === breadcrumbs.length - 1 ? "text-foreground" : "text-slate-400"
+              )}>
+                {crumb}
+              </span>
+            </span>
+          ))}
+        </nav>
       </div>
 
-      <div className="flex items-center gap-2">
-        {mounted && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-            className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-          >
-            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-        )}
+      <div className="flex items-center gap-1.5">
+        {mounted && <ThemeToggle compact />}
 
-        <Button variant="ghost" size="icon" aria-label="Notifications" className="text-slate-500">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+          <Bell className="h-4 w-4" />
         </Button>
 
-        <div className="hidden sm:flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-700">
-          <div className="text-right">
-            <p className="text-sm font-medium text-slate-900 dark:text-white leading-tight">
-              {displayName}
-            </p>
-            {displayId && (
-              <p className="text-xs text-slate-400">{displayId}</p>
-            )}
+        <motion.div
+          className="flex items-center gap-2.5 pl-3 border-l border-border ml-1"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+        >
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-medium text-foreground leading-tight">{displayName}</p>
+            {displayId && <p className="text-[10px] text-slate-400">{displayId}</p>}
           </div>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-xs font-bold dark:bg-primary-900/40 dark:text-primary-400">
-            {["admin", "super_admin", "coordinator"].includes(user?.role || "") ? (
-              user?.role === "super_admin" ? "SA" : user?.role === "coordinator" ? "C" : "A"
-            ) : displayName.charAt(0)}
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-[10px] font-bold dark:bg-primary-900/40 dark:text-primary-400">
+            {["admin", "super_admin", "coordinator"].includes(user?.role || "")
+              ? user?.role === "super_admin" ? "SA" : user?.role === "coordinator" ? "C" : "A"
+              : displayName.charAt(0)}
           </div>
-        </div>
+        </motion.div>
       </div>
     </header>
   );

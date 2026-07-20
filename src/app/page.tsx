@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input, Select, Label } from "@/components/ui/form";
+import { Input, Label } from "@/components/ui/form";
+import { Select } from "@/components/ui/select";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
