@@ -11,11 +11,11 @@ import { Steps } from "@/components/ui/steps";
 import { MapPin, Users, Check, AlertTriangle, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface ClusterProgram { program: { id: number; name: string }; slots: number; enrolled: number }
+interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number }
 interface Cluster {
   id: number; name: string; description: string; capacity: number;
   currentEnrolled: number; location: string;
-  allowedPrograms: ClusterProgram[];
+  allowedDepartments: ClusterDepartment[];
   staff: { name: string; email: string }[];
 }
 
@@ -47,11 +47,11 @@ export default function StudentApply() {
   }, []);
 
   const eligibleClusters = clusters.filter((c) =>
-    c.allowedPrograms?.some((cp) => cp.slots > 0 && cp.program.name === user?.program)
+    c.allowedDepartments?.some((cd) => cd.slots > 0 && cd.department.abbreviation === user?.department)
   );
 
   function getProgramSlot(cluster: Cluster) {
-    return cluster.allowedPrograms?.find((cp) => cp.program.name === user?.program) || null;
+    return cluster.allowedDepartments?.find((cd) => cd.department.abbreviation === user?.department) || null;
   }
 
   const selectedIds = [pref1, pref2].filter(Boolean);

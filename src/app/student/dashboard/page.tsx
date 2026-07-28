@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface ClusterProgram { program: { id: number; name: string }; slots: number; enrolled: number }
+interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number }
 interface Cluster {
   id: number; name: string; description: string; capacity: number;
   currentEnrolled: number; location: string;
-  allowedPrograms: ClusterProgram[];
+  allowedDepartments: ClusterDepartment[];
   staff: { name: string }[];
 }
 
@@ -48,12 +48,12 @@ export default function StudentDashboard() {
   const allocatedName = application?.allocatedCluster ? clusterMap[application.allocatedCluster] : null;
 
   const eligibleClusters = clusters.filter((c) =>
-    c.allowedPrograms?.some((cp) => cp.slots > 0 && cp.program.name === user?.program)
+    c.allowedDepartments?.some((cd) => cd.slots > 0 && cd.department.abbreviation === user?.department)
   );
 
   function getProgramSlot(cluster: Cluster) {
-    const cp = cluster.allowedPrograms?.find((p) => p.program.name === user?.program);
-    return cp || null;
+    const cd = cluster.allowedDepartments?.find((p) => p.department.abbreviation === user?.department);
+    return cd || null;
   }
 
   if (loading) return <DashboardSkeleton />;
