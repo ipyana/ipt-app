@@ -1,14 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cva } from "class-variance-authority";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { LogOut, Search } from "lucide-react";
+import { LogOut, Search, ChevronDown } from "lucide-react";
 
 interface NavItem {
   label: string;
-  href: string;
+  href?: string;
+  children?: NavItem[];
 }
 
 interface ContextSidebarProps {
@@ -21,8 +23,14 @@ interface ContextSidebarProps {
 const navMap: Record<string, NavItem[]> = {
   student: [
     { label: "Dashboard", href: "/student/dashboard" },
-    { label: "Select Clusters", href: "/student/apply" },
-    { label: "My Application", href: "/student/status" },
+    {
+      label: "My Application",
+      children: [
+        { label: "Apply", href: "/student/apply" },
+        { label: "Re-apply", href: "/student/reapply" },
+        { label: "Transfer", href: "/student/transfer" },
+      ],
+    },
     { label: "Upload Report", href: "/student/report" },
   ],
   admin: [
@@ -68,6 +76,18 @@ export function ContextSidebar({ role, collapsed, onToggle, onLogout }: ContextS
   const pathname = usePathname();
   const router = useRouter();
   const items = navMap[role] || navMap.admin;
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    "My Application": true,
+  });
+
+  function isActive(href?: string) {
+    if (!href) return false;
+    return pathname === href || pathname.startsWith(href);
+  }
+
+  function toggleMenu(label: string) {
+    setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  }
 
   return (
     <aside className={sidebarVariants({ state: collapsed ? "collapsed" : "expanded" })}>
@@ -79,11 +99,74 @@ export function ContextSidebar({ role, collapsed, onToggle, onLogout }: ContextS
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
           {items.map((item) => {
-            const active = pathname === item.href || (item.href !== "/super-admin" && pathname.startsWith(item.href) && item.href !== "/");
+            if (item.children) {
+              const open = expandedMenus[item.label] !== false;
+              const childActive = item.children.some((c) => isActive(c.href));
+              return (
+                <div key={item.label} className="space-y-0.5">
+                  <button
+                    onClick={() => toggleMenu(item.label)}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      childActive
+                        ? "text-primary-700 dark:text-primary-400"
+                        : "text-slate-600 hover:bg-sidebar-hover hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                    )}
+                  >
+                    <span>{item.label}</span>
+                    <motion.div
+                      animate={{ rotate: open ? 0 : -90 }}
+                      transition={{ duration: 0.15, ease: "easeInOut" }}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.div>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {open && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.15, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        {item.children.map((child) => {
+                          const active = isActive(child.href);
+                          return (
+                            <motion.button
+                              key={child.href}
+                              onClick={() => router.push(child.href!)}
+                              className={cn(
+                                "relative flex w-full items-center gap-3 rounded-md px-3 py-1.5 pl-6 text-sm font-medium transition-colors",
+                                active
+                                  ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400"
+                                  : "text-slate-500 hover:bg-sidebar-hover hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                              )}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              {active && (
+                                <motion.div
+                                  layoutId="nav-active"
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-0.5 rounded-r bg-primary-500"
+                                  transition={{ duration: 0.15 }}
+                                />
+                              )}
+                              <span>{child.label}</span>
+                            </motion.button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
+            const active = isActive(item.href);
             return (
               <motion.button
                 key={item.href}
-                onClick={() => router.push(item.href)}
+                onClick={() => router.push(item.href!)}
                 className={cn(
                   "relative flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   active

@@ -147,34 +147,27 @@ export default function StudentApply() {
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{currentPref().label}</h3>
               <p className="text-sm text-slate-400">Select one cluster</p>
             </div>
-            <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {getAvailableFor(val).map((cluster) => {
                 const cp = getProgramSlot(cluster)!;
+                const selected = val === cluster.id;
                 return (
                   <button key={cluster.id} onClick={() => selectAndAdvance(cluster.id)}
-                    className={`w-full text-left rounded-xl border-2 p-5 transition-all duration-200 ${
-                      val === cluster.id ? "border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 shadow-sm ring-1 ring-primary-500"
-                      : "border-slate-200 bg-white hover:border-primary-200 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-primary-700"}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-slate-900 dark:text-white">{cluster.name}</h4>
-                          {val === cluster.id && <Badge variant="default" className="shrink-0"><Check className="h-3 w-3 mr-0.5" /> Selected</Badge>}
-                        </div>
-                        <p className="text-sm text-slate-500 line-clamp-2 mb-3">{cluster.description}</p>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cluster.location}</span>
-                          <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {cluster.staff.map((s) => s.name.split(" ").pop()).join(", ")}</span>
-                          <span className="font-medium text-primary-600">{cp.enrolled}/{cp.slots} slots for {user?.program}</span>
-                        </div>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-slate-300 dark:border-slate-600">
-                          {val === cluster.id ? <Check className="h-4 w-4 text-primary-600" /> : <span className="text-sm text-slate-400">{step}</span>}
-                        </div>
-                      </div>
+                    className={`text-left rounded-lg border-2 p-4 transition-all duration-200 ${
+                      selected ? "border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 ring-1 ring-primary-500"
+                      : "border-slate-200 bg-white hover:border-primary-200 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-primary-700"}`}>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">{cluster.name}</h4>
+                      {selected && <Badge variant="default" className="shrink-0 text-[10px] px-1.5"><Check className="h-3 w-3" /></Badge>}
                     </div>
-                    <div className="mt-3"><Progress value={cp.enrolled} max={cp.slots} size="sm" variant={cp.enrolled / cp.slots > 0.9 ? "danger" : cp.enrolled / cp.slots > 0.7 ? "warning" : "primary"} /></div>
+                    <p className="text-[11px] text-slate-500 line-clamp-2 mb-2">{cluster.description}</p>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-2">
+                      <MapPin className="h-3 w-3" /><span className="truncate">{cluster.location}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-primary-600">{cp.enrolled}/{cp.slots}</span>
+                      <span className="text-slate-400">{cp.slots > 0 && cp.enrolled < cp.slots ? "Available" : "Full"}</span>
+                    </div>
                   </button>
                 );
               })}

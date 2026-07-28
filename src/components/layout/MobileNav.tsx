@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 
 interface NavItem {
   label: string;
-  href: string;
+  href?: string;
+  children?: NavItem[];
 }
 
 interface MobileNavProps {
@@ -20,8 +22,14 @@ interface MobileNavProps {
 const navMap: Record<string, NavItem[]> = {
   student: [
     { label: "Dashboard", href: "/student/dashboard" },
-    { label: "Select Clusters", href: "/student/apply" },
-    { label: "My Application", href: "/student/status" },
+    {
+      label: "My Application",
+      children: [
+        { label: "Apply", href: "/student/apply" },
+        { label: "Re-apply", href: "/student/reapply" },
+        { label: "Transfer", href: "/student/transfer" },
+      ],
+    },
     { label: "Upload Report", href: "/student/report" },
   ],
   admin: [
@@ -54,6 +62,9 @@ export function MobileNav({ role, open, onClose, onLogout }: MobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const items = navMap[role] || navMap.admin;
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    "My Application": true,
+  });
 
   return (
     <AnimatePresence>
@@ -80,13 +91,44 @@ export function MobileNav({ role, open, onClose, onLogout }: MobileNavProps) {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <nav className="p-2 space-y-0.5">
+            <nav className="p-2 space-y-0.5 overflow-y-auto" style={{ height: "calc(100% - 100px)" }}>
               {items.map((item) => {
+                if (item.children) {
+                  const openMenu = expandedMenus[item.label] !== false;
+                  return (
+                    <div key={item.label} className="space-y-0.5">
+                      <button
+                        onClick={() => setExpandedMenus((p) => ({ ...p, [item.label]: !openMenu }))}
+                        className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-sidebar-hover dark:text-slate-400"
+                      >
+                        <span>{item.label}</span>
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", openMenu ? "rotate-0" : "-rotate-90")} />
+                      </button>
+                      {openMenu && item.children.map((child) => {
+                        const active = pathname === child.href;
+                        return (
+                          <button
+                            key={child.href}
+                            onClick={() => { router.push(child.href!); onClose(); }}
+                            className={cn(
+                              "flex w-full items-center gap-3 rounded-md px-3 py-1.5 pl-6 text-sm font-medium transition-colors",
+                              active
+                                ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400"
+                                : "text-slate-500 hover:bg-sidebar-hover dark:text-slate-400"
+                            )}
+                          >
+                            {child.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                }
                 const active = pathname === item.href;
                 return (
                   <button
                     key={item.href}
-                    onClick={() => { router.push(item.href); onClose(); }}
+                    onClick={() => { router.push(item.href!); onClose(); }}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       active

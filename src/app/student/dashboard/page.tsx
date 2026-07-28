@@ -32,6 +32,9 @@ export default function StudentDashboard() {
   const [application, setApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Cluster detail modal
+  const [detailCluster, setDetailCluster] = useState<Cluster | null>(null);
+
   // Reapplication modal state
   const [reapplyOpen, setReapplyOpen] = useState(false);
   const [reapplyMode, setReapplyMode] = useState<"choice" | "reapplication" | "transfer" | "underReview">("choice");
@@ -133,6 +136,11 @@ export default function StudentDashboard() {
     router.push("/student/apply");
   }
 
+  function handleClusterDetailAction(clusterId: number) {
+    setDetailCluster(null);
+    setTimeout(() => handleClusterCardClick(clusterId), 200);
+  }
+
   if (loading) return <DashboardSkeleton />;
 
   return (
@@ -216,31 +224,20 @@ export default function StudentDashboard() {
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Available Clusters for {user?.program}</h3>
             <span className="text-sm text-slate-400">{eligibleClusters.length} clusters</span>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {eligibleClusters.map((cluster) => {
               const cp = getProgramSlot(cluster)!;
               const pct = Math.round((cp.enrolled / cp.slots) * 100);
               return (
-                <Card key={cluster.id} className="group cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-200" onClick={() => handleClusterCardClick(cluster.id)}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-base pr-8">{cluster.name}</CardTitle>
-                      <Badge variant="success" className="shrink-0">Available</Badge>
+                <Card key={cluster.id} className="group cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-200" onClick={() => setDetailCluster(cluster)}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{cluster.name}</p>
+                      <Badge variant={pct >= 100 ? "danger" : "success"} className="text-[10px] px-1.5 py-0">
+                        {pct >= 100 ? "Full" : "Available"}
+                      </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-xs text-slate-500 line-clamp-2">{cluster.description}</p>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">Slots for {user?.program?.slice(0, 18)}</span>
-                        <span className="font-medium text-slate-700 dark:text-slate-300">{cp.enrolled} / {cp.slots}</span>
-                      </div>
-                      <Progress value={cp.enrolled} max={cp.slots} size="sm" variant={pct > 90 ? "danger" : pct > 70 ? "warning" : "primary"} />
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cluster.location}</span>
-                      <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {cluster.staff.length} staff</span>
-                    </div>
+                    <p className="text-[11px] text-slate-400">{pct}% filled · {cp.enrolled}/{cp.slots} slots</p>
                   </CardContent>
                 </Card>
               );
@@ -253,6 +250,38 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!detailCluster} onClose={() => setDetailCluster(null)}>
+        {detailCluster && (() => {
+          const cp = getProgramSlot(detailCluster);
+          return (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+                    <MapPin className="h-5 w-5 text-primary-600" />
+                  </div>
+                  <DialogTitle>{detailCluster.name}</DialogTitle>
+                </div>
+              </DialogHeader>
+              <DialogBody>
+                <p className="text-sm text-slate-500 mb-4">{detailCluster.description}</p>
+                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400" /> {detailCluster.location}</div>
+                  <div className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /> {detailCluster.staff?.map((s: any) => s.name).join(", ")}</div>
+                  <div className="flex items-center gap-2"><span className="font-medium text-primary-600">{cp?.enrolled || 0}/{cp?.slots || 0}</span> slots for {user?.program}</div>
+                </div>
+              </DialogBody>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDetailCluster(null)}>Close</Button>
+                <Button onClick={() => handleClusterDetailAction(detailCluster.id)}>
+                  {application ? "Reapply" : "Apply Now"}
+                </Button>
+              </DialogFooter>
+            </>
+          );
+        })()}
+      </Dialog>
 
       <Dialog open={reapplyOpen} onClose={() => setReapplyOpen(false)}>
         <DialogHeader>
