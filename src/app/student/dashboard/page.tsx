@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { Steps } from "@/components/ui/steps";
 import {
   ClipboardList, CheckCircle, Clock, GraduationCap,
-  BookOpen, MapPin, Users, ArrowRight, AlertCircle,
+  BookOpen, MapPin, Users, ArrowRight, AlertCircle, Send,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -21,7 +23,7 @@ interface Cluster {
   staff: { name: string }[];
 }
 
-interface Application { id: number; status: string; allocatedCluster: number | null }
+interface Application { id: number; status: string; allocatedCluster: number | null; clusterPref1: number; clusterPref2: number }
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -29,6 +31,18 @@ export default function StudentDashboard() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [application, setApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Reapplication modal state
+  const [reapplyOpen, setReapplyOpen] = useState(false);
+  const [reapplyMode, setReapplyMode] = useState<"choice" | "reapplication" | "transfer">("choice");
+  const [reapplyStep, setReapplyStep] = useState(1);
+  const [reapplyPref1, setReapplyPref1] = useState(0);
+  const [reapplyPref2, setReapplyPref2] = useState(0);
+  const [transferClusterId, setTransferClusterId] = useState(0);
+  const [transferReason, setTransferReason] = useState("");
+  const [reapplyError, setReapplyError] = useState("");
+  const [reapplySuccess, setReapplySuccess] = useState("");
+  const [reapplySubmitting, setReapplySubmitting] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -54,6 +68,64 @@ export default function StudentDashboard() {
   function getProgramSlot(cluster: Cluster) {
     const cd = cluster.allowedDepartments?.find((p) => p.department.abbreviation === user?.department);
     return cd || null;
+  }
+
+  function openReapplyModal() {
+    setReapplyMode("choice");
+    setReapplyError("");
+    setReapplySuccess("");
+    setReapplyStep(1);
+    setReapplyPref1(0);
+    setReapplyPref2(0);
+    setTransferClusterId(0);
+    setTransferReason("");
+    setReapplyOpen(true);
+  }
+
+  async function handleReapplySubmit() {
+    setReapplyError(""); setReapplySuccess(""); setReapplySubmitting(true);
+    try {
+      const body: any = {};
+      if (reapplyMode === "reapplication") {
+        if (!reapplyPref1 || !reapplyPref2 || reapplyPref1 === reapplyPref2) {
+          setReapplyError("Select two distinct clusters");
+          setReapplySubmitting(false); return;
+        }
+        body.type = "reapplication";
+        body.pref1 = reapplyPref1;
+        body.pref2 = reapplyPref2;
+        body.reason = "Full reapplication";
+      } else {
+        if (!transferClusterId) { setReapplyError("Select a cluster"); setReapplySubmitting(false); return; }
+        if (transferReason.length < 10) { setReapplyError("Provide a reason (min 10 characters)"); setReapplySubmitting(false); return; }
+        body.type = "transfer";
+        body.toClusterId = transferClusterId;
+        body.reason = transferReason;
+      }
+      const res = await fetch("/api/applications/reapply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setReapplySuccess(data.message || "Submitted!");
+      setApplication((prev) => prev ? { ...prev, status: "reapplying" } : prev);
+      setTimeout(() => { setReapplyOpen(false); router.refresh(); }, 3000);
+    } catch (e: any) { setReapplyError(e.message); }
+    finally { setReapplySubmitting(false); }
+  }
+
+  function handleClusterCardClick(clusterId: number) {
+    if (!application) {
+      router.push("/student/apply");
+      return;
+    }
+    if (application.status === "allocated") {
+      openReapplyModal();
+      return;
+    }
+    router.push("/student/apply");
   }
 
   if (loading) return <DashboardSkeleton />;
@@ -82,17 +154,26 @@ export default function StudentDashboard() {
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30">
-                  {application.status === "allocated" ? <CheckCircle className="h-6 w-6 text-emerald-600" /> : <Clock className="h-6 w-6 text-amber-600" />}
+                  {application.status === "allocated" ? <CheckCircle className="h-6 w-6 text-emerald-600" /> :
+                   application.status === "reapplying" ? <Send className="h-6 w-6 text-amber-600" /> :
+                   <Clock className="h-6 w-6 text-amber-600" />}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg text-slate-900 dark:text-white">
-                    {application.status === "allocated" ? "Allocated!" : "Application Under Review"}
+                    {application.status === "allocated" ? "Allocated!" :
+                     application.status === "reapplying" ? "Reapplication Under Review" :
+                     "Application Under Review"}
                   </h3>
                   <p className="text-sm text-slate-500 mt-1">
-                    {application.status === "allocated" ? `You have been allocated to ${allocatedName}.` : "Your preferences have been submitted."}
+                    {application.status === "allocated" ? `You have been allocated to ${allocatedName}.` :
+                     application.status === "reapplying" ? "Your reapplication is being reviewed. You will be notified within 72 hours." :
+                     "Your preferences have been submitted."}
                   </p>
                   {application.status === "allocated" && allocatedName && (
                     <Badge variant="success" className="mt-3 text-sm px-3 py-1">{allocatedName}</Badge>
+                  )}
+                  {application.status === "reapplying" && (
+                    <Badge variant="warning" className="mt-3 text-sm px-3 py-1">Reapplying</Badge>
                   )}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => router.push("/student/status")}>View Details <ArrowRight className="h-3 w-3" /></Button>
@@ -122,7 +203,7 @@ export default function StudentDashboard() {
           <StatCard icon={BookOpen} label="Available Clusters" value={eligibleClusters.length.toString()} sub={`for ${user?.program?.slice(0, 25) || "your program"}`} />
           <StatCard icon={Users} label="Total Capacity" value={eligibleClusters.reduce((s, c) => s + (getProgramSlot(c)?.slots || 0), 0).toString()} sub="program slots" />
           <StatCard icon={GraduationCap} label="Program" value={user?.program?.split(".").pop()?.trim() || "—"} sub={user?.department || ""} />
-          <StatCard icon={CheckCircle} label="Status" value={application ? (application.status === "allocated" ? "Allocated" : "Pending") : "Not Applied"} sub={application ? "Submitted" : "Action needed"} variant={application?.status === "allocated" ? "success" : application ? "warning" : "default"} />
+          <StatCard icon={CheckCircle} label="Status" value={application ? (application.status === "allocated" ? "Allocated" : application.status === "reapplying" ? "Reapplying" : "Pending") : "Not Applied"} sub={application ? "Submitted" : "Action needed"} variant={application?.status === "allocated" ? "success" : application?.status === "reapplying" ? "warning" : application ? "warning" : "default"} />
         </div>
 
         <div>
@@ -135,7 +216,7 @@ export default function StudentDashboard() {
               const cp = getProgramSlot(cluster)!;
               const pct = Math.round((cp.enrolled / cp.slots) * 100);
               return (
-                <Card key={cluster.id} className="group cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-200" onClick={() => router.push("/student/apply")}>
+                <Card key={cluster.id} className="group cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-200" onClick={() => handleClusterCardClick(cluster.id)}>
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-base pr-8">{cluster.name}</CardTitle>
@@ -167,6 +248,119 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      <Dialog open={reapplyOpen} onClose={() => setReapplyOpen(false)}>
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+            </div>
+            <DialogTitle>Already Allocated</DialogTitle>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          {reapplyMode === "choice" && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Your current allocation:</p>
+                <p className="text-sm">1. {clusterMap[application?.clusterPref1 || 0] || "—"}</p>
+                <p className="text-sm">2. {clusterMap[application?.clusterPref2 || 0] || "—"}</p>
+              </div>
+              <p className="text-sm text-slate-500">What would you like to do? Changes must be made within 72 hours of your initial submission.</p>
+              <div className="space-y-2">
+                <button onClick={() => setReapplyMode("reapplication")}
+                  className="w-full text-left rounded-lg border-2 border-slate-200 p-4 hover:border-primary-300 transition-all dark:border-slate-700">
+                  <p className="font-medium text-slate-900 dark:text-white">Change both clusters (full reapply)</p>
+                  <p className="text-xs text-slate-400 mt-1">Pick two new clusters</p>
+                </button>
+                <button onClick={() => setReapplyMode("transfer")}
+                  className="w-full text-left rounded-lg border-2 border-slate-200 p-4 hover:border-primary-300 transition-all dark:border-slate-700">
+                  <p className="font-medium text-slate-900 dark:text-white">Swap one cluster (transfer)</p>
+                  <p className="text-xs text-slate-400 mt-1">Replace one of your current clusters</p>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {reapplyMode === "reapplication" && (
+            <div className="space-y-4">
+              {reapplySuccess ? (
+                <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-4 text-center">
+                  <CheckCircle className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{reapplySuccess}</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-500">Select your new cluster preferences:</p>
+                  {reapplyStep === 1 ? (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <p className="text-xs font-medium text-slate-400 uppercase">First Preference</p>
+                      {eligibleClusters.filter((c) => c.id !== reapplyPref2).map((c) => (
+                        <button key={c.id} onClick={() => { setReapplyPref1(c.id); setReapplyStep(2); }}
+                          className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${reapplyPref1 === c.id ? "border-primary-500" : "border-slate-200 hover:border-primary-200"}`}>
+                          {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <p className="text-xs font-medium text-slate-400 uppercase">Second Preference</p>
+                      {eligibleClusters.filter((c) => c.id !== reapplyPref1).map((c) => (
+                        <button key={c.id} onClick={() => setReapplyPref2(c.id)}
+                          className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${reapplyPref2 === c.id ? "border-primary-500" : "border-slate-200 hover:border-primary-200"}`}>
+                          {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {reapplyError && <p className="text-sm text-red-600">{reapplyError}</p>}
+                </>
+              )}
+            </div>
+          )}
+
+          {reapplyMode === "transfer" && (
+            <div className="space-y-4">
+              {reapplySuccess ? (
+                <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-4 text-center">
+                  <CheckCircle className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{reapplySuccess}</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-500">Select a new cluster to replace one of your current ones:</p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {eligibleClusters.filter((c) => c.id !== application?.clusterPref1 && c.id !== application?.clusterPref2).map((c) => (
+                      <button key={c.id} onClick={() => setTransferClusterId(c.id)}
+                        className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${transferClusterId === c.id ? "border-primary-500" : "border-slate-200 hover:border-primary-200"}`}>
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea value={transferReason} onChange={(e) => setTransferReason(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[60px] dark:bg-slate-900 dark:border-slate-700"
+                    placeholder="Reason for transfer (min 10 characters)" />
+                  {reapplyError && <p className="text-sm text-red-600">{reapplyError}</p>}
+                </>
+              )}
+            </div>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          {reapplySuccess ? (
+            <Button onClick={() => { setReapplyOpen(false); router.refresh(); }}>Close</Button>
+          ) : reapplyMode === "choice" ? (
+            <Button variant="outline" onClick={() => setReapplyOpen(false)}>Cancel</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setReapplyMode("choice")}>Back</Button>
+              <Button onClick={handleReapplySubmit} disabled={reapplySubmitting}>
+                {reapplySubmitting ? "Submitting..." : "Submit"}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </Dialog>
     </AppLayout>
   );
 }

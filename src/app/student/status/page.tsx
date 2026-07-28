@@ -115,7 +115,7 @@ export default function StudentStatus() {
     );
   }
 
-  const statusIndex = application.status === "allocated" ? 2 : application.status === "pending" ? 1 : 0;
+  const statusIndex = application.status === "allocated" ? 2 : (application.status === "pending" || application.status === "reapplying") ? 1 : 0;
   const allocatedClusterData = application.allocatedCluster ? clusters[application.allocatedCluster] : null;
 
   const isWithinTransferWindow = p1Dates && (() => {

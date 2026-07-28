@@ -6,7 +6,13 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  studentId: z.string().min(3, "Registration number must be at least 3 characters"),
+  studentId: z
+    .string()
+    .min(14, "Registration number must be at least 14 characters")
+    .max(15, "Registration number cannot exceed 15 characters")
+    .refine((val) => val.startsWith("25"), {
+      message: "You are not eligible to apply/register in this IPT program",
+    }),
   fullName: z.string().min(2, "Full name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),

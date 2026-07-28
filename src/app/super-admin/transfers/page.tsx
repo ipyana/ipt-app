@@ -87,6 +87,7 @@ export default function SuperAdminTransfers() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Student</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>From</TableHead>
                   <TableHead></TableHead>
                   <TableHead>To</TableHead>
@@ -107,9 +108,14 @@ export default function SuperAdminTransfers() {
                       <p className="font-medium text-sm text-slate-900 dark:text-white">{t.application?.student?.fullName}</p>
                       <p className="text-xs text-slate-400">{t.application?.student?.studentId}</p>
                     </TableCell>
+                    <TableCell>
+                      <Badge variant={t.type === "reapplication" ? "info" : "secondary"}>
+                        {t.type === "reapplication" ? "Reapp" : "Transfer"}
+                      </Badge>
+                    </TableCell>
                     <TableCell><Badge variant="secondary">{t.fromClusterName}</Badge></TableCell>
                     <TableCell><ArrowRight className="h-4 w-4 text-slate-400" /></TableCell>
-                    <TableCell><Badge>{t.toClusterName}</Badge></TableCell>
+                    <TableCell><Badge>{t.toClusterName || "2 new clusters"}</Badge></TableCell>
                     <TableCell className="text-xs text-slate-500 max-w-[200px] truncate">{t.reason}</TableCell>
                     <TableCell className="text-xs text-slate-400">{new Date(t.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
