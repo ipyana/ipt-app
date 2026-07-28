@@ -9,7 +9,7 @@ export async function GET() {
     const clusters = await prisma.cluster.findMany({
       include: {
         staff: { select: { id: true, name: true, email: true } },
-        allowedPrograms: { include: { program: { include: { department: { select: { name: true, abbreviation: true } } } } } },
+        allowedDepartments: { include: { department: { select: { id: true, name: true, abbreviation: true } } } },
       },
       orderBy: { id: "asc" },
     });
@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
     const parsed = clusterManageSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
-    const { programSlots, ...data } = parsed.data;
+    const { departmentSlots, ...data } = parsed.data;
 
-    const capacity = data.capacity || (programSlots?.reduce((s, p) => s + p.slots, 0) || 0);
+    const capacity = data.capacity || (departmentSlots?.reduce((s, p) => s + p.slots, 0) || 0);
     if (capacity < 1) return NextResponse.json({ error: "Capacity must be at least 1" }, { status: 400 });
 
     const cluster = await prisma.cluster.create({
@@ -42,11 +42,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (programSlots?.length) {
-      for (const ps of programSlots) {
+    if (departmentSlots?.length) {
+      for (const ps of departmentSlots) {
         if (ps.slots > 0) {
-          await prisma.clusterProgram.create({
-            data: { clusterId: cluster.id, programId: ps.programId, slots: ps.slots },
+          await prisma.clusterDepartment.create({
+            data: { clusterId: cluster.id, departmentId: ps.departmentId, slots: ps.slots },
           });
         }
       }
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const created = await prisma.cluster.findUnique({
       where: { id: cluster.id },
-      include: { allowedPrograms: { include: { program: true } } },
+      include: { allowedDepartments: { include: { department: true } } },
     });
 
     return NextResponse.json(created, { status: 201 });
@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest) {
     const parsed = clusterManageSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
-    const { programSlots, ...data } = parsed.data;
+    const { departmentSlots, ...data } = parsed.data;
 
     const cluster = await prisma.cluster.update({
       where: { id },
@@ -84,17 +84,17 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    if (programSlots) {
-      await prisma.clusterProgram.deleteMany({ where: { clusterId: id } });
-      for (const ps of programSlots) {
+    if (departmentSlots) {
+      await prisma.clusterDepartment.deleteMany({ where: { clusterId: id } });
+      for (const ps of departmentSlots) {
         if (ps.slots > 0) {
-          await prisma.clusterProgram.create({
-            data: { clusterId: id, programId: ps.programId, slots: ps.slots },
+          await prisma.clusterDepartment.create({
+            data: { clusterId: id, departmentId: ps.departmentId, slots: ps.slots },
           });
         }
       }
 
-      const newCapacity = programSlots.reduce((sum, ps) => sum + ps.slots, 0);
+      const newCapacity = departmentSlots.reduce((sum, ps) => sum + ps.slots, 0);
       await prisma.cluster.update({
         where: { id },
         data: { capacity: newCapacity },
@@ -105,7 +105,7 @@ export async function PUT(request: NextRequest) {
       where: { id },
       include: {
         staff: true,
-        allowedPrograms: { include: { program: { include: { department: { select: { name: true, abbreviation: true } } } } } },
+        allowedDepartments: { include: { department: { select: { id: true, name: true, abbreviation: true } } } },
       },
     });
 

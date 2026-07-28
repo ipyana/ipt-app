@@ -30,18 +30,18 @@ export async function POST(request: NextRequest) {
 
     const cluster = await prisma.cluster.findUnique({
       where: { id: clusterId },
-      include: { allowedPrograms: { include: { program: true } } },
+      include: { allowedDepartments: { include: { department: true } } },
     });
     if (!cluster) return err("Cluster not found", 404);
 
-    const cp = cluster.allowedPrograms.find(
-      (ap) => ap.program.name === application.student.program
+    const cd = cluster.allowedDepartments.find(
+      (ad) => ad.department.abbreviation === application.student.department
     );
-    if (!cp) return err(`Student's program not assigned to this cluster`, 400);
-    if (cp.enrolled >= cp.slots) return err(`All ${cp.slots} slots for this program are full`, 409);
+    if (!cd) return err(`Student's department not assigned to this cluster`, 400);
+    if (cd.enrolled >= cd.slots) return err(`All ${cd.slots} slots for ${application.student.department} are full`, 409);
 
-    await prisma.clusterProgram.update({
-      where: { clusterId_programId: { clusterId, programId: cp.programId } },
+    await prisma.clusterDepartment.update({
+      where: { clusterId_departmentId: { clusterId, departmentId: cd.departmentId } },
       data: { enrolled: { increment: 1 } },
     });
 
@@ -83,17 +83,17 @@ export async function PUT() {
     });
 
     const clusters = await prisma.cluster.findMany({
-      include: { allowedPrograms: { include: { program: true } } },
+      include: { allowedDepartments: { include: { department: true } } },
     });
 
-    const cpMap = new Map<string, { clusterId: number; programId: number; slots: number; enrolled: number }>();
+    const slotMap = new Map<string, { clusterId: number; departmentId: number; slots: number; enrolled: number }>();
     for (const c of clusters) {
-      for (const ap of c.allowedPrograms) {
-        cpMap.set(`${c.id}:${ap.program.name}`, {
+      for (const ad of c.allowedDepartments) {
+        slotMap.set(`${c.id}:${ad.department.abbreviation}`, {
           clusterId: c.id,
-          programId: ap.programId,
-          slots: ap.slots,
-          enrolled: ap.enrolled,
+          departmentId: ad.departmentId,
+          slots: ad.slots,
+          enrolled: ad.enrolled,
         });
       }
     }
@@ -104,27 +104,27 @@ export async function PUT() {
       const prefs = [app.clusterPref1, app.clusterPref2];
 
       for (const clusterId of prefs) {
-        const key = `${clusterId}:${app.student.program}`;
-        const cp = cpMap.get(key);
-        if (cp && cp.enrolled < cp.slots) {
-          await prisma.clusterProgram.update({
-            where: { clusterId_programId: { clusterId: cp.clusterId, programId: cp.programId } },
+        const key = `${clusterId}:${app.student.department}`;
+        const sd = slotMap.get(key);
+        if (sd && sd.enrolled < sd.slots) {
+          await prisma.clusterDepartment.update({
+            where: { clusterId_departmentId: { clusterId: sd.clusterId, departmentId: sd.departmentId } },
             data: { enrolled: { increment: 1 } },
           });
 
           await prisma.cluster.update({
-            where: { id: cp.clusterId },
+            where: { id: sd.clusterId },
             data: { currentEnrolled: { increment: 1 } },
           });
 
           await prisma.application.update({
             where: { id: app.id },
-            data: { allocatedCluster: cp.clusterId, status: "allocated" },
+            data: { allocatedCluster: sd.clusterId, status: "allocated" },
           });
 
-          cp.enrolled++;
+          sd.enrolled++;
 
-          const cluster = clusters.find((c) => c.id === cp.clusterId);
+          const cluster = clusters.find((c) => c.id === sd.clusterId);
           await sendAllocationEmail({
             studentName: app.student.fullName,
             studentEmail: app.student.email,

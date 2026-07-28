@@ -17,7 +17,7 @@ export async function GET() {
     const waitlisted = await prisma.application.findMany({
       where: { status: "waitlisted" },
       include: {
-        student: { select: { id: true, studentId: true, fullName: true, program: true } },
+        student: { select: { id: true, studentId: true, fullName: true, department: true } },
       },
       orderBy: { waitlistedAt: "asc" },
     });
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     const clusters = await prisma.cluster.findMany({
       where: { id: { in: [app.clusterPref1, app.clusterPref2] } },
-      include: { allowedPrograms: { include: { program: true } } },
+      include: { allowedDepartments: { include: { department: true } } },
     });
 
     const phases = await prisma.phase.findMany({
@@ -58,20 +58,24 @@ export async function POST(request: NextRequest) {
     });
     if (phases.length < 4) return err("Phases not configured", 400);
 
-    const p1cp = clusters.find((c) => c.id === app.clusterPref1)?.allowedPrograms
-      .find((ap) => ap.program.name === app.student.program);
+    const p1Cluster = clusters.find((c) => c.id === app.clusterPref1);
+    const p1Cd = p1Cluster?.allowedDepartments?.find(
+      (ad) => ad.department?.abbreviation === app.student.department
+    );
 
-    if (!p1cp || p1cp.enrolled >= p1cp.slots) {
-      return err(`No slots available in ${clusters.find((c) => c.id === app.clusterPref1)?.name}`, 409);
+    if (!p1Cd || p1Cd.enrolled >= p1Cd.slots) {
+      return err(`No slots available in ${p1Cluster?.name || "cluster"}`, 409);
     }
+
+    const p2Cluster = clusters.find((c) => c.id === app.clusterPref2);
+    const p2Cd = p2Cluster?.allowedDepartments?.find(
+      (ad) => ad.department?.abbreviation === app.student.department
+    );
 
     const p1Phase1 = phases.find((ph) => ph.clusterId === app.clusterPref1 && ph.phaseNumber === 1);
     const p1Phase2 = phases.find((ph) => ph.clusterId === app.clusterPref1 && ph.phaseNumber === 2);
     const p2Phase1 = phases.find((ph) => ph.clusterId === app.clusterPref2 && ph.phaseNumber === 1);
     const p2Phase2 = phases.find((ph) => ph.clusterId === app.clusterPref2 && ph.phaseNumber === 2);
-
-    const p2cp = clusters.find((c) => c.id === app.clusterPref2)?.allowedPrograms
-      .find((ap) => ap.program.name === app.student.program);
 
     await prisma.$transaction(async (tx) => {
       await tx.application.update({
@@ -86,14 +90,14 @@ export async function POST(request: NextRequest) {
           data: { phaseId: p1Phase1.id, applicationId: app.id, clusterId: app.clusterPref1 },
         });
       }
-      if (p2Phase2 && p2cp && p2cp.enrolled < p2cp.slots) {
+      if (p2Phase2 && p2Cd && p2Cd.enrolled < p2Cd.slots) {
         await tx.phaseAllocation.create({
           data: { phaseId: p2Phase2.id, applicationId: app.id, clusterId: app.clusterPref2 },
         });
       }
 
-      await tx.clusterProgram.update({
-        where: { clusterId_programId: { clusterId: app.clusterPref1, programId: p1cp.programId } },
+      await tx.clusterDepartment.update({
+        where: { clusterId_departmentId: { clusterId: app.clusterPref1, departmentId: p1Cd.departmentId } },
         data: { enrolled: { increment: 1 } },
       });
       await tx.cluster.update({
@@ -102,8 +106,8 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    const clusterName = clusters.find((c) => c.id === app.clusterPref1)?.name || "";
-    const clusterLocation = clusters.find((c) => c.id === app.clusterPref1)?.location || "";
+    const clusterName = p1Cluster?.name || "";
+    const clusterLocation = p1Cluster?.location || "";
 
     await sendAllocationEmail({
       studentName: app.student.fullName,

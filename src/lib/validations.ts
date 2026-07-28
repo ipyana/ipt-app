@@ -43,8 +43,8 @@ export const clusterManageSchema = z.object({
   description: z.string().optional(),
   capacity: z.number().int().min(0).optional(),
   location: z.string().optional(),
-  programSlots: z
-    .array(z.object({ programId: z.number(), slots: z.number().int().min(0) }))
+  departmentSlots: z
+    .array(z.object({ departmentId: z.number(), slots: z.number().int().min(0) }))
     .optional(),
 });
 

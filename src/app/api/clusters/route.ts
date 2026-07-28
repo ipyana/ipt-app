@@ -12,8 +12,8 @@ export async function GET() {
     const clusters = await prisma.cluster.findMany({
       include: {
         staff: { select: { name: true, email: true } },
-        allowedPrograms: {
-          include: { program: { select: { id: true, name: true, departmentId: true } } },
+        allowedDepartments: {
+          include: { department: { select: { id: true, name: true, abbreviation: true } } },
         },
       },
       orderBy: { id: "asc" },

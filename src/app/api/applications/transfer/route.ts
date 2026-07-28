@@ -22,19 +22,19 @@ export async function GET() {
     const allClusters = await prisma.cluster.findMany({
       where: {
         id: { not: application.allocatedCluster! },
-        allowedPrograms: {
-          some: { program: { name: student.program } },
+        allowedDepartments: {
+          some: { department: { abbreviation: student.department } },
         },
       },
       include: {
-        allowedPrograms: { where: { program: { name: student.program } } },
+        allowedDepartments: { where: { department: { abbreviation: student.department } } },
         staff: { select: { name: true } },
       },
     });
 
     const eligible = allClusters.filter((c) => {
-      const cp = c.allowedPrograms[0];
-      return cp && cp.enrolled < cp.slots;
+      const cd = c.allowedDepartments[0];
+      return cd && cd.enrolled < cd.slots;
     });
 
     return NextResponse.json(eligible);
@@ -80,11 +80,11 @@ export async function POST(request: NextRequest) {
       return err("You are already allocated to that cluster", 400);
     }
 
-    const cp = await prisma.clusterProgram.findFirst({
-      where: { clusterId: toClusterId, program: { name: application.student.program } },
+    const cd = await prisma.clusterDepartment.findFirst({
+      where: { clusterId: toClusterId, department: { abbreviation: application.student.department } },
     });
-    if (!cp) return err("Your program is not eligible for that cluster", 403);
-    if (cp.enrolled >= cp.slots) return err("No available slots in that cluster", 409);
+    if (!cd) return err("Your program is not eligible for that cluster", 403);
+    if (cd.enrolled >= cd.slots) return err("No available slots in that cluster", 409);
 
     const transfer = await prisma.transferRequest.create({
       data: {

@@ -25,7 +25,7 @@ async function main() {
   await prisma.iptSession.deleteMany();
   await prisma.application.deleteMany();
   await prisma.staff.deleteMany();
-  await prisma.clusterProgram.deleteMany();
+  await prisma.clusterDepartment.deleteMany();
   await prisma.cluster.deleteMany();
   await prisma.program.deleteMany();
   await prisma.department.deleteMany();
@@ -99,11 +99,11 @@ async function main() {
       },
     });
 
-    for (const [progName, slots] of Object.entries(cd.programSlots)) {
-      const pid = programMap[progName];
-      if (pid) {
-        await prisma.clusterProgram.create({
-          data: { clusterId: cluster.id, programId: pid, slots },
+    for (const [deptAbbr, slots] of Object.entries(cd.departmentSlots)) {
+      const deptId = deptMap[deptAbbr];
+      if (deptId && slots > 0) {
+        await prisma.clusterDepartment.create({
+          data: { clusterId: cluster.id, departmentId: deptId, slots },
         });
       }
     }
@@ -119,7 +119,7 @@ async function main() {
         },
       });
     }
-    console.log(`Cluster "${cluster.name}" — ${Object.keys(cd.programSlots).length} programs, ${cd.staff.length} staff`);
+    console.log(`Cluster "${cluster.name}" — ${Object.keys(cd.departmentSlots).length} departments, ${cd.staff.length} staff`);
   }
   console.log("Staff accounts created — password: Staff@123 for all staff emails");
 

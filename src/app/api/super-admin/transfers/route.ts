@@ -59,15 +59,15 @@ export async function POST(request: NextRequest) {
     const app = transfer.application;
 
     if (action === "approve") {
-      const cp = await prisma.clusterProgram.findFirst({
-        where: { clusterId: transfer.toClusterId, program: { name: app.student.program } },
+      const cd = await prisma.clusterDepartment.findFirst({
+        where: { clusterId: transfer.toClusterId, department: { abbreviation: app.student.department } },
       });
-      if (!cp || cp.enrolled >= cp.slots) {
+      if (!cd || cd.enrolled >= cd.slots) {
         return err("No available slots in the target cluster", 409);
       }
 
-      const oldCp = await prisma.clusterProgram.findFirst({
-        where: { clusterId: transfer.fromClusterId, program: { name: app.student.program } },
+      const oldCp = await prisma.clusterDepartment.findFirst({
+        where: { clusterId: transfer.fromClusterId, department: { abbreviation: app.student.department } },
       });
 
       await prisma.$transaction(async (tx) => {
@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
         });
 
         if (oldCp) {
-          await tx.clusterProgram.update({
-            where: { clusterId_programId: { clusterId: transfer.fromClusterId, programId: oldCp.programId } },
+          await tx.clusterDepartment.update({
+            where: { clusterId_departmentId: { clusterId: transfer.fromClusterId,             departmentId: oldCp.departmentId } },
             data: { enrolled: { decrement: 1 } },
           });
           await tx.cluster.update({
@@ -92,8 +92,8 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        await tx.clusterProgram.update({
-          where: { clusterId_programId: { clusterId: transfer.toClusterId, programId: cp.programId } },
+        await tx.clusterDepartment.update({
+          where: { clusterId_departmentId: { clusterId: transfer.toClusterId, departmentId: cd.departmentId } },
           data: { enrolled: { increment: 1 } },
         });
         await tx.cluster.update({

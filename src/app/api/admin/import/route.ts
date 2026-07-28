@@ -62,17 +62,17 @@ export async function POST(request: NextRequest) {
         }
 
         if (slots > 0) {
-          const existing = await prisma.clusterProgram.findUnique({
-            where: { clusterId_programId: { clusterId: cluster.id, programId: program.id } },
+          const existing = await prisma.clusterDepartment.findUnique({
+            where: { clusterId_departmentId: { clusterId: cluster.id, departmentId: program.id } },
           });
           if (!existing) {
-            await prisma.clusterProgram.create({
-              data: { clusterId: cluster.id, programId: program.id, slots },
+            await prisma.clusterDepartment.create({
+              data: { clusterId: cluster.id, departmentId: program.id, slots },
             });
             allocationsCreated++;
           } else if (existing.slots !== slots) {
-            await prisma.clusterProgram.update({
-              where: { clusterId_programId: { clusterId: cluster.id, programId: program.id } },
+            await prisma.clusterDepartment.update({
+              where: { clusterId_departmentId: { clusterId: cluster.id, departmentId: program.id } },
               data: { slots },
             });
             allocationsCreated++;

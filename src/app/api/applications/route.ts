@@ -9,13 +9,13 @@ function err(message: string, status: number) {
 }
 
 async function tryAllocate(app: any, pref1: number, pref2: number, student: any) {
-  const p1 = await prisma.clusterProgram.findFirst({
-    where: { clusterId: pref1, program: { name: student.program } },
-    include: { cluster: true },
+  const p1 = await prisma.clusterDepartment.findFirst({
+    where: { clusterId: pref1, department: { abbreviation: student.department } },
+    include: { cluster: true, department: true },
   });
-  const p2 = await prisma.clusterProgram.findFirst({
-    where: { clusterId: pref2, program: { name: student.program } },
-    include: { cluster: true },
+  const p2 = await prisma.clusterDepartment.findFirst({
+    where: { clusterId: pref2, department: { abbreviation: student.department } },
+    include: { cluster: true, department: true },
   });
   if (!p1 || !p2) return null;
 
@@ -38,8 +38,8 @@ async function tryAllocate(app: any, pref1: number, pref2: number, student: any)
     allocateInPref1 = true;
     allocateInPref2 = p2.enrolled < p2.slots;
     if (!allocateInPref2) {
-      const p1b = await prisma.clusterProgram.findFirst({
-        where: { clusterId: pref1, program: { name: student.program } },
+      const p1b = await prisma.clusterDepartment.findFirst({
+        where: { clusterId: pref1, department: { abbreviation: student.department } },
       });
       if (p1b!.enrolled + 1 <= p1b!.slots) {
         allocateInPref2 = false;
@@ -113,19 +113,17 @@ export async function POST(request: NextRequest) {
 
     const clusters = await prisma.cluster.findMany({
       where: { id: { in: [pref1, pref2] } },
-      include: {
-        allowedPrograms: { include: { program: true } },
-      },
+      include: { allowedDepartments: { include: { department: true } } },
     });
 
     if (clusters.length !== 2) return err("One or more selected clusters do not exist", 400);
 
     for (const cluster of clusters) {
-      const cp = cluster.allowedPrograms.find(
-        (ap) => ap.program.name === student.program
+      const cd = cluster.allowedDepartments?.find(
+        (ad) => ad.department?.abbreviation === student.department
       );
-      if (!cp) {
-        return err(`Your program (${student.program}) does not have slots in "${cluster.name}"`, 403);
+      if (!cd) {
+        return err(`Your department (${student.department}) has no slots in "${cluster.name}"`, 403);
       }
     }
 
@@ -147,14 +145,14 @@ export async function POST(request: NextRequest) {
           data: { status: "allocated", allocatedCluster: allocation.result.allocatedCluster },
         });
 
-        for (const ad of allocation.allocationData) {
+        for (const ph of allocation.allocationData) {
           await tx.phaseAllocation.create({
-            data: { phaseId: ad.phaseId, applicationId: app.id, clusterId: ad.clusterId },
+            data: { phaseId: ph.phaseId, applicationId: app.id, clusterId: ph.clusterId },
           });
         }
 
-        await tx.clusterProgram.update({
-          where: { clusterId_programId: { clusterId: allocation.p1.clusterId, programId: allocation.p1.programId } },
+        await tx.clusterDepartment.update({
+          where: { clusterId_departmentId: { clusterId: allocation.p1.clusterId, departmentId: allocation.p1.departmentId } },
           data: { enrolled: { increment: 1 } },
         });
         await tx.cluster.update({
@@ -232,19 +230,17 @@ export async function PUT(request: NextRequest) {
 
     const clusters = await prisma.cluster.findMany({
       where: { id: { in: [pref1, pref2] } },
-      include: {
-        allowedPrograms: { include: { program: true } },
-      },
+      include: { allowedDepartments: { include: { department: true } } },
     });
 
     if (clusters.length !== 2) return err("Invalid cluster selection", 400);
 
     for (const cluster of clusters) {
-      const cp = cluster.allowedPrograms.find(
-        (ap) => ap.program.name === student.program
+      const cd = cluster.allowedDepartments?.find(
+        (ad) => ad.department?.abbreviation === student.department
       );
-      if (!cp) {
-        return err(`Your program (${student.program}) is not eligible for "${cluster.name}"`, 403);
+      if (!cd) {
+        return err(`Your department (${student.department}) has no slots in "${cluster.name}"`, 403);
       }
     }
 
@@ -265,14 +261,14 @@ export async function PUT(request: NextRequest) {
           data: { status: "allocated", allocatedCluster: allocation.result.allocatedCluster },
         });
 
-        for (const ad of allocation.allocationData) {
+        for (const ph of allocation.allocationData) {
           await tx.phaseAllocation.create({
-            data: { phaseId: ad.phaseId, applicationId: updated.id, clusterId: ad.clusterId },
+            data: { phaseId: ph.phaseId, applicationId: updated.id, clusterId: ph.clusterId },
           });
         }
 
-        await tx.clusterProgram.update({
-          where: { clusterId_programId: { clusterId: allocation.p1.clusterId, programId: allocation.p1.programId } },
+        await tx.clusterDepartment.update({
+          where: { clusterId_departmentId: { clusterId: allocation.p1.clusterId, departmentId: allocation.p1.departmentId } },
           data: { enrolled: { increment: 1 } },
         });
         await tx.cluster.update({
