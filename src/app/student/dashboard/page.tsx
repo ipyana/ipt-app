@@ -34,7 +34,7 @@ export default function StudentDashboard() {
 
   // Reapplication modal state
   const [reapplyOpen, setReapplyOpen] = useState(false);
-  const [reapplyMode, setReapplyMode] = useState<"choice" | "reapplication" | "transfer">("choice");
+  const [reapplyMode, setReapplyMode] = useState<"choice" | "reapplication" | "transfer" | "underReview">("choice");
   const [reapplyStep, setReapplyStep] = useState(1);
   const [reapplyPref1, setReapplyPref1] = useState(0);
   const [reapplyPref2, setReapplyPref2] = useState(0);
@@ -123,6 +123,11 @@ export default function StudentDashboard() {
     }
     if (application.status === "allocated") {
       openReapplyModal();
+      return;
+    }
+    if (application.status === "reapplying") {
+      setReapplyMode("underReview");
+      setReapplyOpen(true);
       return;
     }
     router.push("/student/apply");
@@ -259,6 +264,18 @@ export default function StudentDashboard() {
           </div>
         </DialogHeader>
         <DialogBody>
+          {reapplyMode === "underReview" && (
+            <div className="space-y-4 text-center py-4">
+              <div className="flex justify-center mb-2">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-900/20">
+                  <Clock className="h-8 w-8 text-amber-600" />
+                </div>
+              </div>
+              <p className="text-base font-semibold text-slate-900 dark:text-white">Application Under Review</p>
+              <p className="text-sm text-slate-500">Your application is currently under review. You cannot submit a new reapplication or transfer at this time.</p>
+            </div>
+          )}
+
           {reapplyMode === "choice" && (
             <div className="space-y-4">
               <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
@@ -349,6 +366,8 @@ export default function StudentDashboard() {
         <DialogFooter>
           {reapplySuccess ? (
             <Button onClick={() => { setReapplyOpen(false); router.refresh(); }}>Close</Button>
+          ) : reapplyMode === "underReview" ? (
+            <Button onClick={() => router.push("/student/status")}>View Status</Button>
           ) : reapplyMode === "choice" ? (
             <Button variant="outline" onClick={() => setReapplyOpen(false)}>Cancel</Button>
           ) : (
