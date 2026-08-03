@@ -20,7 +20,9 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
 
   const isLoginPage = pathname === "/" || pathname.startsWith("/login");
-  const isPublicAuth = pathname === "/api/auth/login" || pathname === "/api/auth/register";
+  const isPublicPage = pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/staff/register";
+  const isPublicAuth = pathname === "/api/auth/login" || pathname === "/api/auth/register"
+    || pathname === "/api/auth/forgot-password" || pathname === "/api/auth/reset-password" || pathname === "/api/auth/staff-register";
   const isProtectedAuth = pathname === "/api/auth/me" || pathname === "/api/auth/logout";
   const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
   const isSuperAdminRoute = pathname.startsWith("/super-admin") || pathname.startsWith("/api/super-admin");
@@ -34,7 +36,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!token) {
-    if (isLoginPage || isApiRoute) {
+    if (isLoginPage || isPublicPage || isApiRoute) {
       const response = NextResponse.next();
       addSecurityHeaders(request, response);
       return response;

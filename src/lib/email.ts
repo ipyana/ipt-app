@@ -104,6 +104,43 @@ export async function sendReportReminderEmail(params: { studentName: string; stu
   }
 }
 
+export async function sendPasswordResetEmail(params: { name: string; email: string; otpCode: string }) {
+  const result = await sendTemplateEmail("password_reset", params.email, {
+    name: params.name,
+    otpCode: params.otpCode,
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.email, "Reset your IPT password",
+      buildSimpleHtml("Password Reset", `Your verification code is: ${params.otpCode}. It expires in 5 minutes.`));
+  }
+}
+
+export async function sendStaffApprovedEmail(params: { name: string; email: string; clusterName: string; clusterLocation: string }) {
+  const result = await sendTemplateEmail("staff_approved", params.email, {
+    name: params.name,
+    clusterName: params.clusterName,
+    clusterLocation: params.clusterLocation,
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.email, "Your facilitator account has been approved",
+      buildSimpleHtml("Account Approved", `Your facilitator account has been approved. Cluster: ${params.clusterName}`));
+  }
+}
+
+export async function sendStaffRejectedEmail(params: { name: string; email: string; reason?: string }) {
+  const result = await sendTemplateEmail("staff_rejected", params.email, {
+    name: params.name,
+    reason: params.reason || "No specific reason provided",
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.email, "Your facilitator account was not approved",
+      buildSimpleHtml("Account Not Approved", `Reason: ${params.reason || "N/A"}`));
+  }
+}
+
 function buildSimpleHtml(title: string, message: string): string {
   return `<div style="font-family: Arial;max-width:600px;margin:0 auto;padding:24px;">
     <h2 style="color:#2563eb;">${title}</h2>

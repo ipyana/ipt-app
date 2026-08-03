@@ -14,7 +14,7 @@ import { Plus, Pencil, Trash2, Move, Users } from "lucide-react";
 interface Cluster { id: number; name: string; }
 interface StaffMember {
   id: number; name: string; email: string; phone: string | null; role: string;
-  isActive: boolean; clusterId: number;
+  isActive: boolean; status: string; clusterId: number;
   cluster: Cluster;
 }
 
@@ -98,6 +98,16 @@ export default function AdminStaff() {
     setDeleteTarget(null); load();
   }
 
+  async function handleApprove(id: number) {
+    await fetch("/api/admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "approve" }) });
+    load();
+  }
+
+  async function handleReject(id: number) {
+    await fetch("/api/admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "reject", reason: "Registration not approved" }) });
+    load();
+  }
+
   return (
     <AppLayout role="admin">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -130,13 +140,24 @@ export default function AdminStaff() {
                     <TableCell className="text-sm text-slate-500">{s.phone || "—"}</TableCell>
                     <TableCell><Badge>{s.cluster?.name || "—"}</Badge></TableCell>
                     <TableCell>
-                      <Badge variant={s.isActive ? "success" : "secondary"}>{s.isActive ? "Active" : "Inactive"}</Badge>
+                      {s.status === "pending_approval" ? <Badge variant="warning">Pending</Badge>
+                        : s.status === "rejected" ? <Badge variant="danger">Rejected</Badge>
+                        : <Badge variant={s.isActive ? "success" : "secondary"}>{s.isActive ? "Active" : "Inactive"}</Badge>}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => openMove(s)}><Move className="h-4 w-4 text-amber-600" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                        {s.status === "pending_approval" ? (
+                          <>
+                            <Button size="sm" variant="primary" onClick={() => handleApprove(s.id)}>Approve</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleReject(s.id)}>Reject</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => openMove(s)}><Move className="h-4 w-4 text-amber-600" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

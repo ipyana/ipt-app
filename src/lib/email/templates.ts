@@ -126,6 +126,93 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     required: false,
   },
   {
+    key: "password_reset",
+    name: "Password Reset",
+    category: "auth",
+    subject: "Reset your IPT password",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #4f46e5; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">Password Reset</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{name}}</strong>,</p>
+    <p>We received a request to reset your password. Use the following one-time code to complete the reset:</p>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4f46e5;">{{otpCode}}</p>
+    </div>
+    <p style="color: #64748b; font-size: 13px;">This code expires in <strong>5 minutes</strong>. If you did not request a password reset, please ignore this email.</p>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
+  </div>
+</div>`,
+    variables: ["name", "otpCode", "appName"],
+    required: true,
+  },
+  {
+    key: "otp_email",
+    name: "Verification Code",
+    category: "auth",
+    subject: "Your verification code",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #2563eb; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">Verification Code</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{name}}</strong>,</p>
+    <p>Your one-time verification code is:</p>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">{{otpCode}}</p>
+    </div>
+    <p style="color: #64748b; font-size: 13px;">This code expires in <strong>5 minutes</strong>.</p>
+  </div>
+</div>`,
+    variables: ["name", "otpCode"],
+    required: false,
+  },
+  {
+    key: "staff_approved",
+    name: "Facilitator Approved",
+    category: "staff",
+    subject: "Your facilitator account has been approved",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #059669; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">Account Approved</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{name}}</strong>,</p>
+    <p>Congratulations! Your facilitator account has been <strong style="color: #059669;">approved</strong>.</p>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0; font-size: 16px; font-weight: bold; color: #059669;">{{clusterName}}</p>
+      <p style="margin: 8px 0 0; color: #64748b;">Location: {{clusterLocation}}</p>
+    </div>
+    <p style="color: #64748b; font-size: 14px;">You can now log in using your email or phone number to view your assigned students.</p>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
+  </div>
+</div>`,
+    variables: ["name", "clusterName", "clusterLocation", "appName"],
+    required: true,
+  },
+  {
+    key: "staff_rejected",
+    name: "Facilitator Rejected",
+    category: "staff",
+    subject: "Your facilitator account was not approved",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #dc2626; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">Account Not Approved</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{name}}</strong>,</p>
+    <p>We regret to inform you that your facilitator registration has been <strong style="color: #dc2626;">not approved</strong>.</p>
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>Reason:</strong> {{reason}}</p>
+    </div>
+    <p style="color: #64748b; font-size: 14px;">If you believe this is a mistake, please contact the IPT coordinator.</p>
+  </div>
+</div>`,
+    variables: ["name", "reason", "appName"],
+    required: false,
+  },
+  {
     key: "test_email",
     name: "Test Email",
     category: "system",

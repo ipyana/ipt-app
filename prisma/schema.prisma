@@ -49,16 +49,18 @@ model ClusterDepartment {
 }
 
 model Staff {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  phone     String?   @unique
-  password  String
-  role      String    @default("staff")
-  isActive  Boolean   @default(true) @map("is_active")
-  clusterId Int       @map("cluster_id")
-  cluster   Cluster   @relation(fields: [clusterId], references: [id], onDelete: Cascade)
-  createdAt DateTime  @default(now()) @map("created_at")
+  id                 Int       @id @default(autoincrement())
+  name               String
+  email              String    @unique
+  phone              String?   @unique
+  password           String
+  role               String    @default("staff")
+  isActive           Boolean   @default(true) @map("is_active")
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  status             String    @default("active")
+  clusterId          Int       @map("cluster_id")
+  cluster            Cluster   @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  createdAt          DateTime  @default(now()) @map("created_at")
 }
 
 model Student {
@@ -75,13 +77,14 @@ model Student {
 }
 
 model Admin {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  email     String   @unique
-  phone     String?  @unique
-  password  String
-  role      String   @default("admin")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                 Int      @id @default(autoincrement())
+  username           String   @unique
+  email              String   @unique
+  phone              String?  @unique
+  password           String
+  role               String   @default("admin")
+  mustChangePassword Boolean  @default(false) @map("must_change_password")
+  createdAt          DateTime @default(now()) @map("created_at")
 }
 
 model IptSession {
@@ -202,4 +205,16 @@ model EmailLog {
   error     String?
   sentAt    DateTime? @map("sent_at")
   createdAt DateTime @default(now()) @map("created_at")
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String
+  code      String
+  purpose   String
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, purpose])
 }

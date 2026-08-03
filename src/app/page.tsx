@@ -50,6 +50,10 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
+      if (data.mustChangePassword) {
+        router.push("/change-password");
+        return;
+      }
       if (data.role === "super_admin") router.push("/super-admin");
       else if (["admin", "coordinator"].includes(data.role)) router.push("/admin/dashboard");
       else if (data.role === "staff") router.push("/staff");
@@ -179,7 +183,10 @@ export default function HomePage() {
                       placeholder="Enter your email, reg number, or phone" className="h-10" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Password</Label>
+                      <button type="button" onClick={() => router.push("/forgot-password")} className="text-xs font-medium text-primary-600 hover:text-primary-700">Forgot password?</button>
+                    </div>
                     <div className="relative">
                       <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required
                         placeholder="Enter your password" className="h-10 pr-10" />
@@ -192,10 +199,16 @@ export default function HomePage() {
                   <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
-                  <p className="text-center text-sm text-slate-500 mt-4">
-                    Don't have an account?{" "}
-                    <button type="button" onClick={() => switchMode("register")} className="font-medium text-primary-600 hover:text-primary-700">Sign up</button>
-                  </p>
+                  <div className="mt-4 space-y-2 text-center">
+                    <p className="text-sm text-slate-500">
+                      Student?{" "}
+                      <button type="button" onClick={() => switchMode("register")} className="font-medium text-primary-600 hover:text-primary-700">Sign up</button>
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Facilitator?{" "}
+                      <button type="button" onClick={() => router.push("/staff/register")} className="font-medium text-primary-600 hover:text-primary-700">Register here</button>
+                    </p>
+                  </div>
                 </form>
               )}
             </div>

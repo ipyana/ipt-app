@@ -60,9 +60,9 @@ async function main() {
   ];
   for (const u of adminUsers) {
     await prisma.admin.create({
-      data: { username: u.username, email: u.email, phone: u.phone, password: adminHashedPassword, role: "admin" },
+      data: { username: u.username, email: u.email, phone: u.phone, password: adminHashedPassword, role: "admin", mustChangePassword: true },
     });
-    console.log(`Admin created — ${u.name} / ${u.email} / ${u.phone} / password: Admin@123`);
+    console.log(`Admin created — ${u.name} / ${u.email} / ${u.phone} / password: Admin@123 (must change)`);
   }
 
   const deptMap: Record<string, number> = {};

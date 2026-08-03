@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth";
+import { sendStaffApprovedEmail, sendStaffRejectedEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 
 function err(message: string, status: number) {
@@ -47,8 +48,33 @@ export async function PUT(request: NextRequest) {
   try {
     await requireSuperAdmin();
     const body = await request.json();
-    const { id, name, email, phone, password, clusterId, isActive } = body;
+    const { id, name, email, phone, password, clusterId, isActive, action, reason } = body;
     if (!id) return err("ID is required", 400);
+
+    if (action === "approve") {
+      const staff = await prisma.staff.update({
+        where: { id },
+        data: { status: "active", isActive: true },
+        include: { cluster: { select: { id: true, name: true, location: true } } },
+      });
+      await sendStaffApprovedEmail({
+        name: staff.name,
+        email: staff.email,
+        clusterName: staff.cluster?.name || "",
+        clusterLocation: staff.cluster?.location || "",
+      });
+      return NextResponse.json(staff);
+    }
+
+    if (action === "reject") {
+      const staff = await prisma.staff.update({
+        where: { id },
+        data: { status: "rejected", isActive: false },
+        include: { cluster: { select: { id: true, name: true } } },
+      });
+      await sendStaffRejectedEmail({ name: staff.name, email: staff.email, reason: reason || "Not specified" });
+      return NextResponse.json(staff);
+    }
 
     const data: any = {};
     if (name !== undefined) data.name = name;

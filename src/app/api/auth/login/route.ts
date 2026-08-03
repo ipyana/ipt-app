@@ -52,6 +52,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (staff) {
+      if (staff.status === "pending_approval") {
+        return NextResponse.json({ error: "Your account is pending approval. Please wait for an administrator to review your registration." }, { status: 403 });
+      }
+      if (staff.status === "rejected") {
+        return NextResponse.json({ error: "Your registration was not approved. Please contact the IPT coordinator." }, { status: 403 });
+      }
       if (!staff.isActive) {
         return NextResponse.json({ error: "Account is deactivated" }, { status: 403 });
       }
@@ -70,6 +76,7 @@ export async function POST(request: NextRequest) {
         phone: staff.phone,
         role: staff.role,
         clusterId: staff.clusterId,
+        mustChangePassword: staff.mustChangePassword,
       });
 
       response.cookies.set("token", token, {
@@ -105,6 +112,7 @@ export async function POST(request: NextRequest) {
         email: admin.email,
         phone: admin.phone,
         role: admin.role,
+        mustChangePassword: admin.mustChangePassword,
       });
 
       response.cookies.set("token", token, {
