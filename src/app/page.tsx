@@ -16,7 +16,7 @@ interface GroupedPrograms { [dept: string]: Program[] }
 export default function HomePage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
-  const [loginType, setLoginType] = useState<"student" | "admin">("student");
+
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -97,7 +97,7 @@ export default function HomePage() {
       <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
         <AnimatePresence mode="wait">
           <motion.div
-            key={mode + loginType}
+            key={mode}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -121,19 +121,6 @@ export default function HomePage() {
 
               {error && (
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>
-              )}
-
-              {mode === "login" && (
-                <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 mb-6">
-                  {(["student", "admin"] as const).map((t) => (
-                    <button key={t} onClick={() => { setLoginType(t); setError(""); }}
-                      className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
-                        loginType === t ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
-                      }`}>
-                      {t === "student" ? "Student" : "Admin"}
-                    </button>
-                  ))}
-                </div>
               )}
 
               {mode === "register" ? (
@@ -187,17 +174,12 @@ export default function HomePage() {
               ) : (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label>{loginType === "admin" ? "Username or Email" : "Registration Number or Email"}</Label>
+                    <Label>Email, Registration Number, Username, or Phone</Label>
                     <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required
-                      placeholder={loginType === "admin" ? "admin" : "20250001"} className="h-10" />
+                      placeholder="Enter your email, reg number, or phone" className="h-10" />
                   </div>
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label>Password</Label>
-                      {loginType === "admin" && (
-                        <span className="text-xs text-slate-400">admin / Admin@123</span>
-                      )}
-                    </div>
+                    <Label>Password</Label>
                     <div className="relative">
                       <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required
                         placeholder="Enter your password" className="h-10 pr-10" />
@@ -206,9 +188,7 @@ export default function HomePage() {
                       </button>
                     </div>
                   </div>
-                  {loginType === "student" && (
-                    <p className="text-xs text-slate-400 -mt-2">Demo: 20250001 / Student@123</p>
-                  )}
+                  <p className="text-xs text-slate-400 -mt-2">Demo student: 20250001 / Student@123</p>
                   <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>

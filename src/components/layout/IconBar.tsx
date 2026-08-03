@@ -39,8 +39,8 @@ const iconMap: Record<string, IconItem[]> = {
     { key: "overview", icon: BarChart3, href: "/admin/dashboard" },
     { key: "students", icon: Users, href: "/admin/students" },
     { key: "clusters", icon: Layers, href: "/admin/clusters" },
+    { key: "staff", icon: Users, href: "/admin/staff" },
     { key: "email", icon: Mail, href: "/admin/email" },
-    { key: "settings", icon: Settings, href: "/super-admin/settings" },
   ],
   super_admin: [
     { key: "overview", icon: BarChart3, href: "/super-admin" },

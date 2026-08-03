@@ -23,12 +23,12 @@ export async function POST(request: NextRequest) {
   try {
     await requireSuperAdmin();
     const body = await request.json();
-    const { username, email, password, role } = body;
+    const { username, email, phone, password, role } = body;
     if (!username || !email || !password) return err("Username, email, and password are required", 400);
 
     const hashed = await bcrypt.hash(password, 12);
     const admin = await prisma.admin.create({
-      data: { username, email, password: hashed, role: role || "admin" },
+      data: { username, email, phone: phone || null, password: hashed, role: role || "admin" },
     });
     return NextResponse.json(admin, { status: 201 });
   } catch (e: any) {
@@ -43,12 +43,13 @@ export async function PUT(request: NextRequest) {
   try {
     await requireSuperAdmin();
     const body = await request.json();
-    const { id, username, email, password, role } = body;
+    const { id, username, email, phone, password, role } = body;
     if (!id) return err("ID is required", 400);
 
     const data: any = {};
     if (username) data.username = username;
     if (email) data.email = email;
+    if (phone !== undefined) data.phone = phone;
     if (role) data.role = role;
     if (password) data.password = await bcrypt.hash(password, 12);
 

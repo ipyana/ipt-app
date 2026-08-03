@@ -53,6 +53,18 @@ async function main() {
   });
   console.log("Coordinator created — username: coordinator / password: Admin@123");
 
+  const adminUsers = [
+    { username: "emmanuel.malissa", name: "Emmanuel Malissa", email: "Malissaemmanuel@gmail.com", phone: "+255782536312" },
+    { username: "benard.joseph", name: "Benard Joseph", email: "benardjosephi18@gmail.com", phone: "+255676203734" },
+    { username: "juma.ally", name: "Dr. Juma Ally", email: "jeiside@gmail.com", phone: "+255657903492" },
+  ];
+  for (const u of adminUsers) {
+    await prisma.admin.create({
+      data: { username: u.username, email: u.email, phone: u.phone, password: adminHashedPassword, role: "admin" },
+    });
+    console.log(`Admin created — ${u.name} / ${u.email} / ${u.phone} / password: Admin@123`);
+  }
+
   const deptMap: Record<string, number> = {};
   for (const dept of DEPARTMENTS) {
     const d = await prisma.department.create({ data: { name: dept.name, abbreviation: dept.abbreviation } });

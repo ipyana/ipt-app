@@ -12,7 +12,8 @@ async function isValidToken(token: string): Promise<{ id: number; role: string }
   }
 }
 
-const ADMIN_LIKE_ROLES = ["super_admin", "admin", "coordinator"];
+const ADMIN_LIKE_ROLES = ["admin", "coordinator"];
+const SUPER_ADMIN_ROLES = ["super_admin"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

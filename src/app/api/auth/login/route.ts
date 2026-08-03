@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const staff = await prisma.staff.findFirst({
-      where: { email: identifier },
+      where: { OR: [{ email: identifier }, { phone: identifier }] },
     });
 
     if (staff) {
@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
         id: staff.id,
         name: staff.name,
         email: staff.email,
+        phone: staff.phone,
         role: staff.role,
         clusterId: staff.clusterId,
       });
@@ -83,10 +84,14 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = await prisma.admin.findFirst({
-      where: { OR: [{ username: identifier }, { email: identifier }] },
+      where: { OR: [{ username: identifier }, { email: identifier }, { phone: identifier }] },
     });
 
     if (admin) {
+      if (admin.role === "super_admin") {
+        return NextResponse.json({ error: "Super admins must use the dedicated login API" }, { status: 401 });
+      }
+
       const valid = await bcrypt.compare(password, admin.password);
       if (!valid) {
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
@@ -98,6 +103,7 @@ export async function POST(request: NextRequest) {
         id: admin.id,
         username: admin.username,
         email: admin.email,
+        phone: admin.phone,
         role: admin.role,
       });
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdmin } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
 function err(message: string, status: number) {
@@ -9,7 +9,7 @@ function err(message: string, status: number) {
 
 export async function GET() {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
     const staff = await prisma.staff.findMany({
       include: { cluster: { select: { id: true, name: true } } },
       orderBy: { createdAt: "desc" },
@@ -24,7 +24,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
     const body = await request.json();
     const { name, email, phone, password, clusterId } = body;
     if (!name || !email || !password || !clusterId) return err("Name, email, password, and cluster are required", 400);
@@ -38,14 +38,14 @@ export async function POST(request: NextRequest) {
   } catch (e: any) {
     if (e.message === "Unauthorized") return err("Unauthorized", 401);
     if (e.message === "Forbidden") return err("Forbidden", 403);
-    if (e.code === "P2002") return err("Email already exists", 409);
+    if (e.code === "P2002") return err("Email or phone already exists", 409);
     return err("Failed", 500);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
     const body = await request.json();
     const { id, name, email, phone, password, clusterId, isActive } = body;
     if (!id) return err("ID is required", 400);
@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
     const body = await request.json();
     await prisma.staff.delete({ where: { id: body.id } });
     return NextResponse.json({ success: true });

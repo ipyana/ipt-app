@@ -39,6 +39,7 @@ const navMap: Record<string, NavItem[]> = {
     { label: "Clusters", href: "/admin/clusters" },
     { label: "Allocations", href: "/admin/allocations" },
     { label: "Students", href: "/admin/students" },
+    { label: "Facilitators", href: "/admin/staff" },
     { label: "Export Data", href: "/admin/export" },
     { label: "Email", href: "/admin/email" },
   ],

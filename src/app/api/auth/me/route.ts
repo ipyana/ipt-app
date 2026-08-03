@@ -15,6 +15,7 @@ export async function GET() {
         id: admin?.id,
         username: admin?.username,
         email: admin?.email,
+        phone: admin?.phone,
         role: admin?.role,
       });
     }
@@ -28,6 +29,7 @@ export async function GET() {
         id: staff?.id,
         name: staff?.name,
         email: staff?.email,
+        phone: staff?.phone,
         role: staff?.role,
         clusterId: staff?.clusterId,
         clusterName: staff?.cluster?.name,

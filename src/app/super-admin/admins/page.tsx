@@ -12,7 +12,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDia
 import { Plus, Pencil, Trash2, Shield } from "lucide-react";
 
 interface AdminUser {
-  id: number; username: string; email: string; role: string; createdAt: string;
+  id: number; username: string; email: string; phone: string | null; role: string; createdAt: string;
 }
 
 const ROLE_OPTIONS = [
@@ -25,7 +25,7 @@ export default function SuperAdminAdmins() {
   const [items, setItems] = useState<AdminUser[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminUser | null>(null);
-  const [form, setForm] = useState({ username: "", email: "", password: "", role: "admin" });
+  const [form, setForm] = useState({ username: "", email: "", phone: "", password: "", role: "admin" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
@@ -40,14 +40,14 @@ export default function SuperAdminAdmins() {
 
   function openAdd() {
     setEditing(null);
-    setForm({ username: "", email: "", password: "", role: "admin" });
+    setForm({ username: "", email: "", phone: "", password: "", role: "admin" });
     setError("");
     setDialogOpen(true);
   }
 
   function openEdit(u: AdminUser) {
     setEditing(u);
-    setForm({ username: u.username, email: u.email, password: "", role: u.role });
+    setForm({ username: u.username, email: u.email, phone: u.phone || "", password: "", role: u.role });
     setError("");
     setDialogOpen(true);
   }
@@ -131,7 +131,10 @@ export default function SuperAdminAdmins() {
           </DialogHeader>
           <DialogBody>
             <div className="space-y-1.5"><Label>Username</Label><Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Phone (optional)</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+255..." /></div>
+            </div>
             <div className="space-y-1.5"><Label>Role</Label>
               <Select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                 {ROLE_OPTIONS.map((r) => (<option key={r.value} value={r.value}>{r.label}</option>))}

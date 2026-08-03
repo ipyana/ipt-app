@@ -18,7 +18,7 @@ interface StaffMember {
   cluster: Cluster;
 }
 
-export default function SuperAdminStaff() {
+export default function AdminStaff() {
   const [items, setItems] = useState<StaffMember[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -33,7 +33,7 @@ export default function SuperAdminStaff() {
 
   async function load() {
     const [staffRes, clusterRes] = await Promise.all([
-      fetch("/api/super-admin/staff").then((r) => r.json()),
+      fetch("/api/admin/staff").then((r) => r.json()),
       fetch("/api/clusters").then((r) => r.json()),
     ]);
     setItems(Array.isArray(staffRes) ? staffRes : []);
@@ -68,7 +68,7 @@ export default function SuperAdminStaff() {
       const body: any = { ...form };
       if (editing) body.id = editing.id;
       if (!body.password) delete body.password;
-      const res = await fetch("/api/super-admin/staff", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch("/api/admin/staff", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setDialogOpen(false); load();
@@ -80,7 +80,7 @@ export default function SuperAdminStaff() {
     if (!moveTarget || !moveClusterId) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/super-admin/staff", {
+      const res = await fetch("/api/admin/staff", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: moveTarget.id, clusterId: moveClusterId }),
@@ -94,7 +94,7 @@ export default function SuperAdminStaff() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    await fetch("/api/super-admin/staff", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: deleteTarget.id }) });
+    await fetch("/api/admin/staff", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: deleteTarget.id }) });
     setDeleteTarget(null); load();
   }
 
@@ -103,10 +103,10 @@ export default function SuperAdminStaff() {
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Manage Staff</h2>
-            <p className="text-sm text-slate-500">{items.length} staff members</p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Manage Facilitators</h2>
+            <p className="text-sm text-slate-500">{items.length} facilitators</p>
           </div>
-          <Button onClick={openAdd}><Plus className="h-4 w-4" /> Add Staff</Button>
+          <Button onClick={openAdd}><Plus className="h-4 w-4" /> Add Facilitator</Button>
         </div>
 
         <Card>
@@ -116,6 +116,7 @@ export default function SuperAdminStaff() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Cluster</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-32">Actions</TableHead>
@@ -126,6 +127,7 @@ export default function SuperAdminStaff() {
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell className="text-sm text-slate-500">{s.email}</TableCell>
+                    <TableCell className="text-sm text-slate-500">{s.phone || "—"}</TableCell>
                     <TableCell><Badge>{s.cluster?.name || "—"}</Badge></TableCell>
                     <TableCell>
                       <Badge variant={s.isActive ? "success" : "secondary"}>{s.isActive ? "Active" : "Inactive"}</Badge>
@@ -150,7 +152,7 @@ export default function SuperAdminStaff() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
                 <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
+              <DialogTitle>{editing ? "Edit Facilitator" : "Add Facilitator"}</DialogTitle>
             </div>
           </DialogHeader>
           <DialogBody>
@@ -183,7 +185,7 @@ export default function SuperAdminStaff() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20">
                 <Move className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
-              <DialogTitle>Move Lecturer</DialogTitle>
+              <DialogTitle>Move Facilitator</DialogTitle>
             </div>
           </DialogHeader>
           <DialogBody>
@@ -207,7 +209,7 @@ export default function SuperAdminStaff() {
           open={!!deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onConfirm={handleDelete}
-          title="Delete Staff"
+          title="Delete Facilitator"
           description={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
           confirmLabel="Delete"
         />
