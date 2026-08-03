@@ -5,10 +5,17 @@ import { getSession } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getSession();
+
+    // Public: return basic cluster info (id, name, location) for registration/landing
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const clusters = await prisma.cluster.findMany({
+        select: { id: true, name: true, location: true, capacity: true },
+        orderBy: { id: "asc" },
+      });
+      return NextResponse.json(clusters);
     }
 
+    // Authenticated: return full cluster data
     const clusters = await prisma.cluster.findMany({
       include: {
         staff: { select: { name: true, email: true } },
