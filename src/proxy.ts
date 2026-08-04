@@ -31,7 +31,8 @@ export async function proxy(request: NextRequest) {
   const isPublicAuth = pathname === "/api/auth/login" || pathname === "/api/auth/register"
     || pathname === "/api/auth/forgot-password" || pathname === "/api/auth/reset-password" || pathname === "/api/auth/staff-register";
   const isProtectedAuth = pathname === "/api/auth/me" || pathname === "/api/auth/logout";
-  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
+  const isAdminPage = pathname.startsWith("/admin");
+  const isAdminApi = pathname.startsWith("/api/admin");
   const isSuperAdminRoute = pathname.startsWith("/super-admin") || pathname.startsWith("/api/super-admin");
   const isStaffRoute = pathname.startsWith("/staff") || pathname.startsWith("/api/staff");
   const isApiRoute = pathname.startsWith("/api/");
@@ -84,7 +85,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (isAdminRoute && !ADMIN_LIKE_ROLES.includes(session.role)) {
+  if (isAdminPage && !ADMIN_LIKE_ROLES.includes(session.role)) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (isAdminApi && !["admin", "coordinator", "super_admin"].includes(session.role)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
