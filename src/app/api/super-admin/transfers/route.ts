@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireCoordinatorOrAbove } from "@/lib/auth";
 import { sendTransferApprovedEmail, sendTransferRejectedEmail, sendReapplicationResultEmail } from "@/lib/email";
+import { assignGroup } from "@/lib/groups";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -121,8 +122,10 @@ export async function POST(request: NextRequest) {
 
           const p1Ph1 = phases.find((p) => p.clusterId === newPref1 && p.phaseNumber === 1);
           const p2Ph2 = phases.find((p) => p.clusterId === newPref2 && p.phaseNumber === 2);
-          if (p1Ph1) await tx.phaseAllocation.create({ data: { phaseId: p1Ph1.id, applicationId: app.id, clusterId: newPref1 } });
-          if (p2Ph2) await tx.phaseAllocation.create({ data: { phaseId: p2Ph2.id, applicationId: app.id, clusterId: newPref2 } });
+          const g1 = p1Ph1 ? await assignGroup(newPref1, p1Ph1.id) : null;
+          const g2 = p2Ph2 ? await assignGroup(newPref2, p2Ph2.id) : null;
+          if (p1Ph1) await tx.phaseAllocation.create({ data: { phaseId: p1Ph1.id, applicationId: app.id, clusterId: newPref1, groupId: g1 } });
+          if (p2Ph2) await tx.phaseAllocation.create({ data: { phaseId: p2Ph2.id, applicationId: app.id, clusterId: newPref2, groupId: g2 } });
         });
 
         const [cluster1, cluster2] = await Promise.all([
@@ -188,14 +191,20 @@ export async function POST(request: NextRequest) {
           where: { session: { isActive: true }, clusterId: { in: [transfer.fromClusterId, toClusterId] } },
         });
 
+        const phaseByNumber = new Map<number, any>();
+        for (const ph of phases) {
+          if (ph.clusterId === toClusterId) phaseByNumber.set(ph.phaseNumber, ph);
+        }
+
         for (const alloc of app.allocations) {
-          const ph = phases.find((p) => p.id === alloc.phaseId);
-          if (ph) {
-            await tx.phaseAllocation.update({
-              where: { id: alloc.id },
-              data: { clusterId: toClusterId },
-            });
-          }
+          const origPhase = phases.find((p) => p.id === alloc.phaseId);
+          const targetPhase = origPhase ? phaseByNumber.get(origPhase.phaseNumber) : null;
+          const gid = targetPhase ? await assignGroup(toClusterId, targetPhase.id) : null;
+          const newPhaseId = targetPhase ? targetPhase.id : alloc.phaseId;
+          await tx.phaseAllocation.update({
+            where: { id: alloc.id },
+            data: { clusterId: toClusterId, phaseId: newPhaseId, groupId: gid },
+          });
         }
       });
 

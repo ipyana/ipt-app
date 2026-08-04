@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { applicationSchema } from "@/lib/validations";
 import { sendSubmissionEmail } from "@/lib/email";
+import { assignGroup } from "@/lib/groups";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -82,7 +83,7 @@ export async function GET() {
       where: { studentId: session.id },
       include: {
         student: { select: { fullName: true, department: true, program: true } },
-        allocations: { include: { phase: true } },
+        allocations: { include: { phase: true, group: { include: { venue: true } } } },
         waitlistEntries: true,
       },
     });
@@ -139,6 +140,11 @@ export async function POST(request: NextRequest) {
     const allocation = await tryAllocate(app, pref1, pref2, student);
 
     if (allocation) {
+      const groupAssignments: Record<number, number | null> = {};
+      for (const ph of allocation.allocationData) {
+        groupAssignments[ph.phaseId] = await assignGroup(ph.clusterId, ph.phaseId);
+      }
+
       await prisma.$transaction(async (tx) => {
         await tx.application.update({
           where: { id: app.id },
@@ -147,7 +153,7 @@ export async function POST(request: NextRequest) {
 
         for (const ph of allocation.allocationData) {
           await tx.phaseAllocation.create({
-            data: { phaseId: ph.phaseId, applicationId: app.id, clusterId: ph.clusterId },
+            data: { phaseId: ph.phaseId, applicationId: app.id, clusterId: ph.clusterId, groupId: groupAssignments[ph.phaseId] },
           });
         }
 
@@ -163,7 +169,7 @@ export async function POST(request: NextRequest) {
 
       const full = await prisma.application.findUnique({
         where: { id: app.id },
-        include: { allocations: { include: { phase: true } } },
+        include: { allocations: { include: { phase: true, group: { include: { venue: true } } } } },
       });
 
       await sendSubmissionEmail({
@@ -255,6 +261,11 @@ export async function PUT(request: NextRequest) {
     const allocation = await tryAllocate(updated, pref1, pref2, student);
 
     if (allocation) {
+      const groupAssignments: Record<number, number | null> = {};
+      for (const ph of allocation.allocationData) {
+        groupAssignments[ph.phaseId] = await assignGroup(ph.clusterId, ph.phaseId);
+      }
+
       await prisma.$transaction(async (tx) => {
         await tx.application.update({
           where: { id: updated.id },
@@ -263,7 +274,7 @@ export async function PUT(request: NextRequest) {
 
         for (const ph of allocation.allocationData) {
           await tx.phaseAllocation.create({
-            data: { phaseId: ph.phaseId, applicationId: updated.id, clusterId: ph.clusterId },
+            data: { phaseId: ph.phaseId, applicationId: updated.id, clusterId: ph.clusterId, groupId: groupAssignments[ph.phaseId] },
           });
         }
 
@@ -279,7 +290,7 @@ export async function PUT(request: NextRequest) {
 
       const full = await prisma.application.findUnique({
         where: { id: updated.id },
-        include: { allocations: { include: { phase: true } } },
+        include: { allocations: { include: { phase: true, group: { include: { venue: true } } } } },
       });
 
       await sendSubmissionEmail({

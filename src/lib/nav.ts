@@ -23,6 +23,7 @@ export const navMap: Record<string, NavItem[]> = {
     { label: "Programs", href: "/admin/programs" },
     { label: "Clusters", href: "/admin/clusters" },
     { label: "Allocations", href: "/admin/allocations" },
+    { label: "Groups & Venues", href: "/admin/groups" },
     { label: "Students", href: "/admin/students" },
     { label: "Facilitators", href: "/admin/staff" },
     { label: "Export Data", href: "/admin/export" },
@@ -43,6 +44,7 @@ export const navMap: Record<string, NavItem[]> = {
     { label: "Waitlist", href: "/super-admin/waitlist" },
     { label: "Transfers", href: "/super-admin/transfers" },
     { label: "Allocations", href: "/admin/allocations" },
+    { label: "Groups & Venues", href: "/admin/groups" },
     { label: "Clusters", href: "/admin/clusters" },
     { label: "Students", href: "/admin/students" },
     {
@@ -58,6 +60,7 @@ export const navMap: Record<string, NavItem[]> = {
   ],
   staff: [
     { label: "Dashboard", href: "/staff" },
+    { label: "Groups & Venues", href: "/staff/groups" },
     { label: "Announcements", href: "/staff/announcements" },
   ],
 };

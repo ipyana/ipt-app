@@ -45,21 +45,28 @@ export async function sendSubmissionEmail(params: SubmissionEmailParams) {
   const p1Title = c1 ? `IPT Phase 1 — ${c1.name}` : "IPT Phase 1";
   const p2Title = c2 ? `IPT Phase 2 — ${c2.name}` : "IPT Phase 2";
 
+  const p1Group = p1a?.group?.name || "";
+  const p2Group = p2a?.group?.name || "";
+  const p1Venue = p1a?.group?.venue?.name || c1?.location || "";
+  const p2Venue = p2a?.group?.venue?.name || c2?.location || "";
+
   const result = await sendTemplateEmail("submission_confirmed", studentEmail, {
     studentName,
     studentId,
     phase1Cluster: c1?.name || "TBD",
     phase1Dates: ph1 ? `${fmtDate(ph1.startDate)} – ${fmtDate(ph1.endDate)}` : "TBD",
     phase1Staff: c1?.staff?.map((s: any) => s.name).join(", ") || "TBD",
-    phase1Location: c1?.location || "",
-    phase1CalendarGoogle: ph1 ? buildGoogleCalendarUrl({ title: p1Title, description: `IPT Phase 1 cluster placement: ${c1?.name}`, location: c1?.location, startDate: toIso(ph1.startDate), endDate: toIso(ph1.endDate) }) : "",
-    phase1CalendarIcs: ph1 ? buildIcsApiUrl({ title: p1Title, description: `IPT Phase 1 cluster placement: ${c1?.name}`, location: c1?.location, startDate: toIso(ph1.startDate), endDate: toIso(ph1.endDate) }) : "",
+    phase1Venue: p1Venue,
+    phase1Group: p1Group,
+    phase1CalendarGoogle: ph1 ? buildGoogleCalendarUrl({ title: p1Title, description: `IPT Phase 1 cluster placement: ${c1?.name}`, location: p1Venue, startDate: toIso(ph1.startDate), endDate: toIso(ph1.endDate) }) : "",
+    phase1CalendarIcs: ph1 ? buildIcsApiUrl({ title: p1Title, description: `IPT Phase 1 cluster placement: ${c1?.name}`, location: p1Venue, startDate: toIso(ph1.startDate), endDate: toIso(ph1.endDate) }) : "",
     phase2Cluster: c2?.name || "TBD",
     phase2Dates: ph2 ? `${fmtDate(ph2.startDate)} – ${fmtDate(ph2.endDate)}` : "TBD",
     phase2Staff: c2?.staff?.map((s: any) => s.name).join(", ") || "TBD",
-    phase2Location: c2?.location || "",
-    phase2CalendarGoogle: ph2 ? buildGoogleCalendarUrl({ title: p2Title, description: `IPT Phase 2 cluster placement: ${c2?.name}`, location: c2?.location, startDate: toIso(ph2.startDate), endDate: toIso(ph2.endDate) }) : "",
-    phase2CalendarIcs: ph2 ? buildIcsApiUrl({ title: p2Title, description: `IPT Phase 2 cluster placement: ${c2?.name}`, location: c2?.location, startDate: toIso(ph2.startDate), endDate: toIso(ph2.endDate) }) : "",
+    phase2Venue: p2Venue,
+    phase2Group: p2Group,
+    phase2CalendarGoogle: ph2 ? buildGoogleCalendarUrl({ title: p2Title, description: `IPT Phase 2 cluster placement: ${c2?.name}`, location: p2Venue, startDate: toIso(ph2.startDate), endDate: toIso(ph2.endDate) }) : "",
+    phase2CalendarIcs: ph2 ? buildIcsApiUrl({ title: p2Title, description: `IPT Phase 2 cluster placement: ${c2?.name}`, location: p2Venue, startDate: toIso(ph2.startDate), endDate: toIso(ph2.endDate) }) : "",
   });
 
   if (!result.success) {
@@ -284,6 +291,80 @@ export async function sendStaffRejectedEmail(params: { name: string; email: stri
   if (!result.success) {
     await sendEmail(params.email, "Your facilitator account was not approved",
       buildSimpleHtml("Account Not Approved", `Reason: ${params.reason || "N/A"}`));
+  }
+}
+
+export async function sendGroupUpdatedEmail(params: {
+  studentName: string;
+  studentEmail: string;
+  studentId: string;
+  clusterName: string;
+  phaseLabel: string;
+  venue: string;
+  group: string;
+}) {
+  const result = await sendTemplateEmail("group_updated", params.studentEmail, {
+    studentName: params.studentName,
+    studentId: params.studentId,
+    clusterName: params.clusterName,
+    phaseLabel: params.phaseLabel,
+    venue: params.venue,
+    group: params.group,
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.studentEmail, "Your IPT venue/group has been updated",
+      buildSimpleHtml("Venue / Group Updated", `Venue: ${params.venue} · Group: ${params.group}`));
+  }
+}
+
+export async function sendShiftReminderEmail(params: {
+  studentName: string;
+  studentEmail: string;
+  studentId: string;
+  currentCluster: string;
+  nextCluster: string;
+  venue: string;
+  group: string;
+  shiftDate: string;
+}) {
+  const result = await sendTemplateEmail("shift_reminder", params.studentEmail, {
+    studentName: params.studentName,
+    studentId: params.studentId,
+    currentCluster: params.currentCluster,
+    nextCluster: params.nextCluster,
+    venue: params.venue,
+    group: params.group,
+    shiftDate: params.shiftDate,
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.studentEmail, "📅 Reminder: Cluster shift in a few days",
+      buildSimpleHtml("Cluster Shift Reminder", `Next cluster: ${params.nextCluster} on ${params.shiftDate}`));
+  }
+}
+
+export async function sendPhase2ConfirmedEmail(params: {
+  studentName: string;
+  studentEmail: string;
+  studentId: string;
+  clusterName: string;
+  venue: string;
+  group: string;
+  phaseDates: string;
+}) {
+  const result = await sendTemplateEmail("phase2_confirmed", params.studentEmail, {
+    studentName: params.studentName,
+    studentId: params.studentId,
+    clusterName: params.clusterName,
+    venue: params.venue,
+    group: params.group,
+    phaseDates: params.phaseDates,
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.studentEmail, "🎉 Your Phase 2 allocation is ready",
+      buildSimpleHtml("Phase 2 Allocation", `Cluster: ${params.clusterName} · Venue: ${params.venue} · Group: ${params.group}`));
   }
 }
 

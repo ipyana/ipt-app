@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth";
 import { sendAllocationEmail } from "@/lib/email";
+import { assignGroup } from "@/lib/groups";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -77,6 +78,9 @@ export async function POST(request: NextRequest) {
     const p2Phase1 = phases.find((ph) => ph.clusterId === app.clusterPref2 && ph.phaseNumber === 1);
     const p2Phase2 = phases.find((ph) => ph.clusterId === app.clusterPref2 && ph.phaseNumber === 2);
 
+    const g1 = p1Phase1 ? await assignGroup(app.clusterPref1, p1Phase1.id) : null;
+    const g2 = p2Phase2 ? await assignGroup(app.clusterPref2, p2Phase2.id) : null;
+
     await prisma.$transaction(async (tx) => {
       await tx.application.update({
         where: { id: app.id },
@@ -87,12 +91,12 @@ export async function POST(request: NextRequest) {
 
       if (p1Phase1) {
         await tx.phaseAllocation.create({
-          data: { phaseId: p1Phase1.id, applicationId: app.id, clusterId: app.clusterPref1 },
+          data: { phaseId: p1Phase1.id, applicationId: app.id, clusterId: app.clusterPref1, groupId: g1 },
         });
       }
       if (p2Phase2 && p2Cd && p2Cd.enrolled < p2Cd.slots) {
         await tx.phaseAllocation.create({
-          data: { phaseId: p2Phase2.id, applicationId: app.id, clusterId: app.clusterPref2 },
+          data: { phaseId: p2Phase2.id, applicationId: app.id, clusterId: app.clusterPref2, groupId: g2 },
         });
       }
 

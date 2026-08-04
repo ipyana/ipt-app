@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Zap, User, Filter } from "lucide-react";
+import { Zap, User, Filter, CalendarDays, Bell } from "lucide-react";
 
 export default function AdminAllocations() {
   const [apps, setApps] = useState<any[]>([]);
@@ -17,6 +17,8 @@ export default function AdminAllocations() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [allocating, setAllocating] = useState<number | null>(null);
+  const [phase2Busy, setPhase2Busy] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -79,6 +81,38 @@ export default function AdminAllocations() {
     }
   }
 
+  async function handlePhase2() {
+    setPhase2Busy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/phase2", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setMessage({ type: "success", text: data.message });
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setPhase2Busy(false);
+      setTimeout(() => setMessage(null), 5000);
+    }
+  }
+
+  async function handleReminder() {
+    setReminderBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/reminder", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setMessage({ type: "success", text: data.message });
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setReminderBusy(false);
+      setTimeout(() => setMessage(null), 5000);
+    }
+  }
+
   const departments = [...new Set(apps.map((a) => a.student?.department).filter(Boolean))].sort();
   const filtered = apps.filter((a) => {
     if (filter === "pending" && a.status !== "pending") return false;
@@ -95,10 +129,20 @@ export default function AdminAllocations() {
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Allocations</h2>
             <p className="text-sm text-slate-500">{apps.filter((a) => a.status === "pending").length} pending</p>
           </div>
-          <Button onClick={handleAutoAllocate} disabled={allocating === -1} variant="accent">
-            <Zap className="h-4 w-4" />
-            {allocating === -1 ? "Allocating..." : "Auto-Allocate All"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleAutoAllocate} disabled={allocating === -1} variant="accent">
+              <Zap className="h-4 w-4" />
+              {allocating === -1 ? "Allocating..." : "Auto-Allocate All"}
+            </Button>
+            <Button onClick={handlePhase2} disabled={phase2Busy} variant="outline">
+              <CalendarDays className="h-4 w-4" />
+              {phase2Busy ? "Preparing..." : "Phase 2 Allocation"}
+            </Button>
+            <Button onClick={handleReminder} disabled={reminderBusy} variant="outline">
+              <Bell className="h-4 w-4" />
+              {reminderBusy ? "Sending..." : "Send Shift Reminder"}
+            </Button>
+          </div>
         </div>
 
         {message && (

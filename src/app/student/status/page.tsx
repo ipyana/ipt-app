@@ -204,6 +204,9 @@ export default function StudentStatus() {
                     <p className="text-sm text-slate-500 mt-1 line-clamp-2">{c1.description}</p>
                     <div className="space-y-1.5 mt-3 text-sm text-slate-600 dark:text-slate-400">
                       <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400" /> {c1.location}</div>
+                      {phase1Alloc?.group && (
+                        <div className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /> Venue: <strong>{phase1Alloc.group.venue?.name || phase1Alloc.group.name}</strong> · Group: <strong>{phase1Alloc.group.name}</strong></div>
+                      )}
                       <div className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /> {c1.staff?.map((s: any) => s.name).join(", ")}</div>
                       <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-slate-400" /> {formatDateFull(p1Dates.start)} – {formatDateFull(p1Dates.end)}</div>
                     </div>
@@ -228,6 +231,9 @@ export default function StudentStatus() {
                     <p className="text-sm text-slate-500 mt-1 line-clamp-2">{c2.description}</p>
                     <div className="space-y-1.5 mt-3 text-sm text-slate-600 dark:text-slate-400">
                       <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400" /> {c2.location}</div>
+                      {phase2Alloc?.group && (
+                        <div className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /> Venue: <strong>{phase2Alloc.group.venue?.name || phase2Alloc.group.name}</strong> · Group: <strong>{phase2Alloc.group.name}</strong></div>
+                      )}
                       <div className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /> {c2.staff?.map((s: any) => s.name).join(", ")}</div>
                       <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-slate-400" /> {formatDateFull(p2Dates.start)} – {formatDateFull(p2Dates.end)}</div>
                     </div>

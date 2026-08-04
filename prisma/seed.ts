@@ -80,6 +80,7 @@ async function main() {
     }
   }
 
+  const clusterVenueIds: Record<string, number[]> = {};
   for (const cd of CLUSTER_SEED_DATA) {
     const cluster = await prisma.cluster.create({
       data: {
@@ -99,6 +100,15 @@ async function main() {
       }
     }
 
+    const venueIds: number[] = [];
+    for (const v of cd.venues) {
+      const venue = await prisma.venue.create({
+        data: { clusterId: cluster.id, name: v },
+      });
+      venueIds.push(venue.id);
+    }
+    clusterVenueIds[cluster.id] = venueIds;
+
     for (const s of cd.staff) {
       await prisma.staff.create({
         data: {
@@ -110,7 +120,7 @@ async function main() {
         },
       });
     }
-    console.log(`Cluster "${cluster.name}" — ${Object.keys(cd.departmentSlots).length} departments, ${cd.staff.length} staff`);
+    console.log(`Cluster "${cluster.name}" — ${Object.keys(cd.departmentSlots).length} departments, ${cd.staff.length} staff, ${cd.venues.length} venues`);
   }
   console.log("Staff accounts created — password: Staff@123 for all staff emails");
 
@@ -132,12 +142,22 @@ async function main() {
   const p2End = new Date("2026-10-16");
 
   for (const cluster of clusters) {
-    await prisma.phase.create({
+    const p1 = await prisma.phase.create({
       data: { sessionId: session.id, phaseNumber: 1, clusterId: cluster.id, startDate: p1Start, endDate: p1End },
     });
-    await prisma.phase.create({
+    const p2 = await prisma.phase.create({
       data: { sessionId: session.id, phaseNumber: 2, clusterId: cluster.id, startDate: p2Start, endDate: p2End },
     });
+
+    for (const venueId of clusterVenueIds[cluster.id] || []) {
+      const venue = await prisma.venue.findUnique({ where: { id: venueId } });
+      await prisma.group.create({
+        data: { clusterId: cluster.id, phaseId: p1.id, venueId, name: venue?.name || `Group ${venueId}` },
+      });
+      await prisma.group.create({
+        data: { clusterId: cluster.id, phaseId: p2.id, venueId, name: venue?.name || `Group ${venueId}` },
+      });
+    }
   }
   console.log(`Phases created: Phase 1 (${p1Start.toDateString()} – ${p1End.toDateString()}), Phase 2 (${p2Start.toDateString()} – ${p2End.toDateString()}) for ${clusters.length} clusters`);
 

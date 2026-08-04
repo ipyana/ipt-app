@@ -40,6 +40,7 @@ export interface ClusterSeed {
   capacity: number;
   location: string;
   departmentSlots: Record<string, number>;
+  venues: string[];
   staff: { name: string; email: string }[];
 }
 
@@ -50,6 +51,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 115,
     location: "Engineering Workshop Lab 1",
     departmentSlots: { CSE: 28, ETE: 2, IF: 10, IST: 55, TED: 20 },
+    venues: ["A-B 11"],
     staff: [
       { name: "Enlai Watson", email: "enlai.watson@must.ac.tz" },
       { name: "Antony Chaula", email: "antony.chaula@must.ac.tz" },
@@ -63,6 +65,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 115,
     location: "Electronics and IoT Lab",
     departmentSlots: { CSE: 70, ETE: 25, IF: 2, IST: 5, TED: 13 },
+    venues: ["LPII-FF"],
     staff: [
       { name: "Ipyana Mwaisekwa", email: "ipyana.mwaisekwa@must.ac.tz" },
       { name: "Phocas Sebastian", email: "phocas.sebastian@must.ac.tz" },
@@ -76,6 +79,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 148,
     location: "Networking Lab Block B",
     departmentSlots: { CSE: 48, ETE: 35, IF: 2, IST: 40, TED: 23 },
+    venues: ["LPII-GF"],
     staff: [
       { name: "Ibrahim Frank", email: "ibrahim.frank@must.ac.tz" },
       { name: "William Moshi", email: "william.moshi@must.ac.tz" },
@@ -89,6 +93,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 76,
     location: "Electronics and Automation Lab",
     departmentSlots: { CSE: 15, ETE: 56, IF: 0, IST: 5, TED: 0 },
+    venues: ["LPII-FF-P3"],
     staff: [
       { name: "Candida Mwisomba", email: "candida.mwisomba@must.ac.tz" },
       { name: "Daniel Msilanga", email: "daniel.msilanga@must.ac.tz" },
@@ -102,6 +107,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 218,
     location: "Software Innovation Hub",
     departmentSlots: { CSE: 83, ETE: 2, IF: 20, IST: 75, TED: 38 },
+    venues: ["COMP-LAB I", "COMP-LAB II", "A-117", "A-118"],
     staff: [
       { name: "Edwin Nchia", email: "edwin.nchia@must.ac.tz" },
       { name: "Aman Sanga", email: "aman.sanga@must.ac.tz" },
@@ -115,6 +121,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 126,
     location: "Cybersecurity Operations Center",
     departmentSlots: { CSE: 33, ETE: 2, IF: 16, IST: 55, TED: 20 },
+    venues: ["A-204"],
     staff: [
       { name: "Tumain Mbinda", email: "tumain.mbinda@must.ac.tz" },
       { name: "Aman Rukoijo", email: "aman.rukoijo@must.ac.tz" },
@@ -128,6 +135,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 113,
     location: "Digital Media Studio",
     departmentSlots: { CSE: 12, ETE: 1, IF: 38, IST: 50, TED: 12 },
+    venues: ["A-210"],
     staff: [
       { name: "David Mwakifuna", email: "david.mwakifuna@must.ac.tz" },
       { name: "Robert Mtowe", email: "robert.mtowe@must.ac.tz" },
@@ -141,6 +149,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     capacity: 130,
     location: "AI Research Lab",
     departmentSlots: { CSE: 26, ETE: 26, IF: 3, IST: 55, TED: 20 },
+    venues: ["A110", "A115"],
     staff: [
       { name: "Tony Chaula", email: "tony.chaula@must.ac.tz" },
       { name: "Jofrey", email: "jofrey@must.ac.tz" },

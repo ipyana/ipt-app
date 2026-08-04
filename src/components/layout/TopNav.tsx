@@ -25,6 +25,7 @@ const routeLabels: Record<string, string> = {
   programs: "Programs",
   clusters: "Clusters",
   allocations: "Allocations",
+  groups: "Groups & Venues",
   students: "Students",
   export: "Export Data",
   email: "Email",

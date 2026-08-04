@@ -36,6 +36,8 @@ model Cluster {
   allowedDepartments ClusterDepartment[]
   phases            Phase[]
   announcements     Announcement[]
+  venues            Venue[]
+  groups            Group[]
 }
 
 model ClusterDepartment {
@@ -113,6 +115,7 @@ model Phase {
   startDate   DateTime         @map("start_date")
   endDate     DateTime         @map("end_date")
   allocations PhaseAllocation[]
+  groups      Group[]
   createdAt   DateTime         @default(now()) @map("created_at")
 
   @@unique([sessionId, phaseNumber, clusterId])
@@ -125,6 +128,8 @@ model PhaseAllocation {
   applicationId Int         @map("application_id")
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   clusterId     Int         @map("cluster_id")
+  groupId       Int?        @map("group_id")
+  group         Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
   createdAt     DateTime    @default(now()) @map("created_at")
 
   @@unique([applicationId, phaseId])
@@ -249,4 +254,28 @@ model AnnouncementRead {
   readAt         DateTime     @default(now()) @map("read_at")
 
   @@unique([announcementId, studentId])
+}
+
+model Venue {
+  id        Int      @id @default(autoincrement())
+  clusterId Int      @map("cluster_id")
+  cluster   Cluster  @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  groups    Group[]
+
+  @@unique([clusterId, name])
+}
+
+model Group {
+  id        Int      @id @default(autoincrement())
+  clusterId Int      @map("cluster_id")
+  cluster   Cluster  @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  phaseId   Int?     @map("phase_id")
+  phase     Phase?   @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  venueId   Int?     @map("venue_id")
+  venue     Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  allocations PhaseAllocation[]
 }

@@ -29,13 +29,15 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
         <h3 style="margin: 0 0 8px; color: #2563eb;">Phase 1 — {{phase1Cluster}}</h3>
         <p style="margin: 0; color: #64748b; font-size: 13px;">{{phase1Dates}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Supervisors: {{phase1Staff}}</p>
-        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Location: {{phase1Location}}</p>
+        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Venue: {{phase1Venue}}</p>
+        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Group: {{phase1Group}}</p>
       </div>
       <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
         <h3 style="margin: 0 0 8px; color: #059669;">Phase 2 — {{phase2Cluster}}</h3>
         <p style="margin: 0; color: #64748b; font-size: 13px;">{{phase2Dates}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Supervisors: {{phase2Staff}}</p>
-        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Location: {{phase2Location}}</p>
+        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Venue: {{phase2Venue}}</p>
+        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Group: {{phase2Group}}</p>
       </div>
       <div style="padding: 16px 20px; text-align: center;">
         <p style="margin: 0 0 10px; color: #475569; font-size: 13px;"><strong>Save your schedule to your calendar:</strong></p>
@@ -49,7 +51,7 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     <p style="color: #64748b; font-size: 14px;">Please report to your assigned cluster on the start date.</p>
   </div>
 </div>`,
-    variables: ["studentName", "studentId", "phase1Cluster", "phase1Dates", "phase1Staff", "phase1Location", "phase1CalendarGoogle", "phase1CalendarIcs", "phase2Cluster", "phase2Dates", "phase2Staff", "phase2Location", "phase2CalendarGoogle", "phase2CalendarIcs"],
+    variables: ["studentName", "studentId", "phase1Cluster", "phase1Dates", "phase1Staff", "phase1Venue", "phase1Group", "phase1CalendarGoogle", "phase1CalendarIcs", "phase2Cluster", "phase2Dates", "phase2Staff", "phase2Venue", "phase2Group", "phase2CalendarGoogle", "phase2CalendarIcs"],
     required: true,
   },
   {
@@ -381,6 +383,80 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
   </div>
 </div>`,
     variables: ["studentName", "studentId", "status", "statusColor", "cluster1", "cluster2", "reason", "message", "appName"],
+    required: true,
+  },
+  {
+    key: "group_updated",
+    name: "Group / Venue Updated",
+    category: "applications",
+    subject: "Your IPT venue/group has been updated",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #0891b2; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">Venue / Group Updated</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{studentName}}</strong> ({{studentId}}),</p>
+    <p>Your venue/group for <strong>{{clusterName}}</strong> ({{phaseLabel}}) has been updated.</p>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 4px 0;"><strong>Venue:</strong> {{venue}}</p>
+      <p style="margin: 4px 0;"><strong>Group:</strong> {{group}}</p>
+    </div>
+    <p style="color: #64748b; font-size: 14px;">Please report to your assigned venue.</p>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
+  </div>
+</div>`,
+    variables: ["studentName", "studentId", "clusterName", "phaseLabel", "venue", "group", "appName"],
+    required: true,
+  },
+  {
+    key: "shift_reminder",
+    name: "Cluster Shift Reminder",
+    category: "applications",
+    subject: "📅 Reminder: Cluster shift in a few days",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #f59e0b; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">📅 Cluster Shift Reminder</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{studentName}}</strong> ({{studentId}}),</p>
+    <p>This is a friendly reminder that you will be moving to your next IPT cluster soon.</p>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 4px 0;"><strong>Current cluster:</strong> {{currentCluster}}</p>
+      <p style="margin: 4px 0;"><strong>Next cluster:</strong> {{nextCluster}}</p>
+      <p style="margin: 4px 0;"><strong>Venue:</strong> {{venue}}</p>
+      <p style="margin: 4px 0;"><strong>Group:</strong> {{group}}</p>
+      <p style="margin: 4px 0;"><strong>Shift date:</strong> {{shiftDate}}</p>
+    </div>
+    <p style="color: #64748b; font-size: 14px;">Please prepare your reports and report to your new venue on time.</p>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
+  </div>
+</div>`,
+    variables: ["studentName", "studentId", "currentCluster", "nextCluster", "venue", "group", "shiftDate", "appName"],
+    required: true,
+  },
+  {
+    key: "phase2_confirmed",
+    name: "Phase 2 Allocation Confirmed",
+    category: "applications",
+    subject: "🎉 Your Phase 2 allocation is ready",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #059669; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">Phase 2 Allocation</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{studentName}}</strong> ({{studentId}}),</p>
+    <p>Your Phase 2 IPT allocation has been confirmed.</p>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 4px 0; font-size: 16px; font-weight: bold; color: #059669;">{{clusterName}}</p>
+      <p style="margin: 4px 0;"><strong>Venue:</strong> {{venue}}</p>
+      <p style="margin: 4px 0;"><strong>Group:</strong> {{group}}</p>
+      <p style="margin: 4px 0;"><strong>Dates:</strong> {{phaseDates}}</p>
+    </div>
+    <p style="color: #64748b; font-size: 14px;">Please report to your new cluster and venue on the start date.</p>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
+  </div>
+</div>`,
+    variables: ["studentName", "studentId", "clusterName", "venue", "group", "phaseDates", "appName"],
     required: true,
   },
   {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { allocationSchema } from "@/lib/validations";
 import { sendAllocationEmail } from "@/lib/email";
+import { assignGroup } from "@/lib/groups";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -55,6 +56,17 @@ export async function POST(request: NextRequest) {
       data: { allocatedCluster: clusterId, status: "allocated" },
       include: { student: true },
     });
+
+    const phases = await prisma.phase.findMany({
+      where: { session: { isActive: true }, clusterId },
+      orderBy: { phaseNumber: "asc" },
+    });
+    for (const ph of phases) {
+      const gid = await assignGroup(clusterId, ph.id);
+      await prisma.phaseAllocation.create({
+        data: { phaseId: ph.id, applicationId, clusterId, groupId: gid },
+      });
+    }
 
     await sendAllocationEmail({
       studentName: application.student.fullName,
@@ -123,6 +135,17 @@ export async function PUT() {
           });
 
           sd.enrolled++;
+
+          const phases = await prisma.phase.findMany({
+            where: { session: { isActive: true }, clusterId: sd.clusterId },
+            orderBy: { phaseNumber: "asc" },
+          });
+          for (const ph of phases) {
+            const gid = await assignGroup(sd.clusterId, ph.id);
+            await prisma.phaseAllocation.create({
+              data: { phaseId: ph.id, applicationId: app.id, clusterId: sd.clusterId, groupId: gid },
+            });
+          }
 
           const cluster = clusters.find((c) => c.id === sd.clusterId);
           await sendAllocationEmail({
