@@ -44,7 +44,7 @@ export const navMap: Record<string, NavItem[]> = {
     { label: "Staff", href: "/super-admin/staff" },
     { label: "Waitlist", href: "/super-admin/waitlist" },
     { label: "Transfers", href: "/super-admin/transfers" },
-    { label: "Staff Transfers", href: "/admin/staff-transfers" },
+    { label: "Staff Transfers", href: "/super-admin/staff-transfers" },
     { label: "Allocations", href: "/admin/allocations" },
     { label: "Groups & Venues", href: "/admin/groups" },
     { label: "Clusters", href: "/admin/clusters" },
