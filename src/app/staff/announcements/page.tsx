@@ -63,7 +63,7 @@ export default function StaffAnnouncements() {
   }
 
   return (
-    <AppLayout role="student">
+    <AppLayout role="staff">
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Cluster Announcements</h2>

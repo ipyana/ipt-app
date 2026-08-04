@@ -24,7 +24,7 @@ interface SubmissionEmailParams extends EmailParams {
 }
 
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-TZ", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function toIso(d: string) {
@@ -186,7 +186,7 @@ export async function sendLoginNotificationEmail(params: {
     device: params.device,
     location: params.location,
     ip: params.ip,
-    time: new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" }),
+    time: new Date().toLocaleString("en-TZ", { dateStyle: "medium", timeStyle: "short" }),
     appName: "IPT System",
   });
   if (!result.success) {

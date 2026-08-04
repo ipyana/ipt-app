@@ -51,10 +51,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "Engineering Workshop Lab 1",
     departmentSlots: { CSE: 28, ETE: 2, IF: 10, IST: 55, TED: 20 },
     staff: [
-      { name: "Enlai Watson", email: "enlai.watson@university.ac.ke" },
-      { name: "Antony Chaula", email: "antony.chaula@university.ac.ke" },
-      { name: "G. Kayombo", email: "g.kayombo@university.ac.ke" },
-      { name: "Ally S. Sikoro", email: "ally.sikoro@university.ac.ke" },
+      { name: "Enlai Watson", email: "enlai.watson@must.ac.tz" },
+      { name: "Antony Chaula", email: "antony.chaula@must.ac.tz" },
+      { name: "G. Kayombo", email: "g.kayombo@must.ac.tz" },
+      { name: "Ally S. Sikoro", email: "ally.sikoro@must.ac.tz" },
     ],
   },
   {
@@ -64,10 +64,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "Electronics and IoT Lab",
     departmentSlots: { CSE: 70, ETE: 25, IF: 2, IST: 5, TED: 13 },
     staff: [
-      { name: "Ipyana Mwaisekwa", email: "ipyana.mwaisekwa@university.ac.ke" },
-      { name: "Phocas Sebastian", email: "phocas.sebastian@university.ac.ke" },
-      { name: "Mwakalapuka", email: "mwakalapuka@university.ac.ke" },
-      { name: "Beatrace Mayowela", email: "beatrace.mayowela@university.ac.ke" },
+      { name: "Ipyana Mwaisekwa", email: "ipyana.mwaisekwa@must.ac.tz" },
+      { name: "Phocas Sebastian", email: "phocas.sebastian@must.ac.tz" },
+      { name: "Mwakalapuka", email: "mwakalapuka@must.ac.tz" },
+      { name: "Beatrace Mayowela", email: "beatrace.mayowela@must.ac.tz" },
     ],
   },
   {
@@ -77,10 +77,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "Networking Lab Block B",
     departmentSlots: { CSE: 48, ETE: 35, IF: 2, IST: 40, TED: 23 },
     staff: [
-      { name: "Ibrahim Frank", email: "ibrahim.frank@university.ac.ke" },
-      { name: "William Moshi", email: "william.moshi@university.ac.ke" },
-      { name: "James Machibya", email: "james.machibya@university.ac.ke" },
-      { name: "Rachel Mtali", email: "rachel.mtali@university.ac.ke" },
+      { name: "Ibrahim Frank", email: "ibrahim.frank@must.ac.tz" },
+      { name: "William Moshi", email: "william.moshi@must.ac.tz" },
+      { name: "James Machibya", email: "james.machibya@must.ac.tz" },
+      { name: "Rachel Mtali", email: "rachel.mtali@must.ac.tz" },
     ],
   },
   {
@@ -90,10 +90,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "Electronics and Automation Lab",
     departmentSlots: { CSE: 15, ETE: 56, IF: 0, IST: 5, TED: 0 },
     staff: [
-      { name: "Candida Mwisomba", email: "candida.mwisomba@university.ac.ke" },
-      { name: "Daniel Msilanga", email: "daniel.msilanga@university.ac.ke" },
-      { name: "Shela Mjini", email: "shela.mjini@university.ac.ke" },
-      { name: "Monte Kayoka", email: "monte.kayoka@university.ac.ke" },
+      { name: "Candida Mwisomba", email: "candida.mwisomba@must.ac.tz" },
+      { name: "Daniel Msilanga", email: "daniel.msilanga@must.ac.tz" },
+      { name: "Shela Mjini", email: "shela.mjini@must.ac.tz" },
+      { name: "Monte Kayoka", email: "monte.kayoka@must.ac.tz" },
     ],
   },
   {
@@ -103,10 +103,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "Software Innovation Hub",
     departmentSlots: { CSE: 83, ETE: 2, IF: 20, IST: 75, TED: 38 },
     staff: [
-      { name: "Edwin Nchia", email: "edwin.nchia@university.ac.ke" },
-      { name: "Aman Sanga", email: "aman.sanga@university.ac.ke" },
-      { name: "Deogratius Rugemalila", email: "deogratius.rugemalila@university.ac.ke" },
-      { name: "Libearatus Sago", email: "libearatus.sago@university.ac.ke" },
+      { name: "Edwin Nchia", email: "edwin.nchia@must.ac.tz" },
+      { name: "Aman Sanga", email: "aman.sanga@must.ac.tz" },
+      { name: "Deogratius Rugemalila", email: "deogratius.rugemalila@must.ac.tz" },
+      { name: "Libearatus Sago", email: "libearatus.sago@must.ac.tz" },
     ],
   },
   {
@@ -116,10 +116,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "Cybersecurity Operations Center",
     departmentSlots: { CSE: 33, ETE: 2, IF: 16, IST: 55, TED: 20 },
     staff: [
-      { name: "Tumain Mbinda", email: "tumain.mbinda@university.ac.ke" },
-      { name: "Aman Rukoijo", email: "aman.rukoijo@university.ac.ke" },
-      { name: "Alexander Richard", email: "alexander.richard@university.ac.ke" },
-      { name: "Faraja Sikawa", email: "faraja.sikawa@university.ac.ke" },
+      { name: "Tumain Mbinda", email: "tumain.mbinda@must.ac.tz" },
+      { name: "Aman Rukoijo", email: "aman.rukoijo@must.ac.tz" },
+      { name: "Alexander Richard", email: "alexander.richard@must.ac.tz" },
+      { name: "Faraja Sikawa", email: "faraja.sikawa@must.ac.tz" },
     ],
   },
   {
@@ -129,10 +129,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "Digital Media Studio",
     departmentSlots: { CSE: 12, ETE: 1, IF: 38, IST: 50, TED: 12 },
     staff: [
-      { name: "David Mwakifuna", email: "david.mwakifuna@university.ac.ke" },
-      { name: "Robert Mtowe", email: "robert.mtowe@university.ac.ke" },
-      { name: "Namsemba Mzava", email: "namsemba.mzava@university.ac.ke" },
-      { name: "Wycliff Dutu", email: "wycliff.dutu@university.ac.ke" },
+      { name: "David Mwakifuna", email: "david.mwakifuna@must.ac.tz" },
+      { name: "Robert Mtowe", email: "robert.mtowe@must.ac.tz" },
+      { name: "Namsemba Mzava", email: "namsemba.mzava@must.ac.tz" },
+      { name: "Wycliff Dutu", email: "wycliff.dutu@must.ac.tz" },
     ],
   },
   {
@@ -142,10 +142,10 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
     location: "AI Research Lab",
     departmentSlots: { CSE: 26, ETE: 26, IF: 3, IST: 55, TED: 20 },
     staff: [
-      { name: "Tony Chaula", email: "tony.chaula@university.ac.ke" },
-      { name: "Jofrey", email: "jofrey@university.ac.ke" },
-      { name: "Abel Mbogo", email: "abel.mbogo@university.ac.ke" },
-      { name: "Joseph Banzi", email: "joseph.banzi@university.ac.ke" },
+      { name: "Tony Chaula", email: "tony.chaula@must.ac.tz" },
+      { name: "Jofrey", email: "jofrey@must.ac.tz" },
+      { name: "Abel Mbogo", email: "abel.mbogo@must.ac.tz" },
+      { name: "Joseph Banzi", email: "joseph.banzi@must.ac.tz" },
     ],
   },
 ];

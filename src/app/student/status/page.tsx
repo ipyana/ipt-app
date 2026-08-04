@@ -126,11 +126,11 @@ export default function StudentStatus() {
   })();
 
   function formatDate(d: string) {
-    return new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short" });
+    return new Date(d).toLocaleDateString("en-TZ", { day: "numeric", month: "short" });
   }
 
   function formatDateFull(d: string) {
-    return new Date(d).toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    return new Date(d).toLocaleDateString("en-TZ", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   }
 
   return (

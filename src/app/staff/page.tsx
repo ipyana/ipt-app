@@ -20,7 +20,7 @@ export default function StaffDashboard() {
 
   if (loading) {
     return (
-      <AppLayout role="student">
+      <AppLayout role="staff">
         <div className="max-w-6xl mx-auto">
           <div className="h-8 w-48 animate-pulse rounded bg-slate-100 dark:bg-slate-800 mb-8" />
           <div className="grid gap-4 sm:grid-cols-3">
@@ -35,7 +35,7 @@ export default function StaffDashboard() {
 
   if (!data) {
     return (
-      <AppLayout role="student">
+      <AppLayout role="staff">
         <div className="max-w-xl mx-auto text-center py-16">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">No Data</h2>
           <p className="text-sm text-slate-500 mt-2">You are not assigned to any cluster.</p>
@@ -47,7 +47,7 @@ export default function StaffDashboard() {
   const { staff, cluster, phase1Students, phase2Students } = data;
 
   return (
-    <AppLayout role="student">
+    <AppLayout role="staff">
       <div className="max-w-6xl mx-auto space-y-8">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">

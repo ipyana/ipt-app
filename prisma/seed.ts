@@ -38,17 +38,17 @@ async function main() {
   const staffHashedPassword = await bcrypt.hash("Staff@123", 12);
 
   await prisma.admin.create({
-    data: { username: "superadmin", email: "superadmin@ipt.university.ac.ke", password: superHashedPassword, role: "super_admin" },
+    data: { username: "superadmin", email: "superadmin@ipt.must.ac.tz", password: superHashedPassword, role: "super_admin" },
   });
   console.log('Super Admin created — username: superadmin / password: SuperAdmin@123');
 
   await prisma.admin.create({
-    data: { username: "admin", email: "admin@ipt.university.ac.ke", password: adminHashedPassword, role: "admin" },
+    data: { username: "admin", email: "admin@ipt.must.ac.tz", password: adminHashedPassword, role: "admin" },
   });
   console.log("Admin created — username: admin / password: Admin@123");
 
   await prisma.admin.create({
-    data: { username: "coordinator", email: "coordinator@ipt.university.ac.ke", password: adminHashedPassword, role: "coordinator" },
+    data: { username: "coordinator", email: "coordinator@ipt.must.ac.tz", password: adminHashedPassword, role: "coordinator" },
   });
   console.log("Coordinator created — username: coordinator / password: Admin@123");
 
