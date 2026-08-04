@@ -5,7 +5,7 @@ import { EmailLogsConfig } from "@/components/system-config/EmailLogsConfig";
 
 export default function SuperAdminSystemConfigEmailLogs() {
   return (
-    <AppLayout role="admin">
+    <AppLayout role="super_admin">
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Email Logs</h2>

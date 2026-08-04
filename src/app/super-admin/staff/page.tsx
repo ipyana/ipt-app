@@ -109,7 +109,7 @@ export default function SuperAdminStaff() {
   }
 
   return (
-    <AppLayout role="admin">
+    <AppLayout role="super_admin">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>

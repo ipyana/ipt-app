@@ -54,7 +54,7 @@ export default function SuperAdminOverview() {
   ];
 
   return (
-    <AppLayout role="admin">
+    <AppLayout role="super_admin">
       <div className="max-w-7xl mx-auto space-y-8">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Super Admin</h2>

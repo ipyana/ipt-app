@@ -57,7 +57,7 @@ export default function SuperAdminSettings() {
   }, {} as Record<number, any[]>);
 
   return (
-    <AppLayout role="admin">
+    <AppLayout role="super_admin">
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">IPT Settings</h2>

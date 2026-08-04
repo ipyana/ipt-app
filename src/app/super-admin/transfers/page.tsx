@@ -56,7 +56,7 @@ export default function SuperAdminTransfers() {
   const pendingCount = transfers.filter((t) => t.status === "pending").length;
 
   return (
-    <AppLayout role="admin">
+    <AppLayout role="super_admin">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
