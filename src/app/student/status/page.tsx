@@ -260,8 +260,16 @@ export default function StudentStatus() {
               <CardContent className="p-4 flex items-center gap-3">
                 <Loader2 className="h-5 w-5 text-amber-600 animate-spin shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">Transfer Request Pending</p>
-                  <p className="text-xs text-slate-500">Request to move to {clusters[pendingTransfer.toClusterId]?.name || "another cluster"} — awaiting review</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {pendingTransfer.type === "reapplication" ? "Reapplication Pending" : "Transfer Request Pending"}
+                  </p>
+                  {pendingTransfer.type === "reapplication" ? (
+                    <p className="text-xs text-slate-500">
+                      Requested clusters: {clusters[pendingTransfer.pref1New]?.name} &amp; {clusters[pendingTransfer.pref2New]?.name} — awaiting review
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">Request to move to {clusters[pendingTransfer.toClusterId]?.name || "another cluster"} — awaiting review</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -272,8 +280,16 @@ export default function StudentStatus() {
               <CardContent className="p-4 flex items-center gap-3">
                 <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">Transfer Approved</p>
-                  <p className="text-xs text-slate-500">Moved to {clusters[lastTransfer.toClusterId]?.name}</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {lastTransfer.type === "reapplication" ? "Reapplication Approved" : "Transfer Approved"}
+                  </p>
+                  {lastTransfer.type === "reapplication" ? (
+                    <p className="text-xs text-slate-500">
+                      New clusters: {clusters[lastTransfer.pref1New]?.name} &amp; {clusters[lastTransfer.pref2New]?.name}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">Moved to {clusters[lastTransfer.toClusterId]?.name}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -284,7 +300,9 @@ export default function StudentStatus() {
               <CardContent className="p-4 flex items-center gap-3">
                 <XCircle className="h-5 w-5 text-red-600 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">Transfer Not Approved</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {lastTransfer.type === "reapplication" ? "Reapplication Not Approved" : "Transfer Not Approved"}
+                  </p>
                   <p className="text-xs text-slate-500">{lastTransfer.reviewNotes || "No reason provided"}</p>
                 </div>
               </CardContent>

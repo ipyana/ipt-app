@@ -34,6 +34,7 @@ const routeLabels: Record<string, string> = {
   "staff-transfers": "Staff Transfers",
   waitlist: "Waitlist",
   transfers: "Transfers",
+  reapplications: "Re-applications",
   settings: "Settings",
   "system-config": "System Config",
   "email-provider": "Email Provider",
@@ -66,7 +67,7 @@ export function TopNav({ user, onMenuToggle }: TopNavProps) {
   const breadcrumbs = getBreadcrumb(pathname);
 
   return (
-    <header className="fixed top-0 right-0 z-30 flex h-12 items-center justify-between border-b border-border bg-panel/80 backdrop-blur-md px-4 left-14">
+    <header className="fixed top-0 right-0 z-50 flex h-12 items-center justify-between border-b border-border bg-panel/80 backdrop-blur-md px-4 left-14">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={onMenuToggle} className="lg:hidden h-8 w-8">
           <Menu className="h-4 w-4" />

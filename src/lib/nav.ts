@@ -1,35 +1,53 @@
 export interface NavItem {
   label: string;
   href?: string;
+  icon?: string;
   children?: NavItem[];
 }
 
 export const navMap: Record<string, NavItem[]> = {
   student: [
-    { label: "Dashboard", href: "/student/dashboard" },
+    { label: "Dashboard", href: "/student/dashboard", icon: "dashboard" },
     {
-      label: "My Application",
+      label: "Application",
+      icon: "clipboard",
       children: [
         { label: "Apply", href: "/student/apply" },
         { label: "Re-apply", href: "/student/reapply" },
         { label: "Transfer", href: "/student/transfer" },
+        { label: "Status", href: "/student/status" },
       ],
     },
-    { label: "Upload Report", href: "/student/report" },
+    { label: "Upload Report", href: "/student/report", icon: "upload" },
   ],
   admin: [
-    { label: "Overview", href: "/admin/dashboard" },
-    { label: "Departments", href: "/admin/departments" },
-    { label: "Programs", href: "/admin/programs" },
-    { label: "Clusters", href: "/admin/clusters" },
-    { label: "Allocations", href: "/admin/allocations" },
-    { label: "Groups & Venues", href: "/admin/groups" },
-    { label: "Students", href: "/admin/students" },
-    { label: "Facilitators", href: "/admin/staff" },
-    { label: "Staff Transfers", href: "/admin/staff-transfers" },
-    { label: "Export Data", href: "/admin/export" },
+    { label: "Overview", href: "/admin/dashboard", icon: "dashboard" },
+    {
+      label: "Application",
+      icon: "clipboard",
+      children: [
+        { label: "Allocations", href: "/admin/allocations" },
+        { label: "Transfers", href: "/admin/transfers" },
+        { label: "Re-applications", href: "/admin/reapplications" },
+        { label: "Students", href: "/admin/students" },
+      ],
+    },
+    {
+      label: "Management",
+      icon: "layers",
+      children: [
+        { label: "Clusters", href: "/admin/clusters" },
+        { label: "Departments", href: "/admin/departments" },
+        { label: "Programs", href: "/admin/programs" },
+        { label: "Groups & Venues", href: "/admin/groups" },
+      ],
+    },
+    { label: "Facilitators", href: "/admin/staff", icon: "users" },
+    { label: "Staff Transfers", href: "/admin/staff-transfers", icon: "move" },
+    { label: "Export Data", href: "/admin/export", icon: "export" },
     {
       label: "System Config",
+      icon: "settings",
       children: [
         { label: "Email Provider", href: "/admin/system-config/email-provider" },
         { label: "Email Templates", href: "/admin/system-config/email-templates" },
@@ -39,18 +57,32 @@ export const navMap: Record<string, NavItem[]> = {
     },
   ],
   super_admin: [
-    { label: "Overview", href: "/super-admin" },
-    { label: "Admins", href: "/super-admin/admins" },
-    { label: "Staff", href: "/super-admin/staff" },
-    { label: "Waitlist", href: "/super-admin/waitlist" },
-    { label: "Transfers", href: "/super-admin/transfers" },
-    { label: "Staff Transfers", href: "/super-admin/staff-transfers" },
-    { label: "Allocations", href: "/admin/allocations" },
-    { label: "Groups & Venues", href: "/admin/groups" },
-    { label: "Clusters", href: "/admin/clusters" },
-    { label: "Students", href: "/admin/students" },
+    { label: "Overview", href: "/super-admin", icon: "dashboard" },
+    { label: "Admins", href: "/super-admin/admins", icon: "shield" },
+    {
+      label: "Application",
+      icon: "clipboard",
+      children: [
+        { label: "Allocations", href: "/admin/allocations" },
+        { label: "Transfers", href: "/super-admin/transfers" },
+        { label: "Re-applications", href: "/admin/reapplications" },
+        { label: "Waitlist", href: "/super-admin/waitlist" },
+        { label: "Students", href: "/admin/students" },
+      ],
+    },
+    {
+      label: "Management",
+      icon: "layers",
+      children: [
+        { label: "Clusters", href: "/admin/clusters" },
+        { label: "Groups & Venues", href: "/admin/groups" },
+      ],
+    },
+    { label: "Staff", href: "/super-admin/staff", icon: "users" },
+    { label: "Staff Transfers", href: "/super-admin/staff-transfers", icon: "move" },
     {
       label: "System Config",
+      icon: "settings",
       children: [
         { label: "IPT Session", href: "/super-admin/system-config/session" },
         { label: "Email Provider", href: "/super-admin/system-config/email-provider" },
@@ -61,8 +93,8 @@ export const navMap: Record<string, NavItem[]> = {
     },
   ],
   staff: [
-    { label: "Dashboard", href: "/staff" },
-    { label: "Groups & Venues", href: "/staff/groups" },
-    { label: "Announcements", href: "/staff/announcements" },
+    { label: "Dashboard", href: "/staff", icon: "dashboard" },
+    { label: "Groups & Venues", href: "/staff/groups", icon: "layers" },
+    { label: "Announcements", href: "/staff/announcements", icon: "megaphone" },
   ],
 };

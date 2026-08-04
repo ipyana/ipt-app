@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { IconBar } from "@/components/layout/IconBar";
-import { ContextSidebar } from "@/components/layout/ContextSidebar";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { cn } from "@/lib/utils";
@@ -17,13 +16,9 @@ const ADMIN_ROLES = ["admin", "super_admin", "coordinator"];
 
 export function AppLayout({ children, role }: AppLayoutProps) {
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
-  const [hovering, setHovering] = useState(false);
-  const [contextLabel, setContextLabel] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -40,26 +35,9 @@ export function AppLayout({ children, role }: AppLayoutProps) {
       .finally(() => setLoading(false));
   }, [router, role]);
 
-  useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
-
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.replace("/");
-  }
-
-  function handleToggle() {
-    setCollapsed((c) => !c);
-    if (contextLabel) setContextLabel(null);
-  }
-
-  function startHover() {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    setHovering(true);
-  }
-
-  function endHover() {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => setHovering(false), 160);
   }
 
   if (loading) {
@@ -73,32 +51,14 @@ export function AppLayout({ children, role }: AppLayoutProps) {
     );
   }
 
-  const showSidebar = !collapsed || hovering || !!contextLabel;
-
   return (
     <div className="min-h-screen bg-surface">
-      <IconBar role={role} onHoverStart={startHover} onHoverEnd={endHover} />
-      <ContextSidebar
-        role={role}
-        collapsed={!showSidebar}
-        hovering={hovering}
-        contextLabel={contextLabel}
-        onToggle={handleToggle}
-        onHover={setHovering}
-        onHoverStart={startHover}
-        onHoverEnd={endHover}
-        onContext={setContextLabel}
-        onLogout={handleLogout}
-      />
+      <div className="hidden lg:block fixed inset-y-0 left-0 z-40">
+        <Sidebar role={role} onLogout={handleLogout} />
+      </div>
       <MobileNav role={role} open={mobileOpen} onClose={() => setMobileOpen(false)} onLogout={handleLogout} />
       <TopNav user={user} onMenuToggle={() => setMobileOpen(true)} />
-      <main
-        className={cn(
-          "pt-12 transition-all duration-200 ease-in-out",
-          collapsed && !contextLabel ? "pl-14" : "pl-[190px]",
-          "max-lg:pl-14"
-        )}
-      >
+      <main className={cn("pt-12 transition-all duration-200 ease-in-out lg:pl-14")}>
         <div className="animate-fade-in">{children}</div>
       </main>
     </div>

@@ -3,9 +3,9 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TransfersConfig } from "@/components/system-config/TransfersConfig";
 
-export default function SuperAdminTransfers() {
+export default function AdminTransfers() {
   return (
-    <AppLayout role="super_admin">
+    <AppLayout role="admin">
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Transfers</h2>

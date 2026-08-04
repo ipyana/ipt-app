@@ -117,9 +117,15 @@ export default function AdminAllocations() {
   const filtered = apps.filter((a) => {
     if (filter === "pending" && a.status !== "pending") return false;
     if (filter === "allocated" && a.status !== "allocated") return false;
+    if (filter === "reapplying" && a.status !== "reapplying") return false;
     if (deptFilter && a.student?.department !== deptFilter) return false;
     return true;
   });
+
+  // clusters eligible for a student's department (has slots > 0 for that dept)
+  function eligibleFor(dept: string) {
+    return clusters.filter((c) => c.allowedDepartments?.some((ad: any) => ad.department?.abbreviation === dept && ad.slots > 0));
+  }
 
   return (
     <AppLayout role="admin">
@@ -156,7 +162,7 @@ export default function AdminAllocations() {
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          {["all", "pending", "allocated"].map((f) => (
+          {["all", "pending", "allocated", "reapplying"].map((f) => (
             <Button
               key={f}
               variant={filter === f ? "primary" : "outline"}
@@ -219,31 +225,28 @@ export default function AdminAllocations() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {app.status === "allocated" ? (
+                      {app.status === "reapplying" ? (
+                        <Badge variant="warning">Reapplying</Badge>
+                      ) : app.status === "allocated" ? (
                         <Badge variant="success">{app.allocatedName || "Allocated"}</Badge>
                       ) : (
                         <Badge variant="warning">Pending</Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      {app.status !== "allocated" ? (
-                        <Select
-                          value={app.allocatedCluster || ""}
-                          onChange={(e) => handleAllocate(app.id, Number(e.target.value))}
-                          disabled={allocating === app.id}
-                          className="w-40 text-xs h-8"
-                        >
-                          <option value="">Allocate to...</option>
-                          {[app.clusterPref1, app.clusterPref2].map((cid: number) => {
-                            const c = clusters.find((x: any) => x.id === cid);
-                            return c ? (
-                              <option key={cid} value={cid}>{c.name.slice(0, 25)}</option>
-                            ) : null;
-                          })}
-                        </Select>
-                      ) : (
-                        <span className="text-xs text-emerald-600 font-medium">{app.allocatedName}</span>
-                      )}
+                      <Select
+                        value={app.allocatedCluster || ""}
+                        onChange={(e) => handleAllocate(app.id, Number(e.target.value))}
+                        disabled={allocating === app.id || app.status === "reapplying"}
+                        className="w-52 text-xs h-8"
+                      >
+                        <option value="">
+                          {app.status === "allocated" ? "Reallocate to..." : "Allocate to..."}
+                        </option>
+                        {eligibleFor(app.student?.department).map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.name.slice(0, 30)}</option>
+                        ))}
+                      </Select>
                     </TableCell>
                   </TableRow>
                 ))}

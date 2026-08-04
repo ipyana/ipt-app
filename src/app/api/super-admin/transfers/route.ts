@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireCoordinatorOrAbove } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { sendTransferApprovedEmail, sendTransferRejectedEmail, sendReapplicationResultEmail } from "@/lib/email";
 import { assignGroup } from "@/lib/groups";
 
@@ -10,7 +10,7 @@ function err(message: string, status: number) {
 
 export async function GET() {
   try {
-    await requireCoordinatorOrAbove();
+    await requireAdmin();
 
     const clusters = await prisma.cluster.findMany({ select: { id: true, name: true } });
     const clusterMap = Object.fromEntries(clusters.map((c) => [c.id, c.name]));
@@ -30,6 +30,9 @@ export async function GET() {
       ...t,
       fromClusterName: clusterMap[t.fromClusterId] || "Unknown",
       toClusterName: t.toClusterId ? clusterMap[t.toClusterId] || "Unknown" : "2 new clusters",
+      pref1NewName: t.pref1New ? clusterMap[t.pref1New] || "Unknown" : null,
+      pref2NewName: t.pref2New ? clusterMap[t.pref2New] || "Unknown" : null,
+      currentAllocName: t.application.allocatedCluster ? clusterMap[t.application.allocatedCluster] || "Unknown" : null,
     }));
 
     return NextResponse.json(enriched);
@@ -42,7 +45,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await requireCoordinatorOrAbove();
+    const admin = await requireAdmin();
 
     const { id, action, notes } = await request.json();
     if (!id || !["approve", "reject"].includes(action)) {

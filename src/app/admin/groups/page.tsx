@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
-import { MapPin, Users, Plus, Loader2, Zap } from "lucide-react";
+import { MapPin, Users, Plus, Loader2, Zap, Trash2 } from "lucide-react";
 
 export default function AdminGroups() {
   const [clusters, setClusters] = useState<any[]>([]);
@@ -83,6 +83,18 @@ export default function AdminGroups() {
     await loadData(clusterId);
   }
 
+  async function handleDeleteGroup(groupId: number) {
+    if (!window.confirm("Delete this group? Students in it will be unassigned and can be re-grouped.")) return;
+    const res = await fetch("/api/admin/groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete-group", clusterId, groupId }),
+    });
+    const d = await res.json();
+    setMessage({ type: d.success ? "success" : "error", text: d.message || d.error || "Failed" });
+    await loadData(clusterId);
+  }
+
   return (
     <AppLayout role="admin">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -135,7 +147,16 @@ export default function AdminGroups() {
                           <MapPin className="h-3 w-3" /> {group.venue?.name || "No venue"}
                         </p>
                       </div>
-                      <Badge variant="secondary">{group._count?.allocations || 0} students</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{group._count?.allocations || 0} students</Badge>
+                        <button
+                          onClick={() => handleDeleteGroup(group.id)}
+                          className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          title="Delete group"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-1.5 max-h-48 overflow-y-auto">
                       {phase.allocations.filter((a: any) => a.groupId === group.id).map((a: any) => (

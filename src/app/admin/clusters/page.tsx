@@ -8,42 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDialog } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Layers, MapPin, Users, BarChart3, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Layers, MapPin, BookOpen } from "lucide-react";
 
 interface Dept { id: number; name: string; abbreviation: string }
-interface Prog { id: number; name: string; departmentId: number; department: Dept }
-interface ClusterProgram { program: Prog; slots: number; enrolled: number }
+interface ClusterDept { department: Dept; slots: number; enrolled: number }
 interface Cluster {
   id: number; name: string; description: string; capacity: number;
   currentEnrolled: number; location: string;
-  allowedPrograms: ClusterProgram[];
+  allowedDepartments: ClusterDept[];
 }
 
 export default function AdminClustersManage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [programs, setPrograms] = useState<Prog[]>([]);
+  const [departments, setDepartments] = useState<Dept[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Cluster | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", location: "", programSlots: [] as { programId: number; slots: number }[] });
+  const [form, setForm] = useState({ name: "", description: "", location: "", departmentSlots: [] as { departmentId: number; slots: number }[] });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Cluster | null>(null);
   const [viewTarget, setViewTarget] = useState<Cluster | null>(null);
 
   async function load() {
-    const [cl, pr] = await Promise.all([
+    const [cl, dp] = await Promise.all([
       fetch("/api/admin/clusters").then((r) => r.json()),
-      fetch("/api/admin/programs").then((r) => r.json()),
+      fetch("/api/admin/departments").then((r) => r.json()),
     ]);
     setClusters(Array.isArray(cl) ? cl : []);
-    setPrograms(Array.isArray(pr) ? pr : []);
+    setDepartments(Array.isArray(dp) ? dp : []);
   }
 
   useEffect(() => { load(); }, []);
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: "", description: "", location: "", programSlots: [] });
+    setForm({ name: "", description: "", location: "", departmentSlots: [] });
     setError("");
     setDialogOpen(true);
   }
@@ -52,35 +51,35 @@ export default function AdminClustersManage() {
     setEditing(c);
     setForm({
       name: c.name, description: c.description || "", location: c.location || "",
-      programSlots: c.allowedPrograms?.map((cp) => ({ programId: cp.program.id, slots: cp.slots })) || [],
+      departmentSlots: c.allowedDepartments?.map((cd) => ({ departmentId: cd.department.id, slots: cd.slots })) || [],
     });
     setError("");
     setDialogOpen(true);
   }
 
-  function toggleProgramSlot(programId: number) {
+  function toggleDeptSlot(departmentId: number) {
     setForm((f) => {
-      const existing = f.programSlots.findIndex((ps) => ps.programId === programId);
-      if (existing >= 0) return { ...f, programSlots: f.programSlots.filter((ps) => ps.programId !== programId) };
-      return { ...f, programSlots: [...f.programSlots, { programId, slots: 0 }] };
+      const existing = f.departmentSlots.findIndex((ds) => ds.departmentId === departmentId);
+      if (existing >= 0) return { ...f, departmentSlots: f.departmentSlots.filter((ds) => ds.departmentId !== departmentId) };
+      return { ...f, departmentSlots: [...f.departmentSlots, { departmentId, slots: 0 }] };
     });
   }
 
-  function setSlot(programId: number, slots: number) {
+  function setSlot(departmentId: number, slots: number) {
     const v = isNaN(slots) ? 0 : slots;
-    setForm((f) => ({ ...f, programSlots: f.programSlots.map((ps) => ps.programId === programId ? { ...ps, slots: v } : ps) }));
+    setForm((f) => ({ ...f, departmentSlots: f.departmentSlots.map((ds) => ds.departmentId === departmentId ? { ...ds, slots: v } : ds) }));
   }
 
   async function handleSave() {
     setError(""); setSaving(true);
     try {
       const method = editing ? "PUT" : "POST";
-      const cleanSlots = form.programSlots
-        .filter((ps) => typeof ps.slots === "number" && !isNaN(ps.slots) && ps.slots > 0)
-        .map((ps) => ({ programId: ps.programId, slots: ps.slots }));
+      const cleanSlots = form.departmentSlots
+        .filter((ds) => typeof ds.slots === "number" && !isNaN(ds.slots) && ds.slots > 0)
+        .map((ds) => ({ departmentId: ds.departmentId, slots: ds.slots }));
       const body: any = editing
-        ? { id: editing.id, ...form, programSlots: cleanSlots, capacity: cleanSlots.reduce((s, p) => s + p.slots, 0) }
-        : { ...form, programSlots: cleanSlots, capacity: cleanSlots.reduce((s, p) => s + p.slots, 0) };
+        ? { id: editing.id, name: form.name, description: form.description, location: form.location, departmentSlots: cleanSlots, capacity: cleanSlots.reduce((s, p) => s + p.slots, 0) }
+        : { name: form.name, description: form.description, location: form.location, departmentSlots: cleanSlots, capacity: cleanSlots.reduce((s, p) => s + p.slots, 0) };
       const res = await fetch("/api/admin/clusters", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
@@ -95,14 +94,7 @@ export default function AdminClustersManage() {
     setDeleteTarget(null); load();
   }
 
-  const deptGroups = programs.reduce((acc, p) => {
-    const key = p.department?.name || "Other";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(p);
-    return acc;
-  }, {} as Record<string, Prog[]>);
-
-  const totalPossibleSlots = form.programSlots.reduce((s, p) => s + (isNaN(p.slots) ? 0 : p.slots), 0);
+  const totalPossibleSlots = form.departmentSlots.reduce((s, p) => s + (isNaN(p.slots) ? 0 : p.slots), 0);
 
   return (
     <AppLayout role="admin">
@@ -123,22 +115,24 @@ export default function AdminClustersManage() {
                   <TableHead>Cluster</TableHead>
                   <TableHead>Capacity</TableHead>
                   <TableHead>Enrolled</TableHead>
-                  <TableHead>Program Allocations</TableHead>
+                  <TableHead>Department Allocations</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clusters.map((c) => (
+                {clusters.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-sm text-slate-400">No clusters found</TableCell></TableRow>
+                ) : clusters.map((c) => (
                   <TableRow key={c.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => setViewTarget(c)}>
                     <TableCell><p className="font-medium text-sm">{c.name}</p><p className="text-xs text-slate-400">{c.location}</p></TableCell>
                     <TableCell><span className="text-sm font-semibold">{c.capacity}</span></TableCell>
                     <TableCell><span className={`text-sm font-semibold ${c.currentEnrolled >= c.capacity ? "text-red-600" : "text-emerald-600"}`}>{c.currentEnrolled}</span><span className="text-xs text-slate-400"> / {c.capacity}</span></TableCell>
                     <TableCell>
                       <div className="space-y-0.5">
-                        {c.allowedPrograms?.slice(0, 3).map((cp) => (
-                          <div key={cp.program.id} className="text-xs"><span className="font-medium">{cp.program.name.slice(0, 22)}</span><span className="text-slate-400"> — {cp.enrolled}/{cp.slots}</span></div>
+                        {c.allowedDepartments?.slice(0, 3).map((cd) => (
+                          <div key={cd.department.id} className="text-xs"><span className="font-medium">{cd.department.name.slice(0, 30)}</span><span className="text-slate-400"> — {cd.enrolled}/{cd.slots}</span></div>
                         ))}
-                        {(c.allowedPrograms?.length || 0) > 3 && <span className="text-xs text-slate-400">+{c.allowedPrograms!.length - 3} more</span>}
+                        {(c.allowedDepartments?.length || 0) > 3 && <span className="text-xs text-slate-400">+{c.allowedDepartments!.length - 3} more</span>}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -177,29 +171,22 @@ export default function AdminClustersManage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Assign Programs & Set Slot Limits</Label>
+              <Label>Assign Departments & Set Slot Limits</Label>
               <div className="grid gap-3 sm:grid-cols-2 max-h-64 overflow-y-auto">
-                {Object.entries(deptGroups).map(([deptName, progs]) => (
-                  <div key={deptName} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-                    <p className="text-xs font-semibold text-slate-400 uppercase mb-2">{deptName}</p>
-                    <div className="space-y-2">
-                      {progs.map((p) => {
-                        const existing = form.programSlots.find((ps) => ps.programId === p.id);
-                        return (
-                          <div key={p.id} className="space-y-1">
-                            <button onClick={() => toggleProgramSlot(p.id)}
-                              className={`w-full text-left rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                                existing ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400" : "bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-                              }`}>{p.name}</button>
-                            {existing && (
-                              <Input type="number" min={0} value={existing.slots} onChange={(e) => setSlot(p.id, Number(e.target.value))} placeholder="Slots" className="h-7 text-xs w-full" />
-                            )}
-                          </div>
-                        );
-                      })}
+                {departments.map((d) => {
+                  const existing = form.departmentSlots.find((ds) => ds.departmentId === d.id);
+                  return (
+                    <div key={d.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                      <button onClick={() => toggleDeptSlot(d.id)}
+                        className={`w-full text-left rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                          existing ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400" : "bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                        }`}>{d.name} ({d.abbreviation})</button>
+                      {existing && (
+                        <Input type="number" min={0} value={existing.slots} onChange={(e) => setSlot(d.id, Number(e.target.value))} placeholder="Slots" className="h-7 text-xs w-full mt-2" />
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -254,24 +241,24 @@ export default function AdminClustersManage() {
                   <span>{viewTarget.location || "No location set"}</span>
                 </div>
 
-                {viewTarget.allowedPrograms && viewTarget.allowedPrograms.length > 0 && (
+                {viewTarget.allowedDepartments && viewTarget.allowedDepartments.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5">
                       <BookOpen className="h-4 w-4 text-slate-400" />
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Program Allocations</span>
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Department Allocations</span>
                     </div>
                     <div className="space-y-2">
-                      {viewTarget.allowedPrograms.map((cp) => {
-                        const pct = cp.slots > 0 ? Math.round((cp.enrolled / cp.slots) * 100) : 0;
+                      {viewTarget.allowedDepartments.map((cd) => {
+                        const pct = cd.slots > 0 ? Math.round((cd.enrolled / cd.slots) * 100) : 0;
                         return (
-                          <div key={cp.program.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                          <div key={cd.department.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                             <div className="flex items-center justify-between mb-1.5">
                               <div>
-                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{cp.program.name}</p>
-                                <p className="text-xs text-slate-400">{cp.program.department?.abbreviation} — {cp.program.department?.name}</p>
+                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{cd.department.name}</p>
+                                <p className="text-xs text-slate-400">{cd.department.abbreviation}</p>
                               </div>
                               <Badge variant={pct >= 100 ? "danger" : pct > 80 ? "warning" : "success"}>
-                                {cp.enrolled}/{cp.slots}
+                                {cd.enrolled}/{cd.slots}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-2">

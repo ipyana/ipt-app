@@ -121,6 +121,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: `Balanced ${allocations.length} students across ${groups.length} groups` });
     }
 
+    if (action === "delete-group") {
+      const { groupId, phaseId } = body;
+      if (!groupId) return err("Group ID is required", 400);
+      const group = await prisma.group.findUnique({ where: { id: groupId } });
+      if (!group || group.clusterId !== clusterId) return err("Group not found for this cluster", 404);
+      if (group.venueId) {
+        // Unassign students from this group so they can be re-grouped
+        await prisma.phaseAllocation.updateMany({
+          where: { groupId: group.id },
+          data: { groupId: null },
+        });
+      }
+      await prisma.group.delete({ where: { id: group.id } });
+      return NextResponse.json({ success: true, message: "Group deleted" });
+    }
+
     return err("Invalid action", 400);
   } catch (e: any) {
     if (e.message === "Unauthorized") return err("Unauthorized", 401);

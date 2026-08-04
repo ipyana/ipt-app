@@ -21,13 +21,12 @@ export async function POST(request: NextRequest) {
 
     const application = await prisma.application.findUnique({
       where: { id: applicationId },
-      include: { student: true },
+      include: { student: true, allocations: true },
     });
     if (!application) return err("Application not found", 404);
-    if (application.status === "allocated") return err("Already allocated", 409);
-
-    const prefs = [application.clusterPref1, application.clusterPref2];
-    if (!prefs.includes(clusterId)) return err("Allocation must be one of the student's 2 preferences", 400);
+    if (application.status === "reapplying" || application.status === "waitlisted") {
+      return err("Cannot reallocate while a reapplication/transfer or waitlist is pending", 400);
+    }
 
     const cluster = await prisma.cluster.findUnique({
       where: { id: clusterId },
@@ -40,6 +39,24 @@ export async function POST(request: NextRequest) {
     );
     if (!cd) return err(`Student's department not assigned to this cluster`, 400);
     if (cd.enrolled >= cd.slots) return err(`All ${cd.slots} slots for ${application.student.department} are full`, 409);
+
+    // If already allocated elsewhere, release the old slot + old allocations first (reallocation)
+    if (application.allocatedCluster && application.allocatedCluster !== clusterId) {
+      const oldCd = await prisma.clusterDepartment.findFirst({
+        where: { clusterId: application.allocatedCluster, department: { abbreviation: application.student.department } },
+      });
+      if (oldCd && oldCd.enrolled > 0) {
+        await prisma.clusterDepartment.update({
+          where: { clusterId_departmentId: { clusterId: oldCd.clusterId, departmentId: oldCd.departmentId } },
+          data: { enrolled: { decrement: 1 } },
+        });
+      }
+      await prisma.cluster.update({
+        where: { id: application.allocatedCluster },
+        data: { currentEnrolled: { decrement: 1 } },
+      });
+      await prisma.phaseAllocation.deleteMany({ where: { applicationId } });
+    }
 
     await prisma.clusterDepartment.update({
       where: { clusterId_departmentId: { clusterId, departmentId: cd.departmentId } },

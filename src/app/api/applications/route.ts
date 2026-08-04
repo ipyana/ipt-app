@@ -81,6 +81,7 @@ export async function GET() {
         student: { select: { fullName: true, department: true, program: true } },
         allocations: { include: { phase: true, group: { include: { venue: true } } } },
         waitlistEntries: true,
+        transferRequests: { orderBy: { createdAt: "desc" } },
       },
     });
     return NextResponse.json(application);
