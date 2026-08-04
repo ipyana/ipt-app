@@ -19,6 +19,13 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token")?.value;
 
+  // Allow static assets (images, fonts, css, js) to bypass auth
+  if (/\.(png|svg|jpg|jpeg|gif|ico|woff2|css|js|json)$/.test(pathname)) {
+    const response = NextResponse.next();
+    addSecurityHeaders(request, response);
+    return response;
+  }
+
   const isLoginPage = pathname === "/" || pathname.startsWith("/login");
   const isPublicPage = pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/staff/register";
   const isPublicAuth = pathname === "/api/auth/login" || pathname === "/api/auth/register"

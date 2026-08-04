@@ -178,9 +178,9 @@ export default function HomePage() {
               ) : (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label>Email, Registration Number, Username, or Phone</Label>
+                    <Label>Username</Label>
                     <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required
-                      placeholder="Enter your email, reg number, or phone" className="h-10" />
+                      placeholder="Email, Reg Number, or phone" className="h-10" />
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -195,7 +195,6 @@ export default function HomePage() {
                       </button>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-400 -mt-2">Demo student: 20250001 / Student@123</p>
                   <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
