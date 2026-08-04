@@ -9,7 +9,7 @@ import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDialog } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Move, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Move, Users, RefreshCw } from "lucide-react";
 
 interface Cluster { id: number; name: string; }
 interface StaffMember {
@@ -103,6 +103,11 @@ export default function AdminStaff() {
     load();
   }
 
+  async function handleResendActivation(id: number) {
+    await fetch("/api/admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "resend-activation" }) });
+    load();
+  }
+
   async function handleReject(id: number) {
     await fetch("/api/admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "reject", reason: "Registration not approved" }) });
     load();
@@ -142,7 +147,8 @@ export default function AdminStaff() {
                     <TableCell>{s.department ? <Badge variant="secondary">{s.department}</Badge> : <span className="text-sm text-slate-400">—</span>}</TableCell>
                     <TableCell><Badge>{s.cluster?.name || "—"}</Badge></TableCell>
                     <TableCell>
-                      {s.status === "pending_approval" ? <Badge variant="warning">Pending</Badge>
+                      {s.status === "pending_activation" ? <Badge variant="warning">Awaiting Activation</Badge>
+                        : s.status === "pending_approval" ? <Badge variant="warning">Pending</Badge>
                         : s.status === "rejected" ? <Badge variant="danger">Rejected</Badge>
                         : <Badge variant={s.isActive ? "success" : "secondary"}>{s.isActive ? "Active" : "Inactive"}</Badge>}
                     </TableCell>
@@ -151,6 +157,11 @@ export default function AdminStaff() {
                         {s.status === "pending_approval" ? (
                           <>
                             <Button size="sm" variant="primary" onClick={() => handleApprove(s.id)}>Approve</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleReject(s.id)}>Reject</Button>
+                          </>
+                        ) : s.status === "pending_activation" ? (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => handleResendActivation(s.id)}><RefreshCw className="h-3 w-3" /> Resend</Button>
                             <Button size="sm" variant="outline" onClick={() => handleReject(s.id)}>Reject</Button>
                           </>
                         ) : (
@@ -198,9 +209,9 @@ export default function AdminStaff() {
                 {clusters.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>{editing ? "New Password (leave blank to keep)" : "Password"}</Label>
-              <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editing ? "Leave blank" : "Strong password"} />
-            </div>
+            {!editing && (
+              <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-md p-2">An activation email with a link to set a password will be sent to the facilitator.</p>
+            )}
             {error && <p className="text-sm text-red-600">{error}</p>}
           </DialogBody>
           <DialogFooter>

@@ -38,6 +38,8 @@ model Cluster {
   announcements     Announcement[]
   venues            Venue[]
   groups            Group[]
+  staffTransferRequestsFrom StaffTransferRequest[] @relation("staffFromCluster")
+  staffTransferRequestsTo StaffTransferRequest[] @relation("staffToCluster")
 }
 
 model ClusterDepartment {
@@ -66,6 +68,7 @@ model Staff {
   cluster            Cluster?  @relation(fields: [clusterId], references: [id], onDelete: Cascade)
   createdAt          DateTime  @default(now()) @map("created_at")
   announcements      Announcement[]
+  transferRequests   StaffTransferRequest[]
 }
 
 model Student {
@@ -254,6 +257,22 @@ model AnnouncementRead {
   readAt         DateTime     @default(now()) @map("read_at")
 
   @@unique([announcementId, studentId])
+}
+
+model StaffTransferRequest {
+  id           Int       @id @default(autoincrement())
+  staffId      Int       @map("staff_id")
+  staff        Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  fromClusterId Int      @map("from_cluster_id")
+  fromCluster  Cluster   @relation("staffFromCluster", fields: [fromClusterId], references: [id], onDelete: Cascade, map: "StaffTransferRequest_from_cluster_fkey")
+  toClusterId  Int       @map("to_cluster_id")
+  toCluster    Cluster   @relation("staffToCluster", fields: [toClusterId], references: [id], onDelete: Cascade, map: "StaffTransferRequest_to_cluster_fkey")
+  reason       String
+  status       String    @default("pending")
+  reviewNotes  String?   @map("review_notes")
+  reviewedById Int?      @map("reviewed_by_id")
+  reviewedAt   DateTime? @map("reviewed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
 }
 
 model Venue {

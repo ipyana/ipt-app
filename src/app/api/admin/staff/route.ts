@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { sendStaffApprovedEmail, sendStaffRejectedEmail } from "@/lib/email";
+import { sendStaffApprovedEmail, sendStaffRejectedEmail, sendAccountActivatedEmail, sendAccountActivationEmail } from "@/lib/email";
+import { generateToken } from "@/lib/otp";
 import bcrypt from "bcryptjs";
 
 function err(message: string, status: number) {
@@ -27,15 +28,23 @@ export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
     const body = await request.json();
-    const { name, email, phone, department, password, clusterId } = body;
-    if (!name || !email || !password || !clusterId) return err("Name, email, password, and cluster are required", 400);
+    const { name, email, phone, department, clusterId } = body;
+    if (!name || !email || !clusterId) return err("Name, email, and cluster are required", 400);
 
-    const hashed = await bcrypt.hash(password, 12);
+    const placeholder = "$2b$12$placeholderplaceholderplaceholderplaceholderplaceholderp";
     const staff = await prisma.staff.create({
-      data: { name, email, phone: phone || null, department: department || null, password: hashed, role: "staff", clusterId },
+      data: { name, email, phone: phone || null, department: department || null, password: placeholder, role: "staff", clusterId, status: "pending_activation", isActive: false },
       include: { cluster: { select: { id: true, name: true } } },
     });
-    return NextResponse.json(staff, { status: 201 });
+
+    try {
+      const token = await generateToken(email, "staff_activation");
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+      const activationLink = `${baseUrl}/activate-account?token=${token}&email=${encodeURIComponent(email)}`;
+      await sendAccountActivationEmail({ name: staff.name, email: staff.email, activationLink });
+    } catch { /* non-blocking */ }
+
+    return NextResponse.json({ ...staff, message: "Facilitator created. Activation email sent." }, { status: 201 });
   } catch (e: any) {
     if (e.message === "Unauthorized") return err("Unauthorized", 401);
     if (e.message === "Forbidden") return err("Forbidden", 403);
@@ -57,13 +66,23 @@ export async function PUT(request: NextRequest) {
         data: { status: "active", isActive: true },
         include: { cluster: { select: { id: true, name: true, location: true } } },
       });
-      await sendStaffApprovedEmail({
+      await sendAccountActivatedEmail({
         name: staff.name,
         email: staff.email,
         clusterName: staff.cluster?.name || "",
-        clusterLocation: staff.cluster?.location || "",
       });
       return NextResponse.json(staff);
+    }
+
+    if (action === "resend-activation") {
+      const staff = await prisma.staff.findUnique({ where: { id }, include: { cluster: { select: { name: true } } } });
+      if (!staff) return err("Not found", 404);
+      if (staff.status === "active" && staff.isActive) return err("Account is already active", 400);
+      const token = await generateToken(staff.email, "staff_activation");
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+      const activationLink = `${baseUrl}/activate-account?token=${token}&email=${encodeURIComponent(staff.email)}`;
+      await sendAccountActivationEmail({ name: staff.name, email: staff.email, activationLink });
+      return NextResponse.json({ ...staff, message: "Activation email resent" });
     }
 
     if (action === "reject") {

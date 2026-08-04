@@ -11,7 +11,7 @@ function ActivateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,7 +45,7 @@ function ActivateForm() {
             <img src="/must_Logo.png" alt="MUST Logo" className="h-24 w-24 object-contain" />
           </div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white text-center">Activate Your Account</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Set a strong password to activate your admin account</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Set a strong password to activate your account</p>
 
           {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
           {success && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{success}</div>}

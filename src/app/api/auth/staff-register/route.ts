@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { staffRegisterSchema } from "@/lib/validations";
-import { sendAccountCreatedEmail } from "@/lib/email";
+import { generateToken } from "@/lib/otp";
+import { sendAccountActivationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const { name, email, phone, password, department } = parsed.data;
+    const { name, email, phone, department, clusterId } = parsed.data;
 
     const existing = await prisma.staff.findFirst({
       where: { OR: [{ email }, phone ? { phone } : {}] },
@@ -21,31 +21,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "An account with that email or phone already exists" }, { status: 409 });
     }
 
-    const hashed = await bcrypt.hash(password, 12);
-
+    const placeholder = "$2b$12$placeholderplaceholderplaceholderplaceholderplaceholderp";
     const staff = await prisma.staff.create({
       data: {
         name,
         email,
         phone: phone || null,
-        password: hashed,
+        password: placeholder,
         role: "staff",
         isActive: false,
-        status: "pending_approval",
+        status: "pending_activation",
         department,
+        clusterId,
       },
     });
 
     try {
-      await sendAccountCreatedEmail({ name: staff.name, email: staff.email, role: "facilitator" });
+      const token = await generateToken(email, "staff_activation");
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+      const activationLink = `${baseUrl}/activate-account?token=${token}&email=${encodeURIComponent(email)}`;
+      await sendAccountActivationEmail({ name: staff.name, email: staff.email, activationLink });
     } catch { /* non-blocking */ }
 
     return NextResponse.json({
       id: staff.id,
       name: staff.name,
       email: staff.email,
-      status: "pending_approval",
-      message: "Registration submitted for approval",
+      status: "pending_activation",
+      message: "Registration submitted. Check your email to activate your account.",
     }, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "Email or phone already exists" }, { status: 409 });

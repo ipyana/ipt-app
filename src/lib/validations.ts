@@ -34,12 +34,8 @@ export const staffRegisterSchema = z.object({
   name: z.string().min(2, "Full name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
-  password: strongPasswordSchema,
-  confirmPassword: z.string().min(1, "Please confirm your password"),
   department: z.string().min(1, "Please select your department"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  clusterId: z.number().int().positive("Please select your cluster"),
 });
 
 export const applicationSchema = z

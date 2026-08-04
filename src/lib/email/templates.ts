@@ -301,13 +301,16 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{name}}</strong>,</p>
     <p>Congratulations! Your account has been <strong style="color: #059669;">activated</strong> successfully. You can now sign in using your email or phone number.</p>
+    {{#clusterName}}<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0;"><strong>Assigned Cluster:</strong> {{clusterName}}</p>
+    </div>{{/clusterName}}
     <div style="text-align: center; margin: 20px 0;">
       <a href="{{loginLink}}" style="background: #059669; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Sign In</a>
     </div>
     <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
   </div>
 </div>`,
-    variables: ["name", "loginLink", "appName"],
+    variables: ["name", "loginLink", "clusterName", "appName"],
     required: true,
   },
   {
@@ -457,6 +460,30 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
   </div>
 </div>`,
     variables: ["studentName", "studentId", "clusterName", "venue", "group", "phaseDates", "appName"],
+    required: true,
+  },
+  {
+    key: "staff_transfer_result",
+    name: "Facilitator Cluster Transfer Result",
+    category: "staff",
+    subject: "Cluster Transfer {{status}}",
+    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #0891b2; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 20px;">Cluster Transfer {{status}}</h1>
+  </div>
+  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+    <p>Dear <strong>{{name}}</strong>,</p>
+    <p>Your cluster transfer request has been <strong style="color: {{statusColor}};">{{status}}</strong>.</p>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 4px 0;"><strong>From:</strong> {{fromCluster}}</p>
+      <p style="margin: 4px 0;"><strong>To:</strong> {{toCluster}}</p>
+    </div>
+    {{#reason}}<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;"><p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>Note:</strong> {{reason}}</p></div>{{/reason}}
+    <p style="color: #64748b; font-size: 14px;">{{message}}</p>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
+  </div>
+</div>`,
+    variables: ["name", "status", "statusColor", "fromCluster", "toCluster", "reason", "message", "appName"],
     required: true,
   },
   {

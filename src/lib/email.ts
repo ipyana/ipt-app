@@ -164,11 +164,12 @@ export async function sendAccountActivationEmail(params: { name: string; email: 
   }
 }
 
-export async function sendAccountActivatedEmail(params: { name: string; email: string }) {
+export async function sendAccountActivatedEmail(params: { name: string; email: string; clusterName?: string }) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
   const result = await sendTemplateEmail("account_activated", params.email, {
     name: params.name,
     loginLink: appUrl,
+    clusterName: params.clusterName || "",
     appName: "IPT System",
   });
   if (!result.success) {
@@ -291,6 +292,33 @@ export async function sendStaffRejectedEmail(params: { name: string; email: stri
   if (!result.success) {
     await sendEmail(params.email, "Your facilitator account was not approved",
       buildSimpleHtml("Account Not Approved", `Reason: ${params.reason || "N/A"}`));
+  }
+}
+
+export async function sendStaffTransferResultEmail(params: {
+  name: string;
+  email: string;
+  status: "approved" | "rejected";
+  fromCluster: string;
+  toCluster: string;
+  reason?: string;
+}) {
+  const approved = params.status === "approved";
+  const result = await sendTemplateEmail("staff_transfer_result", params.email, {
+    name: params.name,
+    status: approved ? "Approved" : "Rejected",
+    statusColor: approved ? "#059669" : "#dc2626",
+    fromCluster: params.fromCluster,
+    toCluster: params.toCluster,
+    reason: params.reason || "",
+    message: approved
+      ? `Your cluster transfer to ${params.toCluster} has been approved. You will now be assigned to that cluster.`
+      : "Your cluster transfer request was not approved. You remain in your current cluster.",
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.email, `Cluster Transfer ${approved ? "Approved" : "Rejected"}`,
+      buildSimpleHtml(`Transfer ${approved ? "Approved" : "Rejected"}`, `${params.fromCluster} → ${params.toCluster}`));
   }
 }
 

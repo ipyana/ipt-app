@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
-import { Eye, EyeOff, CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const DEPARTMENTS = [
@@ -18,17 +18,24 @@ const DEPARTMENTS = [
 
 export default function StaffRegister() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", department: "" });
-  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", department: "", clusterId: 0 });
+  const [clusters, setClusters] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/clusters")
+      .then((r) => r.json())
+      .then((data) => setClusters(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(""); setSuccess("");
     if (!form.department) { setError("Please select your department"); return; }
-    if (form.password !== form.confirmPassword) { setError("Passwords do not match"); return; }
+    if (!form.clusterId) { setError("Please select your cluster"); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/auth/staff-register", {
@@ -38,13 +45,13 @@ export default function StaffRegister() {
           name: form.name,
           email: form.email,
           phone: form.phone,
-          password: form.password,
           department: form.department,
+          clusterId: form.clusterId,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
-      setSuccess(data.message || "Registration submitted for approval");
+      setSuccess(data.message || "Registration submitted. Check your email to activate your account.");
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
   }
@@ -58,7 +65,7 @@ export default function StaffRegister() {
             <img src="/must_Logo.png" alt="MUST Logo" className="h-24 w-24 object-contain" />
           </div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white text-center">Facilitator Registration</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Register as a cluster facilitator. Your account will be activated after approval.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Register as a cluster facilitator. Set your password via the email link, then wait for approval.</p>
 
           {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
           {success && (
@@ -92,18 +99,13 @@ export default function StaffRegister() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Password</Label>
-                <div className="relative">
-                  <Input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} placeholder="Min 8 chars, 1 cap, 1 number, 1 special" className="h-10 pr-10" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <Label>Your Cluster</Label>
+                <Select value={form.clusterId || ""} onChange={(e) => setForm({ ...form, clusterId: Number(e.target.value) })} required className="h-10">
+                  <option value="">Select your cluster...</option>
+                  {clusters.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Re-Enter Password</Label>
-                <Input type={showPassword ? "text" : "password"} value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} required minLength={8} placeholder="Re-enter your password" className="h-10" />
-              </div>
+              <p className="text-xs text-slate-400">After submission, you will receive an email with a link to set your password. Your account will be activated once an administrator approves your registration.</p>
               <Button type="submit" disabled={loading} className="w-full h-10">
                 {loading ? "Submitting..." : "Submit for Approval"} <ArrowRight className="h-4 w-4" />
               </Button>

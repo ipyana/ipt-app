@@ -80,6 +80,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (staff) {
+      if (staff.status === "pending_activation") {
+        return NextResponse.json({ error: "Your account is pending activation. Please check your email for the activation link." }, { status: 403 });
+      }
       if (staff.status === "pending_approval") {
         return NextResponse.json({ error: "Your account is pending approval. Please wait for an administrator to review your registration." }, { status: 403 });
       }

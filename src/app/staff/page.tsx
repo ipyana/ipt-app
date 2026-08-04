@@ -1,15 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/form";
+import { Select } from "@/components/ui/select";
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, MapPin, Calendar, BookOpen, GraduationCap } from "lucide-react";
+import { Users, MapPin, Calendar, BookOpen, GraduationCap, ArrowRightLeft } from "lucide-react";
 
 export default function StaffDashboard() {
+  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferCluster, setTransferCluster] = useState(0);
+  const [transferReason, setTransferReason] = useState("");
+  const [transferMsg, setTransferMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [transferSaving, setTransferSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/staff/students")
@@ -46,6 +57,26 @@ export default function StaffDashboard() {
 
   const { staff, cluster, phase1Students, phase2Students } = data;
 
+  async function handleTransferSubmit() {
+    setTransferMsg(null);
+    if (!transferCluster) { setTransferMsg({ type: "error", text: "Select a cluster" }); return; }
+    if (transferReason.length < 10) { setTransferMsg({ type: "error", text: "Provide a reason (min 10 characters)" }); return; }
+    setTransferSaving(true);
+    try {
+      const res = await fetch("/api/staff/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toClusterId: transferCluster, reason: transferReason }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Failed");
+      setTransferMsg({ type: "success", text: "Transfer request submitted for coordinator approval." });
+      setTransferReason("");
+      setTransferCluster(0);
+    } catch (e: any) { setTransferMsg({ type: "error", text: e.message }); }
+    finally { setTransferSaving(false); }
+  }
+
   return (
     <AppLayout role="staff">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -54,6 +85,17 @@ export default function StaffDashboard() {
             Welcome, {staff?.name}
           </h2>
           <p className="text-sm text-slate-500 mt-1">Staff Dashboard</p>
+        </div>
+
+        <div className="flex items-center justify-between">
+          {transferMsg && (
+            <div className={`rounded-lg border px-3 py-2 text-sm ${
+              transferMsg.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
+            }`}>{transferMsg.text}</div>
+          )}
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => setTransferOpen(true)}>
+            <ArrowRightLeft className="h-4 w-4" /> Request Cluster Transfer
+          </Button>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -174,6 +216,49 @@ export default function StaffDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={transferOpen} onClose={() => setTransferOpen(false)}>
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-900/20">
+              <ArrowRightLeft className="h-5 w-5 text-cyan-600" />
+            </div>
+            <DialogTitle>Request Cluster Transfer</DialogTitle>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          <div className="space-y-3">
+            <p className="text-xs text-slate-500">Current cluster: <strong>{cluster?.name}</strong>. Select a new cluster and provide a reason. Your request will be reviewed by the coordinator.</p>
+            <div className="space-y-1">
+              <Label>New Cluster</Label>
+              <Select value={transferCluster || ""} onChange={(e) => setTransferCluster(Number(e.target.value))}>
+                <option value="">Select cluster...</option>
+                <option value="1">Computer Maintenance and Peripherals</option>
+                <option value="2">Internet of Things (IoT) &amp; Edge AI</option>
+                <option value="3">Computer Networking and Fiber Optics</option>
+                <option value="4">Electronics Prototyping and Automation</option>
+                <option value="5">Software Development</option>
+                <option value="6">Cyber Security</option>
+                <option value="7">Multimedia and Marketing</option>
+                <option value="8">Artificial Intelligence and Signal Processing</option>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Reason</Label>
+              <textarea
+                value={transferReason}
+                onChange={(e) => setTransferReason(e.target.value)}
+                placeholder="Why do you want to change clusters?"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[80px] dark:bg-slate-900 dark:border-slate-700"
+              />
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setTransferOpen(false)}>Cancel</Button>
+          <Button onClick={handleTransferSubmit} disabled={transferSaving}>{transferSaving ? "Submitting..." : "Submit Request"}</Button>
+        </DialogFooter>
+      </Dialog>
     </AppLayout>
   );
 }
