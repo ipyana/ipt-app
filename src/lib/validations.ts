@@ -5,6 +5,13 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+export const strongPasswordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must include at least one capital letter")
+  .regex(/[0-9]/, "Password must include at least one number")
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must include at least one special character");
+
 export const registerSchema = z.object({
   studentId: z
     .string()
@@ -15,8 +22,24 @@ export const registerSchema = z.object({
     }),
   fullName: z.string().min(2, "Full name is required"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: strongPasswordSchema,
+  confirmPassword: z.string().min(1, "Please confirm your password"),
   programId: z.number().int().positive("Please select your program of study"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+export const staffRegisterSchema = z.object({
+  name: z.string().min(2, "Full name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().optional(),
+  password: strongPasswordSchema,
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+  department: z.string().min(1, "Please select your department"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 export const applicationSchema = z

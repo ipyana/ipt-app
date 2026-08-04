@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
+import { RoleModal } from "@/components/ui/RoleModal";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,6 +17,7 @@ interface GroupedPrograms { [dept: string]: Program[] }
 export default function HomePage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +26,7 @@ export default function HomePage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [programId, setProgramId] = useState<number>(0);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [programs, setPrograms] = useState<GroupedPrograms>({});
   const [selectedDept, setSelectedDept] = useState("");
   const [error, setError] = useState("");
@@ -64,14 +67,16 @@ export default function HomePage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!selectedDept) { setError("Please select your department"); return; }
     if (!programId) { setError("Please select your program of study"); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match"); return; }
     setError("");
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId, fullName, email, password, programId }),
+        body: JSON.stringify({ studentId, fullName, email, password, confirmPassword, programId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
@@ -80,15 +85,19 @@ export default function HomePage() {
     finally { setLoading(false); }
   }
 
-  function handleProgramChange(pid: number) {
-    setProgramId(pid);
-    for (const [dept, progs] of Object.entries(programs)) {
-      if (progs.some((p) => p.id === pid)) {
-        setSelectedDept(dept);
-        return;
-      }
+  function handleRoleSelect(role: "student" | "staff") {
+    setRoleModalOpen(false);
+    if (role === "student") {
+      setMode("register");
+      setError("");
+    } else {
+      router.push("/staff/register");
     }
-    setSelectedDept("");
+  }
+
+  function handleDeptSelect(deptKey: string) {
+    setSelectedDept(deptKey);
+    setProgramId(0);
   }
 
   function switchMode(m: Mode) {
@@ -138,20 +147,19 @@ export default function HomePage() {
                     <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Doe" className="h-10" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Program of Study</Label>
-                    <Select value={programId || ""} onChange={(e) => handleProgramChange(Number(e.target.value))} required className="h-10">
-                      <option value="">Select your program...</option>
-                      {Object.entries(programs).map(([dept, progs]) => (
-                        <optgroup key={dept} label={dept}>
-                          {progs.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                        </optgroup>
-                      ))}
+                    <Label>Department</Label>
+                    <Select value={selectedDept} onChange={(e) => handleDeptSelect(e.target.value)} required className="h-10">
+                      <option value="">Select your department...</option>
+                      {Object.keys(programs).map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
                     </Select>
                   </div>
                   {selectedDept && (
-                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 text-sm">
-                      <span className="text-slate-500">Department: </span>
-                      <span className="font-medium text-slate-900 dark:text-white">{selectedDept}</span>
+                    <div className="space-y-1.5">
+                      <Label>Program of Study</Label>
+                      <Select value={programId || ""} onChange={(e) => setProgramId(Number(e.target.value))} required className="h-10">
+                        <option value="">Select your program...</option>
+                        {programs[selectedDept]?.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                      </Select>
                     </div>
                   )}
                   <div className="space-y-1.5">
@@ -161,11 +169,15 @@ export default function HomePage() {
                   <div className="space-y-1.5">
                     <Label>Password</Label>
                     <div className="relative">
-                      <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className="h-10 pr-10" />
+                      <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} placeholder="Min 8 chars, 1 cap, 1 number, 1 special" className="h-10 pr-10" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Re-Enter Password</Label>
+                    <Input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} placeholder="Re-enter your password" className="h-10" />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
                     {loading ? "Creating account..." : "Create Account"}
@@ -198,22 +210,17 @@ export default function HomePage() {
                   <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
-                  <div className="mt-4 space-y-2 text-center">
-                    <p className="text-sm text-slate-500">
-                      Student?{" "}
-                      <button type="button" onClick={() => switchMode("register")} className="font-medium text-primary-600 hover:text-primary-700">Sign up</button>
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      Facilitator?{" "}
-                      <button type="button" onClick={() => router.push("/staff/register")} className="font-medium text-primary-600 hover:text-primary-700">Register here</button>
-                    </p>
-                  </div>
+                  <p className="text-center text-sm text-slate-500 mt-4">
+                    Don't have an account?{" "}
+                    <button type="button" onClick={() => setRoleModalOpen(true)} className="font-medium text-primary-600 hover:text-primary-700">Sign up</button>
+                  </p>
                 </form>
               )}
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
+      <RoleModal open={roleModalOpen} onClose={() => setRoleModalOpen(false)} onSelect={handleRoleSelect} />
     </div>
   );
 }

@@ -116,6 +116,18 @@ export async function sendPasswordResetEmail(params: { name: string; email: stri
   }
 }
 
+export async function sendAdminActivationEmail(params: { name: string; email: string; activationLink: string }) {
+  const result = await sendTemplateEmail("admin_activation", params.email, {
+    name: params.name,
+    activationLink: params.activationLink,
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.email, "Activate your admin account",
+      buildSimpleHtml("Admin Account Activation", `Click here to activate: ${params.activationLink}`));
+  }
+}
+
 export async function sendStaffApprovedEmail(params: { name: string; email: string; clusterName: string; clusterLocation: string }) {
   const result = await sendTemplateEmail("staff_approved", params.email, {
     name: params.name,

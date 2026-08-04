@@ -27,12 +27,12 @@ export async function POST(request: NextRequest) {
   try {
     await requireSuperAdmin();
     const body = await request.json();
-    const { name, email, phone, password, clusterId } = body;
+    const { name, email, phone, department, password, clusterId } = body;
     if (!name || !email || !password || !clusterId) return err("Name, email, password, and cluster are required", 400);
 
     const hashed = await bcrypt.hash(password, 12);
     const staff = await prisma.staff.create({
-      data: { name, email, phone: phone || null, password: hashed, role: "staff", clusterId },
+      data: { name, email, phone: phone || null, department: department || null, password: hashed, role: "staff", clusterId },
       include: { cluster: { select: { id: true, name: true } } },
     });
     return NextResponse.json(staff, { status: 201 });
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest) {
   try {
     await requireSuperAdmin();
     const body = await request.json();
-    const { id, name, email, phone, password, clusterId, isActive, action, reason } = body;
+    const { id, name, email, phone, department, password, clusterId, isActive, action, reason } = body;
     if (!id) return err("ID is required", 400);
 
     if (action === "approve") {
@@ -80,6 +80,7 @@ export async function PUT(request: NextRequest) {
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email;
     if (phone !== undefined) data.phone = phone;
+    if (department !== undefined) data.department = department;
     if (password) data.password = await bcrypt.hash(password, 12);
     if (clusterId !== undefined) data.clusterId = clusterId;
     if (isActive !== undefined) data.isActive = isActive;

@@ -98,6 +98,9 @@ export async function POST(request: NextRequest) {
       if (admin.role === "super_admin") {
         return NextResponse.json({ error: "Super admins must use the dedicated login API" }, { status: 401 });
       }
+      if (admin.status === "pending") {
+        return NextResponse.json({ error: "Your account is pending activation. Please check your email for the activation link." }, { status: 403 });
+      }
 
       const valid = await bcrypt.compare(password, admin.password);
       if (!valid) {

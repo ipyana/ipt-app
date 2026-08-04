@@ -25,7 +25,7 @@ export default function SuperAdminAdmins() {
   const [items, setItems] = useState<AdminUser[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminUser | null>(null);
-  const [form, setForm] = useState({ username: "", email: "", phone: "", password: "", role: "admin" });
+  const [form, setForm] = useState({ username: "", email: "", phone: "", role: "admin" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
@@ -40,14 +40,14 @@ export default function SuperAdminAdmins() {
 
   function openAdd() {
     setEditing(null);
-    setForm({ username: "", email: "", phone: "", password: "", role: "admin" });
+    setForm({ username: "", email: "", phone: "", role: "admin" });
     setError("");
     setDialogOpen(true);
   }
 
   function openEdit(u: AdminUser) {
     setEditing(u);
-    setForm({ username: u.username, email: u.email, phone: u.phone || "", password: "", role: u.role });
+    setForm({ username: u.username, email: u.email, phone: u.phone || "", role: u.role });
     setError("");
     setDialogOpen(true);
   }
@@ -58,7 +58,7 @@ export default function SuperAdminAdmins() {
       const method = editing ? "PUT" : "POST";
       const body: any = { ...form };
       if (editing) body.id = editing.id;
-      if (!body.password) delete body.password;
+      
       const res = await fetch("/api/super-admin/admins", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
@@ -140,7 +140,11 @@ export default function SuperAdminAdmins() {
                 {ROLE_OPTIONS.map((r) => (<option key={r.value} value={r.value}>{r.label}</option>))}
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>{editing ? "New Password (leave blank to keep)" : "Password"}</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editing ? "Leave blank" : "Min 6 chars"} /></div>
+            {!editing && (
+              <div className="rounded-lg border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20 p-3 text-sm text-primary-700 dark:text-primary-400">
+                An activation email will be sent to the new admin to set their password.
+              </div>
+            )}
             {error && <p className="text-sm text-red-600">{error}</p>}
           </DialogBody>
           <DialogFooter>

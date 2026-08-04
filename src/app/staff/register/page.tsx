@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
@@ -8,33 +8,39 @@ import { Select } from "@/components/ui/select";
 import { Eye, EyeOff, CheckCircle, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-interface Cluster { id: number; name: string; location: string }
+const DEPARTMENTS = [
+  { name: "Computer Science and Engineering", abbreviation: "CSE" },
+  { name: "Electronics and Telecommunication Engineering", abbreviation: "ETE" },
+  { name: "Informatics", abbreviation: "IF" },
+  { name: "Information Science and Technology", abbreviation: "IST" },
+  { name: "Technical Education", abbreviation: "TED" },
+];
 
 export default function StaffRegister() {
   const router = useRouter();
-  const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", clusterId: 0 });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", department: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/clusters")
-      .then((r) => r.json())
-      .then((d) => setClusters(Array.isArray(d) ? d : []))
-      .catch(() => {});
-  }, []);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(""); setSuccess(""); setLoading(true);
+    setError(""); setSuccess("");
+    if (!form.department) { setError("Please select your department"); return; }
+    if (form.password !== form.confirmPassword) { setError("Passwords do not match"); return; }
+    setLoading(true);
     try {
-      if (!form.clusterId) { setError("Please select a cluster"); setLoading(false); return; }
       const res = await fetch("/api/auth/staff-register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          password: form.password,
+          department: form.department,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
@@ -79,20 +85,24 @@ export default function StaffRegister() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Select Your Cluster</Label>
-                <Select value={form.clusterId || ""} onChange={(e) => setForm({ ...form, clusterId: Number(e.target.value) })} required className="h-10">
-                  <option value="">Select a cluster...</option>
-                  {clusters.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                <Label>Your Department</Label>
+                <Select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} required className="h-10">
+                  <option value="">Select your department...</option>
+                  {DEPARTMENTS.map((d) => (<option key={d.abbreviation} value={d.abbreviation}>{d.name} ({d.abbreviation})</option>))}
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Password</Label>
                 <div className="relative">
-                  <Input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} placeholder="Min 6 characters" className="h-10 pr-10" />
+                  <Input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} placeholder="Min 8 chars, 1 cap, 1 number, 1 special" className="h-10 pr-10" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Re-Enter Password</Label>
+                <Input type={showPassword ? "text" : "password"} value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} required minLength={8} placeholder="Re-enter your password" className="h-10" />
               </div>
               <Button type="submit" disabled={loading} className="w-full h-10">
                 {loading ? "Submitting..." : "Submit for Approval"} <ArrowRight className="h-4 w-4" />

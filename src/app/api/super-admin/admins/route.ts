@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth";
-import bcrypt from "bcryptjs";
+import { generateToken } from "@/lib/otp";
+import { sendAdminActivationEmail } from "@/lib/email";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -23,14 +24,21 @@ export async function POST(request: NextRequest) {
   try {
     await requireSuperAdmin();
     const body = await request.json();
-    const { username, email, phone, password, role } = body;
-    if (!username || !email || !password) return err("Username, email, and password are required", 400);
+    const { username, email, phone, role } = body;
+    if (!username || !email) return err("Username and email are required", 400);
 
-    const hashed = await bcrypt.hash(password, 12);
+    const placeholder = "$2b$12$placeholderplaceholderplaceholderplaceholderplaceholderp";
     const admin = await prisma.admin.create({
-      data: { username, email, phone: phone || null, password: hashed, role: role || "admin" },
+      data: { username, email, phone: phone || null, password: placeholder, role: role || "admin", status: "pending" },
     });
-    return NextResponse.json(admin, { status: 201 });
+
+    const token = await generateToken(email, "admin_activation");
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+    const activationLink = `${baseUrl}/activate-account?token=${token}`;
+
+    await sendAdminActivationEmail({ name: username, email, activationLink });
+
+    return NextResponse.json({ ...admin, message: "Admin created. Activation email sent." }, { status: 201 });
   } catch (e: any) {
     if (e.message === "Unauthorized") return err("Unauthorized", 401);
     if (e.message === "Forbidden") return err("Forbidden", 403);
@@ -43,7 +51,7 @@ export async function PUT(request: NextRequest) {
   try {
     await requireSuperAdmin();
     const body = await request.json();
-    const { id, username, email, phone, password, role } = body;
+    const { id, username, email, phone, role } = body;
     if (!id) return err("ID is required", 400);
 
     const data: any = {};
@@ -51,7 +59,6 @@ export async function PUT(request: NextRequest) {
     if (email) data.email = email;
     if (phone !== undefined) data.phone = phone;
     if (role) data.role = role;
-    if (password) data.password = await bcrypt.hash(password, 12);
 
     const admin = await prisma.admin.update({ where: { id }, data });
     return NextResponse.json(admin);

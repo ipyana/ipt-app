@@ -7,11 +7,31 @@ export const DEPARTMENTS = [
 ] as const;
 
 export const PROGRAMS_BY_DEPT: Record<string, string[]> = {
-  CSE: ["BSc. Computer Science and Engineering", "BSc. Software Engineering"],
-  ETE: ["BSc. Electronic and Telecommunication Engineering", "BSc. Electrical Engineering"],
-  IF: ["BSc. Informatics", "BSc. Applied Computing"],
-  IST: ["BSc. Information Science and Technology", "BSc. Business Information Systems"],
-  TED: ["BSc. Computer Systems and Technology", "BSc. Information Technology"],
+  CSE: [
+    "Diploma in Computer Science",
+    "Diploma in Computer Engineering",
+    "Bachelor of Computer Engineering and Technology",
+    "Bachelor of Computer Science",
+    "Bachelor of Engineering in Data Science",
+  ],
+  ETE: [
+    "Diploma in Electronics and Telecommunication Engineering",
+    "Bachelor of Science in Information and Communication Technology",
+    "Bachelor of Science in Electronics and Automation Engineering",
+  ],
+  IF: [
+    "Bachelor of Applied Informatics in Industrial Automation",
+    "Bachelor of Applied Informatics in Marketing",
+  ],
+  IST: [
+    "Diploma in Information and Communication Technology",
+    "Bachelor of Science in Information and Computer Network",
+    "Bachelor of Information and Communication Technology",
+  ],
+  TED: [
+    "Bachelor of Technical Education in Computer Science",
+    "Bachelor of Technical Education in Telecommunication Engineering",
+  ],
 };
 
 export interface ClusterSeed {

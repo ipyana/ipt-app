@@ -11,7 +11,7 @@ export async function GET() {
       include: { cluster: { select: { id: true, name: true, location: true } } },
     });
 
-    if (!staff) return NextResponse.json(null);
+    if (!staff || !staff.clusterId) return NextResponse.json(null);
 
     const phases = await prisma.phase.findMany({
       where: { clusterId: staff.clusterId, session: { isActive: true } },

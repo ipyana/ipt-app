@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { strongPasswordSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
     const { newPassword } = await request.json();
 
-    if (!newPassword || newPassword.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    const pwCheck = strongPasswordSchema.safeParse(newPassword);
+    if (!pwCheck.success) {
+      return NextResponse.json({ error: pwCheck.error.issues[0].message }, { status: 400 });
     }
 
     const hashed = await bcrypt.hash(newPassword, 12);

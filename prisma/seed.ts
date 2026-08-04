@@ -33,7 +33,6 @@ async function main() {
   await prisma.admin.deleteMany();
   console.log("Existing data cleared.");
 
-  const studentHashedPassword = await bcrypt.hash("Student@123", 12);
   const adminHashedPassword = await bcrypt.hash("Admin@123", 12);
   const superHashedPassword = await bcrypt.hash("SuperAdmin@123", 12);
   const staffHashedPassword = await bcrypt.hash("Staff@123", 12);
@@ -80,26 +79,6 @@ async function main() {
       console.log(`  Program: ${name} (${abbrev})`);
     }
   }
-
-  for (let i = 1; i <= 30; i++) {
-    const dept = DEPARTMENTS[i % DEPARTMENTS.length];
-    const progs = PROGRAMS_BY_DEPT[dept.abbreviation];
-    const prog = progs[i % progs.length];
-    const paddedId = `2025${String(i).padStart(4, "0")}`;
-
-    await prisma.student.create({
-      data: {
-        studentId: paddedId,
-        fullName: `Student ${i} (${dept.abbreviation})`,
-        department: dept.abbreviation,
-        program: prog,
-        email: `student${i}@university.ac.ke`,
-        password: studentHashedPassword,
-        role: "student",
-      },
-    });
-  }
-  console.log("30 sample students created — reg: 20250001–20250030 / password: Student@123");
 
   for (const cd of CLUSTER_SEED_DATA) {
     const cluster = await prisma.cluster.create({

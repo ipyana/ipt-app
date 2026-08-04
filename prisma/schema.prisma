@@ -58,8 +58,9 @@ model Staff {
   isActive           Boolean   @default(true) @map("is_active")
   mustChangePassword Boolean   @default(false) @map("must_change_password")
   status             String    @default("active")
-  clusterId          Int       @map("cluster_id")
-  cluster            Cluster   @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  department         String?
+  clusterId          Int?      @map("cluster_id")
+  cluster            Cluster?  @relation(fields: [clusterId], references: [id], onDelete: Cascade)
   createdAt          DateTime  @default(now()) @map("created_at")
 }
 
@@ -83,6 +84,7 @@ model Admin {
   phone              String?  @unique
   password           String
   role               String   @default("admin")
+  status             String   @default("active")
   mustChangePassword Boolean  @default(false) @map("must_change_password")
   createdAt          DateTime @default(now()) @map("created_at")
 }

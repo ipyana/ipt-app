@@ -14,7 +14,7 @@ import { Plus, Pencil, Trash2, Move, Users } from "lucide-react";
 interface Cluster { id: number; name: string; }
 interface StaffMember {
   id: number; name: string; email: string; phone: string | null; role: string;
-  isActive: boolean; status: string; clusterId: number;
+  isActive: boolean; status: string; department: string | null; clusterId: number;
   cluster: Cluster;
 }
 
@@ -25,7 +25,7 @@ export default function SuperAdminStaff() {
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState<StaffMember | null>(null);
   const [editing, setEditing] = useState<StaffMember | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", clusterId: 0 });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", department: "", password: "", clusterId: 0 });
   const [moveClusterId, setMoveClusterId] = useState(0);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -44,13 +44,13 @@ export default function SuperAdminStaff() {
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: "", email: "", phone: "", password: "", clusterId: clusters[0]?.id || 0 });
+    setForm({ name: "", email: "", phone: "", department: "", password: "", clusterId: clusters[0]?.id || 0 });
     setError(""); setDialogOpen(true);
   }
 
   function openEdit(s: StaffMember) {
     setEditing(s);
-    setForm({ name: s.name, email: s.email, phone: s.phone || "", password: "", clusterId: s.clusterId });
+    setForm({ name: s.name, email: s.email, phone: s.phone || "", department: s.department || "", password: "", clusterId: s.clusterId });
     setError(""); setDialogOpen(true);
   }
 
@@ -126,6 +126,7 @@ export default function SuperAdminStaff() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Department</TableHead>
                   <TableHead>Cluster</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-32">Actions</TableHead>
@@ -136,6 +137,7 @@ export default function SuperAdminStaff() {
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell className="text-sm text-slate-500">{s.email}</TableCell>
+                    <TableCell>{s.department ? <Badge variant="secondary">{s.department}</Badge> : <span className="text-sm text-slate-400">—</span>}</TableCell>
                     <TableCell><Badge>{s.cluster?.name || "—"}</Badge></TableCell>
                     <TableCell>
                       {s.status === "pending_approval" ? <Badge variant="warning">Pending</Badge>
@@ -178,11 +180,18 @@ export default function SuperAdminStaff() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>Phone (optional)</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+255..." /></div>
-              <div className="space-y-1.5"><Label>Assign to Cluster</Label>
-                <Select value={form.clusterId || ""} onChange={(e) => setForm({ ...form, clusterId: Number(e.target.value) })}>
-                  {clusters.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+              <div className="space-y-1.5"><Label>Department</Label>
+                <Select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })}>
+                  <option value="">Select...</option>
+                  {["CSE", "ETE", "IF", "IST", "TED"].map((d) => (<option key={d} value={d}>{d}</option>))}
                 </Select>
               </div>
+            </div>
+            <div className="space-y-1.5"><Label>Assign to Cluster</Label>
+              <Select value={form.clusterId || ""} onChange={(e) => setForm({ ...form, clusterId: Number(e.target.value) })}>
+                <option value="">Select cluster...</option>
+                {clusters.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+              </Select>
             </div>
             <div className="space-y-1.5"><Label>{editing ? "New Password (leave blank to keep)" : "Password"}</Label>
               <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editing ? "Leave blank" : "Min 6 chars"} />

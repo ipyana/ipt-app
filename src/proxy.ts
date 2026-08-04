@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const isLoginPage = pathname === "/" || pathname.startsWith("/login");
-  const isPublicPage = pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/staff/register";
+  const isPublicPage = pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/staff/register" || pathname === "/activate-account";
   const isPublicAuth = pathname === "/api/auth/login" || pathname === "/api/auth/register"
     || pathname === "/api/auth/forgot-password" || pathname === "/api/auth/reset-password" || pathname === "/api/auth/staff-register";
   const isProtectedAuth = pathname === "/api/auth/me" || pathname === "/api/auth/logout";

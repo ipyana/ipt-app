@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { verifyOtp } from "@/lib/otp";
+import { strongPasswordSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,8 +10,9 @@ export async function POST(request: NextRequest) {
     if (!email || !code || !newPassword) {
       return NextResponse.json({ error: "Email, code, and new password are required" }, { status: 400 });
     }
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    const pwCheck = strongPasswordSchema.safeParse(newPassword);
+    if (!pwCheck.success) {
+      return NextResponse.json({ error: pwCheck.error.issues[0].message }, { status: 400 });
     }
 
     const valid = await verifyOtp(email, code, "password_reset");

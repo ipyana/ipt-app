@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
     const { password, ...rest } = parsed.data;
-    const hashed = await bcrypt.hash(password || "Student@123", 12);
+    if (!password) return NextResponse.json({ error: "Password is required" }, { status: 400 });
+    const hashed = await bcrypt.hash(password, 12);
 
     const existing = await prisma.student.findFirst({
       where: { OR: [{ email: rest.email }, { studentId: rest.studentId }] },
