@@ -50,6 +50,9 @@ export async function sendTemplateEmail(
     return { success: false, error: `Template "${templateKey}" not found or disabled` };
   }
 
-  const { subject, html } = applyTemplate(template, variables);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+  const merged = { ...variables, logoUrl: `${appUrl}/must_Logo.png` };
+
+  const { subject, html } = applyTemplate(template, merged);
   return sendEmail(to, subject, html, templateKey);
 }

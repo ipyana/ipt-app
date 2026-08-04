@@ -45,11 +45,21 @@ export async function POST(request: NextRequest) {
 
     if (action === "test") {
       if (!to) return err("Recipient email is required", 400);
-      const result = await sendEmail(to, "🧪 IPT Test Email", `<div style="font-family:Arial;padding:24px;">
-        <h2 style="color:#7a1315;">🧪 Test Email</h2>
-        <p>This is a test email from the IPT Application System.</p>
-        <p style="color:#94a3b8;">Sent at: ${new Date().toISOString()}</p>
-      </div>`, "test_email");
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+      const html = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <div style="background: linear-gradient(135deg, #7a1315, #640f11); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Test Email</h1>
+        </div>
+        <div style="text-align: center; padding: 20px 24px 4px;">
+          <img src="${appUrl}/must_Logo.png" alt="MUST" width="80" height="81" style="display: inline-block; width: 80px; height: auto;" />
+        </div>
+        <div style="background: #f8fafc; padding: 16px 24px 28px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>This is a test email from the IPT Application System.</p>
+          <p>If you received this, your email configuration is working correctly.</p>
+          <p style="color: #94a3b8; font-size: 12px;">Sent at: ${new Date().toISOString()}</p>
+        </div>
+      </div>`;
+      const result = await sendEmail(to, "IPT Test Email", html, "test_email");
       return NextResponse.json(result);
     }
 

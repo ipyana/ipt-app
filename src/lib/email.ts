@@ -71,7 +71,7 @@ export async function sendSubmissionEmail(params: SubmissionEmailParams) {
 
   if (!result.success) {
     const html = buildFallbackSubmissionHtml(params);
-    await sendEmail(studentEmail, `🎉 IPT Placement Confirmed — ${studentName}`, html);
+    await sendEmail(studentEmail, `IPT Placement Confirmed — ${studentName}`, html);
   }
 }
 
@@ -97,8 +97,8 @@ export async function sendTransferApprovedEmail(params: ClusterEmailParams) {
     clusterLocation: params.clusterLocation || "",
   });
   if (!result.success) {
-    const html = buildSimpleHtml("✅ Transfer Approved", `Your transfer to ${params.clusterName} has been approved.`);
-    await sendEmail(params.studentEmail, `✅ Transfer Approved — ${params.clusterName}`, html);
+    const html = buildSimpleHtml("Transfer Approved", `Your transfer to ${params.clusterName} has been approved.`);
+    await sendEmail(params.studentEmail, `Transfer Approved — ${params.clusterName}`, html);
   }
 }
 
@@ -110,8 +110,8 @@ export async function sendTransferRejectedEmail(params: ClusterEmailParams) {
     reason: params.reason || "No specific reason provided",
   });
   if (!result.success) {
-    const html = buildSimpleHtml("❌ Transfer Not Approved", `Your transfer request was not approved. Reason: ${params.reason || "N/A"}`);
-    await sendEmail(params.studentEmail, "❌ Transfer Request Update", html);
+    const html = buildSimpleHtml("Transfer Not Approved", `Your transfer request was not approved. Reason: ${params.reason || "N/A"}`);
+    await sendEmail(params.studentEmail, "Transfer Request Update", html);
   }
 }
 
@@ -214,8 +214,8 @@ export async function sendAnnouncementEmail(params: {
     appName: "IPT System",
   });
   if (!result.success) {
-    await sendEmail(params.studentEmail, `📢 ${params.title} — ${params.clusterName}`,
-      buildSimpleHtml(`📢 ${params.title}`, `${params.body}`));
+    await sendEmail(params.studentEmail, `${params.title} — ${params.clusterName}`,
+      buildSimpleHtml(`${params.title}`, `${params.body}`));
   }
 }
 
@@ -332,7 +332,7 @@ export async function sendShiftReminderEmail(params: {
     appName: "IPT System",
   });
   if (!result.success) {
-    await sendEmail(params.studentEmail, "📅 Reminder: Cluster shift in a few days",
+    await sendEmail(params.studentEmail, "Reminder: Cluster shift in a few days",
       buildSimpleHtml("Cluster Shift Reminder", `Next cluster: ${params.nextCluster} on ${params.shiftDate}`));
   }
 }
@@ -356,7 +356,7 @@ export async function sendPhase2ConfirmedEmail(params: {
     appName: "IPT System",
   });
   if (!result.success) {
-    await sendEmail(params.studentEmail, "🎉 Your Phase 2 allocation is ready",
+    await sendEmail(params.studentEmail, "Your Phase 2 allocation is ready",
       buildSimpleHtml("Phase 2 Allocation", `Cluster: ${params.clusterName} · Venue: ${params.venue} · Group: ${params.group}`));
   }
 }
@@ -375,22 +375,38 @@ function escapeHtml(value: string): string {
 }
 
 function buildSimpleHtml(title: string, message: string): string {
-  return `<div style="font-family: Arial;max-width:600px;margin:0 auto;padding:24px;">
-    <h2 style="color:#14763b;">${escapeHtml(title)}</h2>
-    <p style="color:#475569;">${escapeHtml(message)}</p>
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+  return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <div style="background: linear-gradient(135deg, #7a1315, #640f11); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 20px;">${escapeHtml(title)}</h1>
+    </div>
+    <div style="text-align: center; padding: 20px 24px 4px;">
+      <img src="${appUrl}/must_Logo.png" alt="MUST" width="80" height="81" style="display: inline-block; width: 80px; height: auto;" />
+    </div>
+    <div style="background: #f8fafc; padding: 16px 24px 28px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+      <p style="color: #475569;">${escapeHtml(message)}</p>
+    </div>
   </div>`;
 }
 
 function buildFallbackSubmissionHtml(params: SubmissionEmailParams): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
   const clusterMap = Object.fromEntries(params.clusters.map((c: any) => [c.id, c]));
   const p1 = params.allocations?.find((a: any) => params.phases.find((p: any) => p.id === a.phaseId)?.phaseNumber === 1);
   const p2 = params.allocations?.find((a: any) => params.phases.find((p: any) => p.id === a.phaseId)?.phaseNumber === 2);
   const c1 = p1 ? clusterMap[p1.clusterId] : null;
   const c2 = p2 ? clusterMap[p2.clusterId] : null;
-  return `<div style="font-family: Arial;max-width:600px;margin:0 auto;">
-    <h2 style="color:#14763b;">🎉 IPT Placement Confirmed!</h2>
-    <p>Dear ${escapeHtml(params.studentName)},</p>
-    <p>${c1 ? `Phase 1: ${escapeHtml(c1.name)}` : ""}</p>
-    <p>${c2 ? `Phase 2: ${escapeHtml(c2.name)}` : ""}</p>
+  return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+    <div style="background: linear-gradient(135deg, #7a1315, #640f11); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 20px;">IPT Placement Confirmed</h1>
+    </div>
+    <div style="text-align: center; padding: 20px 24px 4px;">
+      <img src="${appUrl}/must_Logo.png" alt="MUST" width="80" height="81" style="display: inline-block; width: 80px; height: auto;" />
+    </div>
+    <div style="background: #f8fafc; padding: 16px 24px 28px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+      <p>Dear ${escapeHtml(params.studentName)},</p>
+      <p>${c1 ? `Phase 1: ${escapeHtml(c1.name)}` : ""}</p>
+      <p>${c2 ? `Phase 2: ${escapeHtml(c2.name)}` : ""}</p>
+    </div>
   </div>`;
 }
