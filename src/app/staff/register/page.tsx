@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const DEPARTMENTS = [
@@ -23,6 +24,7 @@ export default function StaffRegister() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [existsOpen, setExistsOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/clusters")
@@ -50,6 +52,10 @@ export default function StaffRegister() {
         }),
       });
       const data = await res.json();
+      if (data?.code === "USER_EXISTS" || res.status === 409) {
+        setExistsOpen(true);
+        return;
+      }
       if (!res.ok) throw new Error(data.error || "Registration failed");
       setSuccess(data.message || "Registration submitted. Check your email to activate your account.");
     } catch (err: any) { setError(err.message); }
@@ -118,6 +124,24 @@ export default function StaffRegister() {
           </p>
         </div>
       </motion.div>
+
+      <Dialog open={existsOpen} onClose={() => setExistsOpen(false)}>
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+            </div>
+            <DialogTitle>User Already Exists</DialogTitle>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Contact your facilitator or Admin, or reset password.</p>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setExistsOpen(false)}>Close</Button>
+          <Button onClick={() => { setExistsOpen(false); router.push("/forgot-password"); }}>Reset Password</Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }

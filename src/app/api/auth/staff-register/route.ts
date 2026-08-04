@@ -14,11 +14,13 @@ export async function POST(request: NextRequest) {
 
     const { name, email, phone, department, clusterId } = parsed.data;
 
-    const existing = await prisma.staff.findFirst({
-      where: { OR: [{ email }, phone ? { phone } : {}] },
-    });
-    if (existing) {
-      return NextResponse.json({ error: "An account with that email or phone already exists" }, { status: 409 });
+    const [existingStaff, existingStudent, existingAdmin] = await Promise.all([
+      prisma.staff.findFirst({ where: { OR: [{ email }, phone ? { phone } : {}] } }),
+      prisma.student.findFirst({ where: { email } }),
+      prisma.admin.findFirst({ where: { OR: [{ email }, phone ? { phone } : {}] } }),
+    ]);
+    if (existingStaff || existingStudent || existingAdmin) {
+      return NextResponse.json({ error: "User Already Exists, Contact your facilitator or Admin, or reset password", code: "USER_EXISTS" }, { status: 409 });
     }
 
     const placeholder = "$2b$12$placeholderplaceholderplaceholderplaceholderplaceholderp";
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
       message: "Registration submitted. Check your email to activate your account.",
     }, { status: 201 });
   } catch (e: any) {
-    if (e.code === "P2002") return NextResponse.json({ error: "Email or phone already exists" }, { status: 409 });
+    if (e.code === "P2002") return NextResponse.json({ error: "User Already Exists, Contact your facilitator or Admin, or reset password", code: "USER_EXISTS" }, { status: 409 });
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }

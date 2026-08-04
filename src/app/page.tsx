@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
 import { RoleModal } from "@/components/ui/RoleModal";
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { AlertCircle } from "lucide-react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -30,6 +32,7 @@ export default function HomePage() {
   const [programs, setPrograms] = useState<GroupedPrograms>({});
   const [selectedDept, setSelectedDept] = useState("");
   const [error, setError] = useState("");
+  const [existsOpen, setExistsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -79,6 +82,10 @@ export default function HomePage() {
         body: JSON.stringify({ studentId, fullName, email, password, confirmPassword, programId }),
       });
       const data = await res.json();
+      if (data?.code === "USER_EXISTS" || res.status === 409) {
+        setExistsOpen(true);
+        return;
+      }
       if (!res.ok) throw new Error(data.error || "Registration failed");
       router.push("/student/dashboard");
     } catch (err: any) { setError(err.message); }
@@ -221,6 +228,24 @@ export default function HomePage() {
         </AnimatePresence>
       </div>
       <RoleModal open={roleModalOpen} onClose={() => setRoleModalOpen(false)} onSelect={handleRoleSelect} />
+
+      <Dialog open={existsOpen} onClose={() => setExistsOpen(false)}>
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+            </div>
+            <DialogTitle>User Already Exists</DialogTitle>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Contact your facilitator or Admin, or reset password.</p>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setExistsOpen(false)}>Close</Button>
+          <Button onClick={() => { setExistsOpen(false); switchMode("login"); }}>Reset Password</Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }

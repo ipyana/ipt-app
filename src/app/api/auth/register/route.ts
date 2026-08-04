@@ -15,11 +15,13 @@ export async function POST(request: NextRequest) {
 
     const { studentId, fullName, email, password, programId } = parsed.data;
 
-    const existing = await prisma.student.findFirst({
-      where: { OR: [{ email }, { studentId }] },
-    });
-    if (existing) {
-      return NextResponse.json({ error: "Student already exists" }, { status: 409 });
+    const [existingStudent, existingStaff, existingAdmin] = await Promise.all([
+      prisma.student.findFirst({ where: { OR: [{ email }, { studentId }] } }),
+      prisma.staff.findUnique({ where: { email } }),
+      prisma.admin.findUnique({ where: { email } }),
+    ]);
+    if (existingStudent || existingStaff || existingAdmin) {
+      return NextResponse.json({ error: "User Already Exists, Contact your facilitator or Admin, or reset password", code: "USER_EXISTS" }, { status: 409 });
     }
 
     const program = await prisma.program.findUnique({
