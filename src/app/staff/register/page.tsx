@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
-import { Eye, EyeOff, Users, CheckCircle, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface Cluster { id: number; name: string; location: string }
@@ -47,10 +47,9 @@ export default function StaffRegister() {
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="w-full max-w-md">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
-          <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
-              <Users className="h-6 w-6 text-emerald-600" />
-            </div>
+          <div className="flex justify-center mb-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/must_Logo.png" alt="MUST Logo" className="h-24 w-24 object-contain" />
           </div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white text-center">Facilitator Registration</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Register as a cluster facilitator. Your account will be activated after approval.</p>

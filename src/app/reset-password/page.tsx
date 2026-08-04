@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
-import { Eye, EyeOff, KeyRound, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 function ResetPasswordForm() {
@@ -41,9 +41,8 @@ function ResetPasswordForm() {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="w-full max-w-sm">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
           <div className="flex justify-center mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
-              <KeyRound className="h-6 w-6 text-primary-600" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/must_Logo.png" alt="MUST Logo" className="h-24 w-24 object-contain" />
           </div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white text-center">Reset Password</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Enter the code sent to your email and set a new password</p>
