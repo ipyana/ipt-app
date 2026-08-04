@@ -74,12 +74,86 @@ export const clusterManageSchema = z.object({
 });
 
 export const studentAdminSchema = z.object({
-  studentId: z.string().min(3, "Registration number required"),
+  studentId: z
+    .string()
+    .min(14, "Registration number must be at least 14 characters")
+    .max(15, "Registration number cannot exceed 15 characters")
+    .refine((val) => val.startsWith("25"), {
+      message: "You are not eligible to apply/register in this IPT program",
+    }),
   fullName: z.string().min(2, "Full name required"),
   department: z.string().min(1, "Department required"),
   program: z.string().min(1, "Program required"),
   email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters").optional(),
+  password: strongPasswordSchema.optional(),
+});
+
+export const reapplySchema = z
+  .object({
+    type: z.enum(["reapplication", "transfer"]),
+    pref1: z.number().int().positive().optional(),
+    pref2: z.number().int().positive().optional(),
+    toClusterId: z.number().int().positive().optional(),
+    reason: z.string().min(1).optional(),
+  })
+  .refine((d) => (d.type === "reapplication" ? !!d.pref1 && !!d.pref2 && d.pref1 !== d.pref2 : true), {
+    message: "Select two distinct clusters for reapplication",
+    path: ["pref1"],
+  })
+  .refine((d) => (d.type === "transfer" ? !!d.toClusterId && (d.reason || "").trim().length >= 10 : true), {
+    message: "Select a cluster and provide a reason (min 10 characters)",
+    path: ["toClusterId"],
+  });
+
+export const transferSchema = z.object({
+  toClusterId: z.number().int().positive("Select a cluster"),
+  reason: z.string().min(10, "Provide a reason (min 10 characters)"),
+});
+
+export const staffTransferSchema = z.object({
+  toClusterId: z.number().int().positive("Select a cluster"),
+  reason: z.string().min(10, "Provide a reason (min 10 characters)"),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("A valid email is required"),
+});
+
+export const resetPasswordSchema = z.object({
+  email: z.string().email("A valid email is required"),
+  token: z.string().min(1, "Token is required"),
+  newPassword: strongPasswordSchema,
+});
+
+export const activateAccountSchema = z.object({
+  email: z.string().email("A valid email is required"),
+  token: z.string().min(1, "Token is required"),
+  newPassword: strongPasswordSchema,
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((d) => d.newPassword === d.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+export const announcementSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  body: z.string().min(1, "Message is required").max(5000),
+});
+
+export const groupActionSchema = z.object({
+  action: z.enum(["create-group", "move-student", "auto-balance"]),
+  clusterId: z.number().int().positive().optional(),
+  phaseId: z.number().int().positive().optional(),
+  name: z.string().min(1).max(100).optional(),
+  venueId: z.number().int().positive().optional(),
+  allocationId: z.number().int().positive().optional(),
+  groupId: z.number().int().positive().optional(),
+});
+
+export const staffTransferReviewSchema = z.object({
+  id: z.number().int().positive(),
+  action: z.enum(["approve", "reject"]),
+  notes: z.string().max(500).optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

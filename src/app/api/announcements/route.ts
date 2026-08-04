@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireStaff, requireAdmin } from "@/lib/auth";
 import { uploadAnnouncementFile } from "@/lib/storage";
 import { sendAnnouncementEmail } from "@/lib/email";
+import { announcementSchema } from "@/lib/validations";
+import { sendEmailsInBatches } from "@/lib/batch";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -45,8 +47,9 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const title = (formData.get("title") as string) || "";
     const body = (formData.get("body") as string) || "";
-    if (!title.trim() || !body.trim()) {
-      return err("Title and body are required", 400);
+    const parsed = announcementSchema.safeParse({ title, body });
+    if (!parsed.success) {
+      return err(parsed.error.issues[0].message, 400);
     }
 
     let attachmentUrl: string | undefined;
@@ -81,20 +84,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    for (const student of students) {
-      try {
-        await sendAnnouncementEmail({
-          studentName: student.fullName,
-          studentEmail: student.email,
-          clusterName: cluster?.name || "Your cluster",
-          title: announcement.title,
-          body: announcement.body,
-          facilitator: staff.name,
-          attachmentUrl: attachmentUrl || undefined,
-          attachmentName: attachmentName || undefined,
-        });
-      } catch { /* continue */ }
-    }
+    await sendEmailsInBatches(students, async (student) => {
+      await sendAnnouncementEmail({
+        studentName: student.fullName,
+        studentEmail: student.email,
+        clusterName: cluster?.name || "Your cluster",
+        title: announcement.title,
+        body: announcement.body,
+        facilitator: staff.name,
+        attachmentUrl: attachmentUrl || undefined,
+        attachmentName: attachmentName || undefined,
+      });
+      return true;
+    });
 
     return NextResponse.json(announcement, { status: 201 });
   } catch (e: any) {

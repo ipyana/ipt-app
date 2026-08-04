@@ -58,7 +58,10 @@ export async function PUT(request: NextRequest) {
     if (username) data.username = username;
     if (email) data.email = email;
     if (phone !== undefined) data.phone = phone;
-    if (role) data.role = role;
+    if (role) {
+      if (role === "super_admin") return err("Cannot assign super_admin role", 400);
+      data.role = role;
+    }
 
     const admin = await prisma.admin.update({ where: { id }, data });
     return NextResponse.json(admin);

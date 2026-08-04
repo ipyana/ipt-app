@@ -8,14 +8,7 @@ import { Select } from "@/components/ui/select";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-
-const DEPARTMENTS = [
-  { name: "Computer Science and Engineering", abbreviation: "CSE" },
-  { name: "Electronics and Telecommunication Engineering", abbreviation: "ETE" },
-  { name: "Informatics", abbreviation: "IF" },
-  { name: "Information Science and Technology", abbreviation: "IST" },
-  { name: "Technical Education", abbreviation: "TED" },
-];
+import { DEPARTMENTS } from "@/lib/departments";
 
 export default function StaffRegister() {
   const router = useRouter();

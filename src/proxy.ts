@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || "fallback-secret");
+function getSecret(): Uint8Array {
+  const raw = process.env.JWT_SECRET;
+  if (!raw || raw.length < 32 || raw.includes("change-me") || raw === "fallback-secret") {
+    throw new Error("JWT_SECRET is not configured with a strong value");
+  }
+  return new TextEncoder().encode(raw);
+}
+
+const secret = getSecret();
 
 async function isValidToken(token: string): Promise<{ id: number; role: string } | null> {
   try {
@@ -85,7 +93,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (isAdminPage && !ADMIN_LIKE_ROLES.includes(session.role)) {
+  if (isAdminPage && !ADMIN_LIKE_ROLES.includes(session.role) && session.role !== "super_admin") {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -108,16 +116,22 @@ function addSecurityHeaders(request: NextRequest, response: NextResponse) {
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  response.headers.set(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  );
 
   if (request.nextUrl.pathname.startsWith("/api/")) {
     const origin = request.headers.get("origin") || "";
-    const allowedOrigins = [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"];
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
-      response.headers.set("Access-Control-Allow-Origin", origin || "*");
+    const allowedOrigins = [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"].filter(Boolean);
+    if (allowedOrigins.includes(origin)) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+      response.headers.set("Vary", "Origin");
+      response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+      response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      response.headers.set("Access-Control-Allow-Credentials", "true");
     }
-    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    response.headers.set("Access-Control-Allow-Credentials", "true");
   }
 }
 

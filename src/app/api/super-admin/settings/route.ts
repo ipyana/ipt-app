@@ -30,7 +30,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     await requireSuperAdmin();
-    const { name, startDate, endDate, weeksPerPhase } = await request.json();
+    const { name, startDate, endDate, weeksPerPhase, confirmReset } = await request.json();
     if (!name || !startDate || !endDate) return err("Name, start date, and end date are required", 400);
 
     const existing = await prisma.iptSession.findFirst({ orderBy: { createdAt: "desc" } });
@@ -40,6 +40,11 @@ export async function POST(request: NextRequest) {
     const wpp = weeksPerPhase || 5;
 
     if (existing) {
+      const allocationCount = await prisma.phaseAllocation.count();
+      if (allocationCount > 0 && !confirmReset) {
+        return err("This will delete all existing allocations and groups. Pass confirmReset=true to proceed.", 409);
+      }
+
       await prisma.iptSession.update({
         where: { id: existing.id },
         data: { name, startDate: sDate, endDate: eDate, weeksPerPhase: wpp },

@@ -3,9 +3,15 @@ import { prisma } from "@/lib/db";
 import { staffRegisterSchema } from "@/lib/validations";
 import { generateToken } from "@/lib/otp";
 import { sendAccountActivationEmail } from "@/lib/email";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
+    const limit = await checkRateLimit(clientKey(request, "staff-register"), 5);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: `Too many registration attempts. Try again in ${limit.retryAfterSec} seconds.` }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = staffRegisterSchema.safeParse(body);
     if (!parsed.success) {

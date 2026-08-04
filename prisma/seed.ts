@@ -1,7 +1,7 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
-import { CLUSTER_SEED_DATA, DEPARTMENTS, PROGRAMS_BY_DEPT } from "../src/lib/clusterData";
+import { CLUSTER_SEED_DATA, DEPARTMENTS, PROGRAMS_BY_DEPT } from "./clusterData";
 import "dotenv/config";
 
 const connectionString = process.env.DATABASE_URL!;

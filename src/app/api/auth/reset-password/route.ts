@@ -2,14 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/otp";
-import { strongPasswordSchema } from "@/lib/validations";
+import { strongPasswordSchema, resetPasswordSchema } from "@/lib/validations";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, token, newPassword } = await request.json();
-    if (!email || !token || !newPassword) {
-      return NextResponse.json({ error: "Email, token, and new password are required" }, { status: 400 });
+    const limit = await checkRateLimit(clientKey(request, "reset-password"), 10);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: `Too many attempts. Try again in ${limit.retryAfterSec} seconds.` }, { status: 429 });
     }
+
+    const body = await request.json();
+    const parsed = resetPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+
+    const { email, token, newPassword } = parsed.data;
     const pwCheck = strongPasswordSchema.safeParse(newPassword);
     if (!pwCheck.success) {
       return NextResponse.json({ error: pwCheck.error.issues[0].message }, { status: 400 });

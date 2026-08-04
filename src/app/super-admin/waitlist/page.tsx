@@ -104,7 +104,7 @@ export default function SuperAdminWaitlist() {
                       <TableCell><Badge>{w.pref1Name || "—"}</Badge></TableCell>
                       <TableCell><Badge variant="secondary">{w.pref2Name || "—"}</Badge></TableCell>
                       <TableCell className="text-xs text-slate-400">
-                        {w.waitlistedAt ? new Date(w.waitlistedAt).toLocaleDateString() : "—"}
+                        {w.waitlistedAt ? new Date(w.waitlistedAt).toLocaleDateString("en-TZ") : "—"}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">

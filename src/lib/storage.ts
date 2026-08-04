@@ -106,7 +106,11 @@ export async function readStoredFile(key: string): Promise<{ data: Buffer; conte
   }
 
   try {
-    const filepath = path.join(process.cwd(), "uploads", key.replace(/^\/?/, ""));
+    const uploadsRoot = path.resolve(process.cwd(), "uploads");
+    const filepath = path.resolve(uploadsRoot, key.replace(/^\/+/, ""));
+    if (!filepath.startsWith(uploadsRoot + path.sep)) {
+      return null;
+    }
     const data = await readFile(filepath);
     return { data, contentType: "application/octet-stream" };
   } catch {

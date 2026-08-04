@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { reapplySchema } from "@/lib/validations";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -23,10 +24,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { type } = body;
+    const parsed = reapplySchema.safeParse(body);
+    if (!parsed.success) {
+      return err(parsed.error.issues[0].message, 400);
+    }
+
+    const { type } = parsed.data;
 
     if (type === "reapplication") {
-      const { pref1, pref2 } = body;
+      const { pref1, pref2 } = parsed.data;
       if (!pref1 || !pref2 || pref1 === pref2) {
         return err("Select two distinct clusters for reapplication", 400);
       }
@@ -46,6 +52,9 @@ export async function POST(request: NextRequest) {
         );
         if (!cd) {
           return err(`Your department has no slots in "${cluster.name}"`, 403);
+        }
+        if (cd.enrolled >= cd.slots) {
+          return err(`No available slots in "${cluster.name}"`, 409);
         }
       }
 
@@ -77,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "transfer") {
-      const { toClusterId, reason } = body;
+      const { toClusterId, reason } = parsed.data;
       if (!toClusterId || !reason || reason.trim().length < 10) {
         return err("Select a cluster and provide a reason (min 10 characters)", 400);
       }

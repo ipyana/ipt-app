@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import {
   Shield, Users, GraduationCap, Layers, Clock, CheckCircle,
-  AlertTriangle, TrendingUp, List,
+  AlertTriangle, TrendingUp, List, ArrowRightLeft,
 } from "lucide-react";
 
 export default function SuperAdminOverview() {
@@ -49,8 +49,9 @@ export default function SuperAdminOverview() {
     { label: "Manage Admins", desc: "Create and manage admin accounts", path: "/super-admin/admins", icon: Shield },
     { label: "Manage Staff", desc: "CRUD staff, move between clusters", path: "/super-admin/staff", icon: Users },
     { label: "Waitlist", desc: "Review and approve waitlisted students", path: "/super-admin/waitlist", icon: List },
-    { label: "Settings", desc: "Configure IPT session dates", path: "/super-admin/settings", icon: Layers },
+    { label: "Settings", desc: "Configure IPT session dates", path: "/super-admin/system-config/session", icon: Layers },
     { label: "Allocations", desc: "Manual allocation overrides", path: "/admin/allocations", icon: CheckCircle },
+    { label: "Staff Transfers", desc: "Approve facilitator cluster transfers", path: "/super-admin/staff-transfers", icon: ArrowRightLeft },
   ];
 
   return (

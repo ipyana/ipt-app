@@ -21,11 +21,17 @@ export default function StaffDashboard() {
   const [transferReason, setTransferReason] = useState("");
   const [transferMsg, setTransferMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [transferSaving, setTransferSaving] = useState(false);
+  const [allClusters, setAllClusters] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/staff/students")
       .then((r) => r.json())
       .then((d) => setData(d))
+      .catch(() => {});
+    fetch("/api/clusters")
+      .then((r) => r.json())
+      .then((d) => setAllClusters(Array.isArray(d) ? d : []))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -233,14 +239,9 @@ export default function StaffDashboard() {
               <Label>New Cluster</Label>
               <Select value={transferCluster || ""} onChange={(e) => setTransferCluster(Number(e.target.value))}>
                 <option value="">Select cluster...</option>
-                <option value="1">Computer Maintenance and Peripherals</option>
-                <option value="2">Internet of Things (IoT) &amp; Edge AI</option>
-                <option value="3">Computer Networking and Fiber Optics</option>
-                <option value="4">Electronics Prototyping and Automation</option>
-                <option value="5">Software Development</option>
-                <option value="6">Cyber Security</option>
-                <option value="7">Multimedia and Marketing</option>
-                <option value="8">Artificial Intelligence and Signal Processing</option>
+                {allClusters
+                  .filter((c) => c.id !== cluster?.id)
+                  .map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
               </Select>
             </div>
             <div className="space-y-1">

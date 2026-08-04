@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOnly } from "@/lib/auth";
 import { listEmailLogs } from "@/lib/email/logs";
 import { sendEmail } from "@/lib/email/service";
 import { testSmtpConnection } from "@/lib/email/smtp";
@@ -12,7 +12,7 @@ function err(message: string, status: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { searchParams } = new URL(request.url);
     const tab = searchParams.get("tab") || "logs";
 
@@ -40,13 +40,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { action, to } = await request.json();
 
     if (action === "test") {
       if (!to) return err("Recipient email is required", 400);
       const result = await sendEmail(to, "🧪 IPT Test Email", `<div style="font-family:Arial;padding:24px;">
-        <h2 style="color:#6366f1;">🧪 Test Email</h2>
+        <h2 style="color:#7a1315;">🧪 Test Email</h2>
         <p>This is a test email from the IPT Application System.</p>
         <p style="color:#94a3b8;">Sent at: ${new Date().toISOString()}</p>
       </div>`, "test_email");
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { key, value } = await request.json();
     if (!key) return err("Key is required", 400);
 

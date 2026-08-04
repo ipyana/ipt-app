@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/auth";
+import { staffTransferSchema } from "@/lib/validations";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -33,7 +34,9 @@ export async function POST(request: NextRequest) {
     if (staff.status !== "active") return err("Account is not active", 403);
     if (!staff.clusterId) return err("You are not assigned to any cluster", 400);
 
-    const { toClusterId, reason } = await request.json();
+    const parsed = staffTransferSchema.safeParse(await request.json());
+    if (!parsed.success) return err(parsed.error.issues[0].message, 400);
+    const { toClusterId, reason } = parsed.data;
     if (!toClusterId) return err("Select a cluster", 400);
     if (toClusterId === staff.clusterId) return err("You are already assigned to that cluster", 400);
     if (!reason || reason.trim().length < 10) return err("Provide a reason (min 10 characters)", 400);

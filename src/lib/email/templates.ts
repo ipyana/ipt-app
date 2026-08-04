@@ -17,7 +17,7 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "applications",
     subject: "🎉 IPT Placement Confirmed — {{studentName}}",
     body: `<div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
-  <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 32px; border-radius: 16px 16px 0 0; text-align: center;">
+  <div style="background: linear-gradient(135deg, #14763b, #106030); padding: 32px; border-radius: 16px 16px 0 0; text-align: center;">
     <h1 style="color: white; margin: 0; font-size: 24px;">🎉 IPT Placement Confirmed!</h1>
     <p style="color: #bfdbfe; margin: 8px 0 0; font-size: 14px;">Industrial Practical Training 2025/2026</p>
   </div>
@@ -26,14 +26,14 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     <p style="color: #475569; line-height: 1.6;">Congratulations! Your IPT cluster placement has been confirmed.</p>
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin: 24px 0;">
       <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-        <h3 style="margin: 0 0 8px; color: #2563eb;">Phase 1 — {{phase1Cluster}}</h3>
+        <h3 style="margin: 0 0 8px; color: #14763b;">Phase 1 — {{phase1Cluster}}</h3>
         <p style="margin: 0; color: #64748b; font-size: 13px;">{{phase1Dates}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Supervisors: {{phase1Staff}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Venue: {{phase1Venue}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Group: {{phase1Group}}</p>
       </div>
       <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-        <h3 style="margin: 0 0 8px; color: #059669;">Phase 2 — {{phase2Cluster}}</h3>
+        <h3 style="margin: 0 0 8px; color: #14763b;">Phase 2 — {{phase2Cluster}}</h3>
         <p style="margin: 0; color: #64748b; font-size: 13px;">{{phase2Dates}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Supervisors: {{phase2Staff}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Venue: {{phase2Venue}}</p>
@@ -41,11 +41,11 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
       </div>
       <div style="padding: 16px 20px; text-align: center;">
         <p style="margin: 0 0 10px; color: #475569; font-size: 13px;"><strong>Save your schedule to your calendar:</strong></p>
-        <a href="{{phase1CalendarGoogle}}" style="background: #2563eb; color: white; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px;">Add Phase 1 to Google</a>
-        <a href="{{phase1CalendarIcs}}" style="background: #ffffff; color: #2563eb; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px; border: 1px solid #bfdbfe;">Add Phase 1 to Apple</a>
+        <a href="{{phase1CalendarGoogle}}" style="background: #14763b; color: white; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px;">Add Phase 1 to Google</a>
+        <a href="{{phase1CalendarIcs}}" style="background: #ffffff; color: #14763b; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px; border: 1px solid #bfdbfe;">Add Phase 1 to Apple</a>
         <br>
-        <a href="{{phase2CalendarGoogle}}" style="background: #059669; color: white; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px;">Add Phase 2 to Google</a>
-        <a href="{{phase2CalendarIcs}}" style="background: #ffffff; color: #059669; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px; border: 1px solid #a7f3d0;">Add Phase 2 to Apple</a>
+        <a href="{{phase2CalendarGoogle}}" style="background: #14763b; color: white; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px;">Add Phase 2 to Google</a>
+        <a href="{{phase2CalendarIcs}}" style="background: #ffffff; color: #14763b; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-block; margin: 4px; border: 1px solid #a7f3d0;">Add Phase 2 to Apple</a>
       </div>
     </div>
     <p style="color: #64748b; font-size: 14px;">Please report to your assigned cluster on the start date.</p>
@@ -60,14 +60,14 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "applications",
     subject: "IPT Allocation — {{clusterName}}",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #2563eb; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #14763b; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">IPT Allocation Confirmed</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{studentName}}</strong> ({{studentId}}),</p>
     <p>Your IPT cluster allocation has been confirmed:</p>
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-      <p style="margin: 0; font-size: 18px; font-weight: bold; color: #2563eb;">{{clusterName}}</p>
+      <p style="margin: 0; font-size: 18px; font-weight: bold; color: #14763b;">{{clusterName}}</p>
       <p style="margin: 8px 0 0; color: #64748b;">Location: {{clusterLocation}}</p>
     </div>
     <p style="color: #64748b; font-size: 14px;">Please report to the cluster location on the start date.</p>
@@ -82,14 +82,14 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "transfers",
     subject: "✅ Transfer Approved — {{clusterName}}",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #059669; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #14763b; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">✅ Transfer Approved</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{studentName}}</strong> ({{studentId}}),</p>
-    <p>Your cluster transfer request has been <strong style="color: #059669;">approved</strong>.</p>
+    <p>Your cluster transfer request has been <strong style="color: #14763b;">approved</strong>.</p>
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-      <p style="margin: 0; font-size: 18px; font-weight: bold; color: #059669;">{{clusterName}}</p>
+      <p style="margin: 0; font-size: 18px; font-weight: bold; color: #14763b;">{{clusterName}}</p>
       <p style="margin: 8px 0 0; color: #64748b;">Location: {{clusterLocation}}</p>
     </div>
     <p style="color: #64748b; font-size: 14px;">Please report to your new cluster immediately.</p>
@@ -120,87 +120,25 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     required: true,
   },
   {
-    key: "report_reminder",
-    name: "Report Reminder",
-    category: "applications",
-    subject: "IPT Report Submission Reminder",
-    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #f59e0b; padding: 24px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 20px;">📋 Report Reminder</h1>
-  </div>
-  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
-    <p>Dear <strong>{{studentName}}</strong>,</p>
-    <p>This is a reminder to submit your IPT report before the deadline.</p>
-    <p>Please log in to the IPT portal to upload your report.</p>
-  </div>
-</div>`,
-    variables: ["studentName"],
-    required: false,
-  },
-  {
     key: "password_reset",
     name: "Password Reset",
     category: "auth",
     subject: "Reset your IPT password",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #4f46e5; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #7a1315; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">Password Reset</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{name}}</strong>,</p>
     <p>We received a request to reset your password. Use the link below to set a new password. This link is only valid for one use.</p>
     <div style="text-align: center; margin: 20px 0;">
-      <a href="{{resetLink}}" style="background: #4f46e5; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; display: inline-block;">Reset My Password</a>
+      <a href="{{resetLink}}" style="background: #7a1315; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; display: inline-block;">Reset My Password</a>
     </div>
     <p style="color: #64748b; font-size: 13px;">This link expires in <strong>24 hours</strong>. If you did not request a password reset, please ignore this email.</p>
     <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
   </div>
 </div>`,
     variables: ["name", "resetLink", "appName"],
-    required: true,
-  },
-  {
-    key: "otp_email",
-    name: "Verification Code",
-    category: "auth",
-    subject: "Your verification code",
-    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #2563eb; padding: 24px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 20px;">Verification Code</h1>
-  </div>
-  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
-    <p>Dear <strong>{{name}}</strong>,</p>
-    <p>Your one-time verification code is:</p>
-    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
-      <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">{{otpCode}}</p>
-    </div>
-    <p style="color: #64748b; font-size: 13px;">This code expires in <strong>5 minutes</strong>.</p>
-  </div>
-</div>`,
-    variables: ["name", "otpCode"],
-    required: false,
-  },
-  {
-    key: "staff_approved",
-    name: "Facilitator Approved",
-    category: "staff",
-    subject: "Your facilitator account has been approved",
-    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #059669; padding: 24px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 20px;">Account Approved</h1>
-  </div>
-  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
-    <p>Dear <strong>{{name}}</strong>,</p>
-    <p>Congratulations! Your facilitator account has been <strong style="color: #059669;">approved</strong>.</p>
-    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-      <p style="margin: 0; font-size: 16px; font-weight: bold; color: #059669;">{{clusterName}}</p>
-      <p style="margin: 8px 0 0; color: #64748b;">Location: {{clusterLocation}}</p>
-    </div>
-    <p style="color: #64748b; font-size: 14px;">You can now log in using your email or phone number to view your assigned students.</p>
-    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
-  </div>
-</div>`,
-    variables: ["name", "clusterName", "clusterLocation", "appName"],
     required: true,
   },
   {
@@ -225,41 +163,19 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     required: false,
   },
   {
-    key: "admin_activation",
-    name: "Admin Account Activation",
-    category: "auth",
-    subject: "Activate your admin account",
-    body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #7c3aed; padding: 24px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 20px;">Admin Account Activation</h1>
-  </div>
-  <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
-    <p>Dear <strong>{{name}}</strong>,</p>
-    <p>An admin account has been created for you. Use the link below to activate your account and set your password:</p>
-    <div style="text-align: center; margin: 20px 0;">
-      <a href="{{activationLink}}" style="background: #7c3aed; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Activate My Account</a>
-    </div>
-    <p style="color: #64748b; font-size: 13px;">This link expires in <strong>24 hours</strong>. If you did not request this, please ignore this email.</p>
-    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
-  </div>
-</div>`,
-    variables: ["name", "activationLink", "appName"],
-    required: true,
-  },
-  {
     key: "account_created",
     name: "Account Created",
     category: "auth",
     subject: "Welcome to the IPT Portal, {{name}}",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #2563eb; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #14763b; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">Account Created</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{name}}</strong>,</p>
     <p>Your <strong>{{role}}</strong> account on the IPT Portal has been created successfully. You can now sign in to continue.</p>
     <div style="text-align: center; margin: 20px 0;">
-      <a href="{{loginLink}}" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Sign In</a>
+      <a href="{{loginLink}}" style="background: #14763b; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Sign In</a>
     </div>
     <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
   </div>
@@ -273,14 +189,14 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "auth",
     subject: "Activate your IPT Portal account",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #7c3aed; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #7a1315; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">Account Activation</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{name}}</strong>,</p>
     <p>An account has been created for you. Use the link below to activate your account and set your password:</p>
     <div style="text-align: center; margin: 20px 0;">
-      <a href="{{activationLink}}" style="background: #7c3aed; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Activate My Account</a>
+      <a href="{{activationLink}}" style="background: #7a1315; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Activate My Account</a>
     </div>
     <p style="color: #64748b; font-size: 13px;">This link expires in <strong>24 hours</strong>. If you did not request this, please ignore this email.</p>
     <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
@@ -295,17 +211,17 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "auth",
     subject: "Your IPT Portal account is now active",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #059669; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #14763b; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">Account Activated</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{name}}</strong>,</p>
-    <p>Congratulations! Your account has been <strong style="color: #059669;">activated</strong> successfully. You can now sign in using your email or phone number.</p>
+    <p>Congratulations! Your account has been <strong style="color: #14763b;">activated</strong> successfully. You can now sign in using your email or phone number.</p>
     {{#clusterName}}<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
       <p style="margin: 0;"><strong>Assigned Cluster:</strong> {{clusterName}}</p>
     </div>{{/clusterName}}
     <div style="text-align: center; margin: 20px 0;">
-      <a href="{{loginLink}}" style="background: #059669; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Sign In</a>
+      <a href="{{loginLink}}" style="background: #14763b; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">Sign In</a>
     </div>
     <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>
   </div>
@@ -370,7 +286,7 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "applications",
     subject: "IPT Reapplication {{status}}",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #6366f1; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #974748; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">Reapplication {{status}}</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
@@ -443,14 +359,14 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "applications",
     subject: "🎉 Your Phase 2 allocation is ready",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #059669; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #14763b; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">Phase 2 Allocation</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
     <p>Dear <strong>{{studentName}}</strong> ({{studentId}}),</p>
     <p>Your Phase 2 IPT allocation has been confirmed.</p>
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-      <p style="margin: 4px 0; font-size: 16px; font-weight: bold; color: #059669;">{{clusterName}}</p>
+      <p style="margin: 4px 0; font-size: 16px; font-weight: bold; color: #14763b;">{{clusterName}}</p>
       <p style="margin: 4px 0;"><strong>Venue:</strong> {{venue}}</p>
       <p style="margin: 4px 0;"><strong>Group:</strong> {{group}}</p>
       <p style="margin: 4px 0;"><strong>Dates:</strong> {{phaseDates}}</p>
@@ -492,7 +408,7 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     category: "system",
     subject: "IPT Test Email",
     body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: #6366f1; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="background: #974748; padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 20px;">🧪 Test Email</h1>
   </div>
   <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
@@ -509,12 +425,25 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
 const VAR_REGEX = /\{\{(\w+)\}\}/g;
 const CONDITIONAL_REGEX = /\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g;
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case "&": return "&amp;";
+      case "<": return "&lt;";
+      case ">": return "&gt;";
+      case '"': return "&quot;";
+      case "'": return "&#39;";
+      default: return c;
+    }
+  });
+}
+
 function renderSection(body: string, vars: Record<string, string>): string {
   return body
     .replace(CONDITIONAL_REGEX, (_m: string, key: string, inner: string) => {
       return vars[key] ? inner : "";
     })
-    .replace(VAR_REGEX, (_m: string, key: string) => vars[key] ?? `{{${key}}}`);
+    .replace(VAR_REGEX, (_m: string, key: string) => escapeHtml(vars[key] ?? `{{${key}}}`));
 }
 
 export function applyTemplate(template: { subject: string; body: string }, vars: Record<string, string>): { subject: string; html: string } {

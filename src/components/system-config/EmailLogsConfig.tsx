@@ -70,7 +70,7 @@ export function EmailLogsConfig() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-red-500 max-w-[150px] truncate">{log.error || "—"}</TableCell>
-                  <TableCell className="text-xs text-slate-400">{new Date(log.createdAt).toLocaleString()}</TableCell>
+                  <TableCell className="text-xs text-slate-400">{new Date(log.createdAt).toLocaleString("en-TZ")}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

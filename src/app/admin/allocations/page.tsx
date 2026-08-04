@@ -194,7 +194,9 @@ export default function AdminAllocations() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((app) => (
+                {filtered.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-sm text-slate-400">No applications found</TableCell></TableRow>
+                ) : filtered.map((app) => (
                   <TableRow key={app.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

@@ -59,10 +59,10 @@ export default function StudentStatus() {
   async function handleTransferSubmit() {
     setTransferError(""); setTransferSuccess(""); setTransferSaving(true);
     try {
-      const res = await fetch("/api/applications/transfer", {
+      const res = await fetch("/api/applications/reapply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transferForm),
+        body: JSON.stringify({ type: "transfer", toClusterId: transferForm.toClusterId, reason: transferForm.reason }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");

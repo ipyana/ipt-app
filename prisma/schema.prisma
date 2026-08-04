@@ -225,6 +225,7 @@ model Otp {
   email     String
   code      String
   purpose   String
+  attempts  Int      @default(0)
   expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")

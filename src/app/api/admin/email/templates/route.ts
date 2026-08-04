@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminOnly } from "@/lib/auth";
 import { listEmailTemplates, getEmailTemplate, updateEmailTemplate, resetEmailTemplate, syncDefaultTemplates } from "@/lib/email/templates";
 
 function err(message: string, status: number) {
@@ -8,7 +8,7 @@ function err(message: string, status: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { searchParams } = new URL(request.url);
     const key = searchParams.get("key");
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { action } = await request.json();
 
     if (action === "sync") {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { key, subject, body, enabled } = await request.json();
     if (!key) return err("Key is required", 400);
 
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { key } = await request.json();
     if (!key) return err("Key is required", 400);
 

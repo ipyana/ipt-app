@@ -106,7 +106,7 @@ export default function SuperAdminAdmins() {
                     <TableCell className="font-medium">{u.username}</TableCell>
                     <TableCell className="text-sm text-slate-500">{u.email}</TableCell>
                     <TableCell><Badge variant={roleBadge[u.role] as any}>{u.role.replace("_", " ")}</Badge></TableCell>
-                    <TableCell className="text-xs text-slate-400">{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-xs text-slate-400">{new Date(u.createdAt).toLocaleDateString("en-TZ")}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(u)}><Pencil className="h-4 w-4" /></Button>

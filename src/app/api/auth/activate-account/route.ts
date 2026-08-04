@@ -2,16 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/otp";
-import { strongPasswordSchema } from "@/lib/validations";
+import { activateAccountSchema, strongPasswordSchema } from "@/lib/validations";
 import { sendAccountActivatedEmail } from "@/lib/email";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, token, newPassword, confirmPassword } = await request.json();
-
-    if (!email || !token || !newPassword || !confirmPassword) {
-      return NextResponse.json({ error: "Email, activation token, and password are required" }, { status: 400 });
+    const limit = await checkRateLimit(clientKey(request, "activate-account"), 10);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: `Too many attempts. Try again in ${limit.retryAfterSec} seconds.` }, { status: 429 });
     }
+
+    const body = await request.json();
+    const parsed = activateAccountSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+
+    const { email, token, newPassword, confirmPassword } = parsed.data;
     if (newPassword !== confirmPassword) {
       return NextResponse.json({ error: "Passwords do not match" }, { status: 400 });
     }

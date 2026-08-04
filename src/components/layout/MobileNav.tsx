@@ -42,7 +42,7 @@ export function MobileNav({ role, open, onClose, onLogout }: MobileNavProps) {
             className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar shadow-xl lg:hidden"
           >
             <div className="flex h-12 items-center justify-between border-b border-border px-4">
-              <span className="text-sm font-bold text-foreground">CoICT — IPT</span>
+              <span className="text-sm font-bold text-foreground">MUST — IPT</span>
               <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-sidebar-hover">
                 <X className="h-4 w-4" />
               </button>

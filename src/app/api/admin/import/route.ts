@@ -63,16 +63,16 @@ export async function POST(request: NextRequest) {
 
         if (slots > 0) {
           const existing = await prisma.clusterDepartment.findUnique({
-            where: { clusterId_departmentId: { clusterId: cluster.id, departmentId: program.id } },
+            where: { clusterId_departmentId: { clusterId: cluster.id, departmentId: department.id } },
           });
           if (!existing) {
             await prisma.clusterDepartment.create({
-              data: { clusterId: cluster.id, departmentId: program.id, slots },
+              data: { clusterId: cluster.id, departmentId: department.id, slots },
             });
             allocationsCreated++;
           } else if (existing.slots !== slots) {
             await prisma.clusterDepartment.update({
-              where: { clusterId_departmentId: { clusterId: cluster.id, departmentId: program.id } },
+              where: { clusterId_departmentId: { clusterId: cluster.id, departmentId: department.id } },
               data: { slots },
             });
             allocationsCreated++;

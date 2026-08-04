@@ -36,14 +36,3 @@ export async function assignGroup(clusterId: number, phaseId: number): Promise<n
   return pick.id;
 }
 
-/** Returns the group (and its venue) for a given phase allocation. */
-export async function getGroupForAllocation(phaseAllocationId: number) {
-  return prisma.phaseAllocation.findUnique({
-    where: { id: phaseAllocationId },
-    include: { group: { include: { venue: true } } },
-  });
-}
-
-export async function countGroupMembers(groupId: number): Promise<number> {
-  return prisma.phaseAllocation.count({ where: { groupId } });
-}

@@ -1,6 +1,8 @@
 # IPT Application System — UI/UX Redesign Summary
 
-**Project:** CoICT — IPT 2025/2026 (Mbeya University of Science and Technology)  
+> **Note:** This document is a **design reference**. Some mockup details (kenyan names, "3 preferences", CoICT branding, demo reg numbers like `20250001`) are **superseded** — see `README.md` and `IMPLEMENTATION.md` for the current behavior. Brand colors are now **#14763b** (primary) and **#7a1315** (accent).
+
+**Project:** MUST — IPT 2025/2026 (Mbeya University of Science and Technology)  
 **Stack:** Next.js 16 App Router · TypeScript · Tailwind CSS 4 · Framer Motion  
 **Libraries:** Lucide React · next-themes · shadcn/ui patterns · class-variance-authority
 

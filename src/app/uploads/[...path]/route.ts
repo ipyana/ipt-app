@@ -5,7 +5,11 @@ import path from "path";
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
     const { path: segments } = await params;
-    const filepath = path.join(process.cwd(), "uploads", ...segments.map((s) => decodeURIComponent(s)));
+    const uploadsRoot = path.resolve(process.cwd(), "uploads");
+    const filepath = path.resolve(uploadsRoot, ...segments.map((s) => decodeURIComponent(s)));
+    if (!filepath.startsWith(uploadsRoot + path.sep)) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
     const s = await stat(filepath);
     if (!s.isFile()) {
       return new NextResponse("Not found", { status: 404 });

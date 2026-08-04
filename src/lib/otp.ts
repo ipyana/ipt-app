@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000;
 const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const MAX_ATTEMPTS = 5;
 
 export async function generateOtp(email: string, purpose: string): Promise<string> {
   const code = crypto.randomInt(100000, 999999).toString();
@@ -40,7 +41,11 @@ export async function verifyToken(email: string, token: string, purpose: string)
     orderBy: { createdAt: "desc" },
   });
 
-  if (!otp) return false;
+  if (!otp) {
+    await recordFailedAttempt(email, purpose, token);
+    return false;
+  }
+  if (otp.attempts >= MAX_ATTEMPTS) return false;
 
   await prisma.otp.update({
     where: { id: otp.id },
@@ -56,7 +61,11 @@ export async function verifyOtp(email: string, code: string, purpose: string): P
     orderBy: { createdAt: "desc" },
   });
 
-  if (!otp) return false;
+  if (!otp) {
+    await recordFailedAttempt(email, purpose, code);
+    return false;
+  }
+  if (otp.attempts >= MAX_ATTEMPTS) return false;
 
   await prisma.otp.update({
     where: { id: otp.id },
@@ -64,4 +73,21 @@ export async function verifyOtp(email: string, code: string, purpose: string): P
   });
 
   return true;
+}
+
+async function recordFailedAttempt(email: string, purpose: string, code: string) {
+  try {
+    const recent = await prisma.otp.findFirst({
+      where: { email, purpose, used: false, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (recent && recent.code !== code) {
+      await prisma.otp.update({
+        where: { id: recent.id },
+        data: { attempts: { increment: 1 } },
+      });
+    }
+  } catch {
+    /* ignore */
+  }
 }

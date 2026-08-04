@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireCoordinatorOrAbove } from "@/lib/auth";
 import { sendStaffTransferResultEmail } from "@/lib/email";
+import { staffTransferReviewSchema } from "@/lib/validations";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -29,7 +30,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const admin = await requireCoordinatorOrAbove();
-    const { id, action, notes } = await request.json();
+    const body = await request.json();
+    const parsed = staffTransferReviewSchema.safeParse(body);
+    if (!parsed.success) return err(parsed.error.issues[0].message, 400);
+    const { id, action, notes } = parsed.data;
     if (!id || !["approve", "reject"].includes(action)) {
       return err("ID and action (approve/reject) are required", 400);
     }

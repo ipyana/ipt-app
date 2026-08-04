@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { assignGroup } from "@/lib/groups";
 import { sendPhase2ConfirmedEmail } from "@/lib/email";
+import { sendEmailsInBatches } from "@/lib/batch";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -26,7 +27,14 @@ export async function POST() {
     });
     for (const ph of phases) phase2ByCluster.set(ph.clusterId, ph);
 
+    const clusters = await prisma.cluster.findMany();
+    const clusterMap = Object.fromEntries(clusters.map((c) => [c.id, c]));
+    const groups = await prisma.group.findMany({ where: { phaseId: { in: phases.map((p) => p.id) } }, include: { venue: true } });
+    const groupMap = new Map<number, any>(groups.map((g) => [g.id, g]));
+
     let assigned = 0;
+
+    const payloads: { app: any; phase2: any; group: any }[] = [];
 
     for (const app of apps) {
       const clusterId = app.allocatedCluster;
@@ -35,13 +43,14 @@ export async function POST() {
       if (!phase2) continue;
 
       const existing = app.allocations.find((a: any) => a.phaseId === phase2.id);
+      let gid: number | null = existing?.groupId ?? null;
       if (!existing) {
-        const gid = await assignGroup(clusterId, phase2.id);
+        gid = await assignGroup(clusterId, phase2.id);
         await prisma.phaseAllocation.create({
           data: { phaseId: phase2.id, applicationId: app.id, clusterId, groupId: gid },
         });
       } else if (!existing.groupId) {
-        const gid = await assignGroup(clusterId, phase2.id);
+        gid = await assignGroup(clusterId, phase2.id);
         await prisma.phaseAllocation.update({
           where: { id: existing.id },
           data: { groupId: gid },
@@ -49,24 +58,21 @@ export async function POST() {
       }
       assigned++;
 
-      const alloc = await prisma.phaseAllocation.findFirst({
-        where: { applicationId: app.id, phaseId: phase2.id },
-        include: { group: { include: { venue: true } } },
-      });
-      const cluster = await prisma.cluster.findUnique({ where: { id: clusterId } });
-
-      try {
-        await sendPhase2ConfirmedEmail({
-          studentName: app.student.fullName,
-          studentEmail: app.student.email,
-          studentId: app.student.studentId,
-          clusterName: cluster?.name || "Your cluster",
-          venue: alloc?.group?.venue?.name || alloc?.group?.name || "",
-          group: alloc?.group?.name || "",
-          phaseDates: `${phase2.startDate.toLocaleDateString("en-TZ")} – ${phase2.endDate.toLocaleDateString("en-TZ")}`,
-        });
-      } catch { /* continue */ }
+      payloads.push({ app, phase2, group: gid ? groupMap.get(gid) : null });
     }
+
+    await sendEmailsInBatches(payloads, async ({ app, phase2, group }) => {
+      await sendPhase2ConfirmedEmail({
+        studentName: app.student.fullName,
+        studentEmail: app.student.email,
+        studentId: app.student.studentId,
+        clusterName: clusterMap[app.allocatedCluster]?.name || "Your cluster",
+        venue: group?.venue?.name || group?.name || "",
+        group: group?.name || "",
+        phaseDates: `${phase2.startDate.toLocaleDateString("en-TZ")} – ${phase2.endDate.toLocaleDateString("en-TZ")}`,
+      });
+      return true;
+    });
 
     return NextResponse.json({ success: true, message: `Phase 2 allocation ready for ${assigned} students` });
   } catch (e: any) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminOnly } from "@/lib/auth";
 import { deleteStoredFile } from "@/lib/storage";
 
 function err(message: string, status: number) {
@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { id } = await request.json();
     if (!id) return err("ID is required", 400);
 

@@ -31,16 +31,22 @@ export function SessionConfig() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleSave() {
+  async function handleSave(confirmReset = false) {
     setError(""); setSaving(true);
     try {
       const res = await fetch("/api/super-admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, confirmReset }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
+      if (!res.ok) {
+        if (res.status === 409) {
+          const ok = window.confirm("Saving these dates will delete ALL existing allocations, venue groups, and phase records. Continue?");
+          if (ok) return handleSave(true);
+        }
+        throw new Error(data.error || "Failed");
+      }
       load();
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
@@ -72,7 +78,7 @@ export function SessionConfig() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Update Session"}</Button>
+          <Button onClick={() => handleSave(false)} disabled={saving}>{saving ? "Saving..." : "Update Session"}</Button>
         </CardContent>
       </Card>
 
@@ -97,7 +103,7 @@ export function SessionConfig() {
                       </div>
                       <div className="text-xs text-slate-500 flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {new Date(ph.startDate).toLocaleDateString()} – {new Date(ph.endDate).toLocaleDateString()}
+                        {new Date(ph.startDate).toLocaleDateString("en-TZ")} – {new Date(ph.endDate).toLocaleDateString("en-TZ")}
                       </div>
                     </div>
                   ))}

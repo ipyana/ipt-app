@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminOnly } from "@/lib/auth";
 import { departmentSchema } from "@/lib/validations";
 
 export async function GET() {
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { id } = await request.json();
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
     await prisma.department.delete({ where: { id } });

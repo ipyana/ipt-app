@@ -4,9 +4,15 @@ import { prisma } from "@/lib/db";
 import { createToken } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations";
 import { sendAccountCreatedEmail } from "@/lib/email";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
+    const limit = await checkRateLimit(clientKey(request, "register"), 5);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: `Too many registration attempts. Try again in ${limit.retryAfterSec} seconds.` }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {

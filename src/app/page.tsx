@@ -146,45 +146,45 @@ export default function HomePage() {
               {mode === "register" ? (
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label>Registration Number</Label>
-                    <Input value={studentId} onChange={(e) => setStudentId(e.target.value)} required placeholder="e.g. 20252025" className="h-10" />
+                    <Label htmlFor="studentId">Registration Number</Label>
+                    <Input id="studentId" value={studentId} onChange={(e) => setStudentId(e.target.value)} required placeholder="e.g. 20252025" className="h-10" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Full Name</Label>
-                    <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Doe" className="h-10" />
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Doe" className="h-10" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Department</Label>
-                    <Select value={selectedDept} onChange={(e) => handleDeptSelect(e.target.value)} required className="h-10">
+                    <Label htmlFor="dept">Department</Label>
+                    <Select id="dept" value={selectedDept} onChange={(e) => handleDeptSelect(e.target.value)} required className="h-10">
                       <option value="">Select your department...</option>
                       {Object.keys(programs).map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
                     </Select>
                   </div>
                   {selectedDept && (
                     <div className="space-y-1.5">
-                      <Label>Program of Study</Label>
-                      <Select value={programId || ""} onChange={(e) => setProgramId(Number(e.target.value))} required className="h-10">
+                      <Label htmlFor="program">Program of Study</Label>
+                      <Select id="program" value={programId || ""} onChange={(e) => setProgramId(Number(e.target.value))} required className="h-10">
                         <option value="">Select your program...</option>
                         {programs[selectedDept]?.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
                       </Select>
                     </div>
                   )}
                   <div className="space-y-1.5">
-                    <Label>Email</Label>
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" className="h-10" />
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" className="h-10" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Password</Label>
+                    <Label htmlFor="password">Password</Label>
                     <div className="relative">
-                      <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} placeholder="Min 8 chars, 1 cap, 1 number, 1 special" className="h-10 pr-10" />
+                      <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} placeholder="Min 8 chars, 1 cap, 1 number, 1 special" className="h-10 pr-10" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Re-Enter Password</Label>
-                    <Input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} placeholder="Re-enter your password" className="h-10" />
+                    <Label htmlFor="confirmPassword">Re-Enter Password</Label>
+                    <Input id="confirmPassword" type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} placeholder="Re-enter your password" className="h-10" />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
                     {loading ? "Creating account..." : "Create Account"}
@@ -197,8 +197,8 @@ export default function HomePage() {
               ) : (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label>Username</Label>
-                    <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required
+                    <Label htmlFor="identifier">Username</Label>
+                    <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required
                       placeholder="Email, Reg Number, or phone" className="h-10" />
                   </div>
                   <div className="space-y-1.5">

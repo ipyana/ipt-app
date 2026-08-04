@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { applicationSchema } from "@/lib/validations";
 import { sendSubmissionEmail } from "@/lib/email";
 import { assignGroup } from "@/lib/groups";
+import { reserveDepartmentSlot } from "@/lib/allocate";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -38,14 +39,6 @@ async function tryAllocate(app: any, pref1: number, pref2: number, student: any)
   if (p1.enrolled < p1.slots) {
     allocateInPref1 = true;
     allocateInPref2 = p2.enrolled < p2.slots;
-    if (!allocateInPref2) {
-      const p1b = await prisma.clusterDepartment.findFirst({
-        where: { clusterId: pref1, department: { abbreviation: student.department } },
-      });
-      if (p1b!.enrolled + 1 <= p1b!.slots) {
-        allocateInPref2 = false;
-      }
-    }
   } else if (p2.enrolled < p2.slots) {
     allocateInPref2 = true;
     usePref2AsPhase1 = true;
@@ -73,7 +66,10 @@ async function tryAllocate(app: any, pref1: number, pref2: number, student: any)
     }
   }
 
-  return { result, allocationData, p1, p2, usePref2AsPhase1 };
+  const p1ClusterId = usePref2AsPhase1 ? pref2 : pref1;
+  const p1DepartmentId = (usePref2AsPhase1 ? p2 : p1).departmentId;
+
+  return { result, allocationData, p1, p2, usePref2AsPhase1, p1ClusterId, p1DepartmentId };
 }
 
 export async function GET() {
@@ -157,14 +153,10 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        await tx.clusterDepartment.update({
-          where: { clusterId_departmentId: { clusterId: allocation.p1.clusterId, departmentId: allocation.p1.departmentId } },
-          data: { enrolled: { increment: 1 } },
-        });
-        await tx.cluster.update({
-          where: { id: allocation.p1.clusterId },
-          data: { currentEnrolled: { increment: 1 } },
-        });
+        const reserved = await reserveDepartmentSlot(tx, allocation.p1ClusterId, allocation.p1DepartmentId);
+        if (!reserved) {
+          throw new Error("Slot no longer available");
+        }
       });
 
       const full = await prisma.application.findUnique({
@@ -278,14 +270,10 @@ export async function PUT(request: NextRequest) {
           });
         }
 
-        await tx.clusterDepartment.update({
-          where: { clusterId_departmentId: { clusterId: allocation.p1.clusterId, departmentId: allocation.p1.departmentId } },
-          data: { enrolled: { increment: 1 } },
-        });
-        await tx.cluster.update({
-          where: { id: allocation.p1.clusterId },
-          data: { currentEnrolled: { increment: 1 } },
-        });
+        const reserved = await reserveDepartmentSlot(tx, allocation.p1ClusterId, allocation.p1DepartmentId);
+        if (!reserved) {
+          throw new Error("Slot no longer available");
+        }
       });
 
       const full = await prisma.application.findUnique({

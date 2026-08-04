@@ -91,7 +91,7 @@ export function AnnouncementsConfig() {
                       </a>
                     ) : <span className="text-xs text-slate-400">—</span>}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleDateString("en-TZ")}</TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(a)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                   </TableCell>

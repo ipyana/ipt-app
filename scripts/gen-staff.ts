@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { CLUSTER_SEED_DATA } from "../src/lib/clusterData";
+import { CLUSTER_SEED_DATA } from "../prisma/clusterData";
 
 async function main() {
   const hash = await bcrypt.hash("Staff@123", 12);

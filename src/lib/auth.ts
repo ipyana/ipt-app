@@ -1,7 +1,15 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || "fallback-secret");
+function getSecret(): Uint8Array {
+  const raw = process.env.JWT_SECRET;
+  if (!raw || raw.length < 32 || raw.includes("change-me") || raw === "fallback-secret") {
+    throw new Error("JWT_SECRET is not configured with a strong value");
+  }
+  return new TextEncoder().encode(raw);
+}
+
+const secret = getSecret();
 const alg = "HS256";
 
 export async function createToken(payload: { id: number; role: string; studentId?: string }) {
@@ -36,6 +44,12 @@ export async function requireAuth() {
 export async function requireAdmin() {
   const session = await requireAuth();
   if (!["admin", "coordinator", "super_admin"].includes(session.role)) throw new Error("Forbidden");
+  return session;
+}
+
+export async function requireAdminOnly() {
+  const session = await requireAuth();
+  if (!["admin", "super_admin"].includes(session.role)) throw new Error("Forbidden");
   return session;
 }
 

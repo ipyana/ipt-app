@@ -2,10 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateToken } from "@/lib/otp";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
+import { forgotPasswordSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const limit = await checkRateLimit(clientKey(request, "forgot-password"), 5);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: `Too many reset requests. Try again in ${limit.retryAfterSec} seconds.` }, { status: 429 });
+    }
+
+    const body = await request.json();
+    const parsed = forgotPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+
+    const { email } = parsed.data;
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "A valid email is required" }, { status: 400 });
     }

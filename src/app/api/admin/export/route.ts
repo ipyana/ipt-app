@@ -43,7 +43,7 @@ export async function GET() {
     ]);
 
     const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .map((row) => row.map((cell) => `"${String(cell).replace(/^[=+\-@]/, "'").replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
     return new NextResponse(csvContent, {

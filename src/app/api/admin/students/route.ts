@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireAdminOnly } from "@/lib/auth";
 import { studentAdminSchema } from "@/lib/validations";
 import bcrypt from "bcryptjs";
 
@@ -68,8 +68,13 @@ export async function PUT(request: NextRequest) {
     const existing = await prisma.student.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Student not found" }, { status: 404 });
 
-    const { password, ...rest } = body;
-    const updateData: any = { ...rest };
+    const { password, studentId, fullName, email, department, program } = body;
+    const updateData: any = {};
+    if (studentId !== undefined) updateData.studentId = studentId;
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (email !== undefined) updateData.email = email;
+    if (department !== undefined) updateData.department = department;
+    if (program !== undefined) updateData.program = program;
     if (password) {
       updateData.password = await bcrypt.hash(password, 12);
     }
@@ -84,7 +89,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminOnly();
     const { id } = await request.json();
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
     await prisma.student.delete({ where: { id } });

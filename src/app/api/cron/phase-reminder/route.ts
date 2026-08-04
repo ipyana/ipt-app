@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
       const phase2Alloc = app.allocations.find((a: any) => a.phaseId === phase2.id);
       const venue = phase2Alloc?.group?.venue?.name || phase2Alloc?.group?.name || clusterMap[clusterId]?.location || "";
       const group = phase2Alloc?.group?.name || "";
+      const nextCluster = (phase2Alloc?.clusterId && clusterMap[phase2Alloc.clusterId]?.name) || clusterMap[clusterId]?.name || "Your cluster";
 
       try {
         await sendShiftReminderEmail({
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
           studentEmail: app.student.email,
           studentId: app.student.studentId,
           currentCluster: clusterMap[clusterId]?.name || "Your cluster",
-          nextCluster: clusterMap[clusterId]?.name || "Your cluster",
+          nextCluster,
           venue,
           group,
           shiftDate: phase2.startDate.toLocaleDateString("en-TZ", { day: "numeric", month: "long", year: "numeric" }),

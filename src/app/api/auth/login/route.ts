@@ -5,6 +5,7 @@ import { createToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
 import { sendLoginNotificationEmail } from "@/lib/email";
 import { parseUserAgent, getGeo } from "@/lib/useragent";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 
 function clientIp(request: NextRequest): string {
   const fwd = request.headers.get("x-forwarded-for");
@@ -32,6 +33,12 @@ async function notifyLogin(name: string, email: string, request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const ipKey = clientKey(request, "login");
+    const limit = await checkRateLimit(ipKey, 10);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: `Too many login attempts. Try again in ${limit.retryAfterSec} seconds.` }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {

@@ -117,7 +117,7 @@ export default function SuperAdminTransfers() {
                     <TableCell><ArrowRight className="h-4 w-4 text-slate-400" /></TableCell>
                     <TableCell><Badge>{t.toClusterName || "2 new clusters"}</Badge></TableCell>
                     <TableCell className="text-xs text-slate-500 max-w-[200px] truncate">{t.reason}</TableCell>
-                    <TableCell className="text-xs text-slate-400">{new Date(t.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-xs text-slate-400">{new Date(t.createdAt).toLocaleDateString("en-TZ")}</TableCell>
                     <TableCell>
                       {t.status === "pending" ? <Badge variant="warning">Pending</Badge>
                         : t.status === "approved" ? <Badge variant="success">Approved</Badge>

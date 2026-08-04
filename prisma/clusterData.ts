@@ -1,10 +1,4 @@
-export const DEPARTMENTS = [
-  { name: "Computer Science and Engineering", abbreviation: "CSE" },
-  { name: "Electronics and Telecommunication Engineering", abbreviation: "ETE" },
-  { name: "Informatics", abbreviation: "IF" },
-  { name: "Information Science and Technology", abbreviation: "IST" },
-  { name: "Technical Education", abbreviation: "TED" },
-] as const;
+export { DEPARTMENTS, DEPARTMENT_ABBREVIATIONS } from "../src/lib/departments";
 
 export const PROGRAMS_BY_DEPT: Record<string, string[]> = {
   CSE: [

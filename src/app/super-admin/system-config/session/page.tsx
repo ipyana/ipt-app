@@ -1,18 +1,12 @@
 "use client";
 
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SystemConfigPage } from "@/components/system-config/SystemConfigPage";
 import { SessionConfig } from "@/components/system-config/SessionConfig";
 
-export default function SuperAdminSystemConfigSession() {
+export default function Page() {
   return (
-    <AppLayout role="super_admin">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">IPT Session</h2>
-          <p className="text-sm text-slate-500 mt-1">Configure IPT session dates and phase schedule</p>
-        </div>
-        <SessionConfig />
-      </div>
-    </AppLayout>
+    <SystemConfigPage role="super_admin" title="IPT Session" description="Configure IPT session dates and phase schedule">
+      <SessionConfig />
+    </SystemConfigPage>
   );
 }

@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDialog } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Move, Users, RefreshCw } from "lucide-react";
+import { DEPARTMENT_ABBREVIATIONS } from "@/lib/departments";
 
 interface Cluster { id: number; name: string; }
 interface StaffMember {
@@ -108,6 +109,11 @@ export default function SuperAdminStaff() {
     load();
   }
 
+  async function handleForceActivate(id: number) {
+    await fetch("/api/super-admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "force-activate" }) });
+    load();
+  }
+
   async function handleReject(id: number) {
     await fetch("/api/super-admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "reject", reason: "Registration not approved" }) });
     load();
@@ -138,7 +144,9 @@ export default function SuperAdminStaff() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((s) => (
+                {items.length === 0 ? (
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-slate-400">No facilitators registered yet. Facilitators can self-register, or you can add one.</TableCell></TableRow>
+                ) : items.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell className="text-sm text-slate-500">{s.email}</TableCell>
@@ -163,6 +171,9 @@ export default function SuperAdminStaff() {
                             <Button size="sm" variant="outline" onClick={() => handleResendActivation(s.id)}><RefreshCw className="h-3 w-3" /> Resend</Button>
                             <Button size="sm" variant="outline" onClick={() => handleReject(s.id)}>Reject</Button>
                           </>
+                        )}
+                        {s.status === "active" && !s.isActive && (
+                          <Button size="sm" variant="outline" onClick={() => handleForceActivate(s.id)}><RefreshCw className="h-3 w-3" /> Reactivate</Button>
                         )}
                         <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openMove(s)}><Move className="h-4 w-4 text-amber-600" /></Button>
@@ -195,7 +206,7 @@ export default function SuperAdminStaff() {
               <div className="space-y-1.5"><Label>Department</Label>
                 <Select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })}>
                   <option value="">Select...</option>
-                  {["CSE", "ETE", "IF", "IST", "TED"].map((d) => (<option key={d} value={d}>{d}</option>))}
+                  {DEPARTMENT_ABBREVIATIONS.map((d) => (<option key={d} value={d}>{d}</option>))}
                 </Select>
               </div>
             </div>

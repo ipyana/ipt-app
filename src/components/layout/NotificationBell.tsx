@@ -110,7 +110,7 @@ export function NotificationBell() {
                         <Paperclip className="h-2.5 w-2.5" /> {a.attachmentName || "File"}
                       </a>
                     )}
-                    <span>· {new Date(a.createdAt).toLocaleDateString()}</span>
+                    <span>· {new Date(a.createdAt).toLocaleDateString("en-TZ")}</span>
                   </div>
                 </div>
               ))}

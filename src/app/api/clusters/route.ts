@@ -18,7 +18,7 @@ export async function GET() {
     // Authenticated: return full cluster data
     const clusters = await prisma.cluster.findMany({
       include: {
-        staff: { select: { name: true, email: true } },
+        staff: { select: { name: true, id: true } },
         allowedDepartments: {
           include: { department: { select: { id: true, name: true, abbreviation: true } } },
         },

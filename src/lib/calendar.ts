@@ -12,7 +12,7 @@ function toIcsDate(date: string): string {
 }
 
 function escapeIcs(text: string): string {
-  return text.replace(/([\\;,])/g, "\\$1").replace(/\n/g, "\\n");
+  return text.replace(/([\\;,])/g, "\\$1").replace(/[\r\n]+/g, "\\n");
 }
 
 export function buildGoogleCalendarUrl(event: CalendarEvent): string {
@@ -31,7 +31,7 @@ export function buildIcs(event: CalendarEvent): string {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//CoICT IPT//IPT Portal//EN",
+    "PRODID:-//MUST IPT//IPT Portal//EN",
     "BEGIN:VEVENT",
     `UID:${Date.now()}@ipt.herpydevs.com`,
     `DTSTAMP:${stamp}`,
@@ -45,11 +45,6 @@ export function buildIcs(event: CalendarEvent): string {
   ]
     .filter(Boolean)
     .join("\r\n");
-}
-
-export function buildIcsDownloadUrl(event: CalendarEvent): string {
-  const data = encodeURIComponent(buildIcs(event));
-  return `data:text/calendar;charset=utf-8,${data}`;
 }
 
 export function buildIcsApiUrl(event: CalendarEvent): string {
