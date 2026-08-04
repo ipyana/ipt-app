@@ -9,19 +9,18 @@ function getSecret(): Uint8Array {
   return new TextEncoder().encode(raw);
 }
 
-const secret = getSecret();
 const alg = "HS256";
 
 export async function createToken(payload: { id: number; role: string; studentId?: string }) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg })
     .setExpirationTime("24h")
-    .sign(secret);
+    .sign(getSecret());
 }
 
 export async function verifyToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret());
     return payload as { id: number; role: string; studentId?: string };
   } catch {
     return null;

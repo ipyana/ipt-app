@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-function getSecret(): Uint8Array {
+async function getSecret(): Promise<Uint8Array> {
   const raw = process.env.JWT_SECRET;
   if (!raw || raw.length < 32 || raw.includes("change-me") || raw === "fallback-secret") {
     throw new Error("JWT_SECRET is not configured with a strong value");
@@ -9,11 +9,9 @@ function getSecret(): Uint8Array {
   return new TextEncoder().encode(raw);
 }
 
-const secret = getSecret();
-
 async function isValidToken(token: string): Promise<{ id: number; role: string } | null> {
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, await getSecret());
     return payload as { id: number; role: string };
   } catch {
     return null;
