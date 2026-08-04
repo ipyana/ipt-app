@@ -221,9 +221,6 @@ export default function HomePage() {
                     Don't have an account?{" "}
                     <button type="button" onClick={() => setRoleModalOpen(true)} className="font-medium text-primary-600 hover:text-primary-700">Sign up</button>
                   </p>
-                  <p className="text-center text-xs text-slate-400 mt-2">
-                    <button type="button" onClick={() => router.push("/super-admin/login")} className="hover:text-slate-600">Super Admin login</button>
-                  </p>
                 </form>
               )}
             </div>
