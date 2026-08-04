@@ -2,6 +2,7 @@ import { Client } from "minio";
 import { prisma } from "@/lib/db";
 import { writeFile, mkdir, readFile } from "fs/promises";
 import path from "path";
+import { lookup } from "dns/promises";
 
 const DEFAULT_BUCKET = "ipt-uploads";
 
@@ -12,6 +13,18 @@ export interface StorageConfig {
   accessKey: string;
   secretKey: string;
   bucket: string;
+}
+
+async function resolveEndpoint(endpoint: string): Promise<string> {
+  if (!endpoint || endpoint.includes(".") || endpoint.includes(":") || /^[0-9.]+$/.test(endpoint)) {
+    return endpoint;
+  }
+  try {
+    const { address } = await lookup(endpoint);
+    return address;
+  } catch {
+    return endpoint;
+  }
 }
 
 async function loadStorageConfig(): Promise<StorageConfig | null> {
@@ -29,7 +42,7 @@ async function loadStorageConfig(): Promise<StorageConfig | null> {
   const useSSL = (map["minio_secure"] || process.env.MINIO_USE_SSL || "false") === "true";
 
   return {
-    endpoint,
+    endpoint: await resolveEndpoint(endpoint),
     port,
     useSSL,
     accessKey,
