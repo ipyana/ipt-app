@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireCoordinatorOrAbove } from "@/lib/auth";
-import { sendTransferApprovedEmail, sendTransferRejectedEmail } from "@/lib/email";
+import { sendTransferApprovedEmail, sendTransferRejectedEmail, sendReapplicationResultEmail } from "@/lib/email";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -125,6 +125,19 @@ export async function POST(request: NextRequest) {
           if (p2Ph2) await tx.phaseAllocation.create({ data: { phaseId: p2Ph2.id, applicationId: app.id, clusterId: newPref2 } });
         });
 
+        const [cluster1, cluster2] = await Promise.all([
+          prisma.cluster.findUnique({ where: { id: newPref1 } }),
+          prisma.cluster.findUnique({ where: { id: newPref2 } }),
+        ]);
+        await sendReapplicationResultEmail({
+          studentName: app.student.fullName,
+          studentEmail: app.student.email,
+          studentId: app.student.studentId,
+          status: "approved",
+          cluster1: cluster1?.name || "Unknown",
+          cluster2: cluster2?.name || "Unknown",
+        });
+
         return NextResponse.json({ success: true, message: "Reapplication approved" });
       }
 
@@ -205,13 +218,30 @@ export async function POST(request: NextRequest) {
       });
 
       const fromCluster = await prisma.cluster.findUnique({ where: { id: transfer.fromClusterId } });
-      await sendTransferRejectedEmail({
-        studentName: app.student.fullName,
-        studentEmail: app.student.email,
-        studentId: app.student.studentId,
-        clusterName: fromCluster?.name || "Unknown",
-        reason: notes || "No specific reason provided",
-      });
+
+      if (transfer.type === "reapplication") {
+        const [cluster1, cluster2] = await Promise.all([
+          prisma.cluster.findUnique({ where: { id: transfer.pref1New || transfer.fromClusterId } }),
+          prisma.cluster.findUnique({ where: { id: transfer.pref2New || transfer.fromClusterId } }),
+        ]);
+        await sendReapplicationResultEmail({
+          studentName: app.student.fullName,
+          studentEmail: app.student.email,
+          studentId: app.student.studentId,
+          status: "rejected",
+          cluster1: cluster1?.name || "Unknown",
+          cluster2: cluster2?.name || "Unknown",
+          reason: notes || "No specific reason provided",
+        });
+      } else {
+        await sendTransferRejectedEmail({
+          studentName: app.student.fullName,
+          studentEmail: app.student.email,
+          studentId: app.student.studentId,
+          clusterName: fromCluster?.name || "Unknown",
+          reason: notes || "No specific reason provided",
+        });
+      }
     }
 
     return NextResponse.json({ success: true });

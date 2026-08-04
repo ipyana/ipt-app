@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth";
 import { generateToken } from "@/lib/otp";
-import { sendAdminActivationEmail } from "@/lib/email";
+import { sendAccountActivationEmail } from "@/lib/email";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
     const activationLink = `${baseUrl}/activate-account?token=${token}`;
 
-    await sendAdminActivationEmail({ name: username, email, activationLink });
+    await sendAccountActivationEmail({ name: username, email, activationLink });
 
     return NextResponse.json({ ...admin, message: "Admin created. Activation email sent." }, { status: 201 });
   } catch (e: any) {

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { listEmailLogs } from "@/lib/email/logs";
 import { sendEmail } from "@/lib/email/service";
 import { testSmtpConnection } from "@/lib/email/smtp";
+import { testStorageConnection } from "@/lib/storage";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -16,7 +17,8 @@ export async function GET(request: NextRequest) {
     const tab = searchParams.get("tab") || "logs";
 
     if (tab === "settings") {
-      const keys = ["smtp_host", "smtp_port", "smtp_secure", "smtp_user", "smtp_pass", "smtp_from", "smtp_sender_name"];
+      const keys = ["smtp_host", "smtp_port", "smtp_secure", "smtp_user", "smtp_pass", "smtp_from", "smtp_sender_name",
+        "minio_endpoint", "minio_port", "minio_secure", "minio_access_key", "minio_secret_key", "minio_bucket"];
       const settings = await prisma.setting.findMany({ where: { key: { in: keys } } });
       const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
       return NextResponse.json(map);
@@ -53,6 +55,11 @@ export async function POST(request: NextRequest) {
 
     if (action === "test-smtp") {
       const result = await testSmtpConnection();
+      return NextResponse.json(result);
+    }
+
+    if (action === "test-storage") {
+      const result = await testStorageConnection();
       return NextResponse.json(result);
     }
 

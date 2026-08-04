@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/otp";
 import { strongPasswordSchema } from "@/lib/validations";
+import { sendAccountActivatedEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +39,10 @@ export async function POST(request: NextRequest) {
       where: { id: admin.id },
       data: { password: hashed, status: "active", mustChangePassword: false },
     });
+
+    try {
+      await sendAccountActivatedEmail({ name: admin.username, email: admin.email });
+    } catch { /* non-blocking */ }
 
     return NextResponse.json({ success: true, message: "Account activated. You can now sign in." });
   } catch {

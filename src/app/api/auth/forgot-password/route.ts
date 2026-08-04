@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { generateOtp } from "@/lib/otp";
+import { generateToken } from "@/lib/otp";
 import { sendPasswordResetEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
@@ -26,11 +26,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No account found with that email" }, { status: 404 });
     }
 
-    const otpCode = await generateOtp(email, "password_reset");
-    await sendPasswordResetEmail({ name, email, otpCode });
+    const token = await generateToken(email, "password_reset");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const resetLink = `${appUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    await sendPasswordResetEmail({ name, email, resetLink });
 
-    return NextResponse.json({ success: true, message: "Password reset code sent to your email" });
+    return NextResponse.json({ success: true, message: "Password reset link sent to your email" });
   } catch {
-    return NextResponse.json({ error: "Failed to send reset code" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send reset link" }, { status: 500 });
   }
 }

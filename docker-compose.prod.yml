@@ -9,6 +9,10 @@ services:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
       NEXT_TELEMETRY_DISABLED: "1"
+      MINIO_ENDPOINT: must_minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET: ipt-uploads
     expose:
       - "3000"
     networks:

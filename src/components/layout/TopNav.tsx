@@ -3,10 +3,11 @@
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Menu, Bell, ChevronRight } from "lucide-react";
+import { Menu, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationBell } from "./NotificationBell";
 import { cn } from "@/lib/utils";
 
 interface TopNavProps {
@@ -32,6 +33,12 @@ const routeLabels: Record<string, string> = {
   waitlist: "Waitlist",
   transfers: "Transfers",
   settings: "Settings",
+  "system-config": "System Config",
+  "email-provider": "Email Provider",
+  "email-templates": "Email Templates",
+  "email-logs": "Email Logs",
+  session: "IPT Session",
+  announcements: "Announcements",
 };
 
 function getBreadcrumb(pathname: string): string[] {
@@ -80,9 +87,7 @@ export function TopNav({ user, onMenuToggle }: TopNavProps) {
       <div className="flex items-center gap-1.5">
         {mounted && <ThemeToggle compact />}
 
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-          <Bell className="h-4 w-4" />
-        </Button>
+        {user?.role === "student" && <NotificationBell />}
 
         <motion.div
           className="flex items-center gap-2.5 pl-3 border-l border-border ml-1"

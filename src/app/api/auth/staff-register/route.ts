@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { staffRegisterSchema } from "@/lib/validations";
+import { sendAccountCreatedEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +35,10 @@ export async function POST(request: NextRequest) {
         department,
       },
     });
+
+    try {
+      await sendAccountCreatedEmail({ name: staff.name, email: staff.email, role: "facilitator" });
+    } catch { /* non-blocking */ }
 
     return NextResponse.json({
       id: staff.id,

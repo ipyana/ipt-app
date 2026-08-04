@@ -15,8 +15,10 @@ import {
   Move,
   Settings,
   Mail,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { navMap, NavItem } from "@/lib/nav";
 
 interface IconItem {
   key: string;
@@ -26,35 +28,24 @@ interface IconItem {
 
 interface IconBarProps {
   role: string;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
 }
 
-const iconMap: Record<string, IconItem[]> = {
-  student: [
-    { key: "dashboard", icon: LayoutDashboard, href: "/student/dashboard" },
-    { key: "apply", icon: ClipboardList, href: "/student/apply" },
-    { key: "status", icon: FileText, href: "/student/status" },
-    { key: "report", icon: Upload, href: "/student/report" },
-  ],
-  admin: [
-    { key: "overview", icon: BarChart3, href: "/admin/dashboard" },
-    { key: "students", icon: Users, href: "/admin/students" },
-    { key: "clusters", icon: Layers, href: "/admin/clusters" },
-    { key: "staff", icon: Users, href: "/admin/staff" },
-    { key: "email", icon: Mail, href: "/admin/email" },
-  ],
-  super_admin: [
-    { key: "overview", icon: BarChart3, href: "/super-admin" },
-    { key: "admins", icon: Shield, href: "/super-admin/admins" },
-    { key: "staff", icon: Users, href: "/super-admin/staff" },
-    { key: "transfers", icon: Move, href: "/super-admin/transfers" },
-    { key: "settings", icon: Settings, href: "/super-admin/settings" },
-  ],
-  staff: [
-    { key: "dashboard", icon: LayoutDashboard, href: "/staff" },
-  ],
-};
+function itemToIcon(item: NavItem): IconItem | null {
+  if (!item.href) return null;
+  return { key: item.label, icon: item.href.includes("dashboard") || item.href === "/student/dashboard" ? LayoutDashboard : item.href.includes("apply") || item.href.includes("status") ? ClipboardList : item.href.includes("report") || item.href.includes("export") ? Upload : item.href.includes("students") ? Users : item.href.includes("clusters") ? Layers : item.href.includes("staff") || item.href.includes("admins") ? Shield : item.href.includes("transfers") ? Move : item.href.includes("settings") || item.href.includes("system-config") ? Settings : item.href.includes("email") ? Mail : item.href.includes("announcements") ? Megaphone : FileText, href: item.href };
+}
 
-export function IconBar({ role }: IconBarProps) {
+const iconMap: Record<string, IconItem[]> = Object.fromEntries(
+  Object.entries(navMap).map(([role, items]) => {
+    const flat = items.map(itemToIcon).filter((x): x is IconItem => !!x);
+    const first = flat[0] || { key: "dashboard", icon: LayoutDashboard, href: "/" };
+    return [role, flat.length > 1 ? flat : [first]];
+  })
+);
+
+export function IconBar({ role, onHoverStart, onHoverEnd }: IconBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const icons = iconMap[role] || iconMap.admin;
@@ -65,7 +56,7 @@ export function IconBar({ role }: IconBarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-full w-14 flex-col items-center border-r border-border bg-sidebar py-2">
+    <aside className="fixed left-0 top-0 z-50 flex h-full w-14 flex-col items-center border-r border-border bg-sidebar py-2" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
       <button onClick={() => router.push("/")} className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-sidebar-hover transition-colors">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/must_Logo.png" alt="MUST" className="h-7 w-7 object-contain" />

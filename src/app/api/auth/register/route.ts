@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { createToken } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations";
+import { sendAccountCreatedEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,10 @@ export async function POST(request: NextRequest) {
     });
 
     const token = await createToken({ id: student.id, role: student.role, studentId: student.studentId });
+
+    try {
+      await sendAccountCreatedEmail({ name: student.fullName, email: student.email, role: "student" });
+    } catch { /* non-blocking */ }
 
     const response = NextResponse.json({
       id: student.id,

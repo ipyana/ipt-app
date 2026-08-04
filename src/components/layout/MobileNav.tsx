@@ -5,12 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { X, ChevronDown } from "lucide-react";
-
-interface NavItem {
-  label: string;
-  href?: string;
-  children?: NavItem[];
-}
+import { navMap } from "@/lib/nav";
 
 interface MobileNavProps {
   role: string;
@@ -18,46 +13,6 @@ interface MobileNavProps {
   onClose: () => void;
   onLogout: () => void;
 }
-
-const navMap: Record<string, NavItem[]> = {
-  student: [
-    { label: "Dashboard", href: "/student/dashboard" },
-    {
-      label: "My Application",
-      children: [
-        { label: "Apply", href: "/student/apply" },
-        { label: "Re-apply", href: "/student/reapply" },
-        { label: "Transfer", href: "/student/transfer" },
-      ],
-    },
-    { label: "Upload Report", href: "/student/report" },
-  ],
-  admin: [
-    { label: "Overview", href: "/admin/dashboard" },
-    { label: "Departments", href: "/admin/departments" },
-    { label: "Programs", href: "/admin/programs" },
-    { label: "Clusters", href: "/admin/clusters" },
-    { label: "Allocations", href: "/admin/allocations" },
-    { label: "Students", href: "/admin/students" },
-    { label: "Facilitators", href: "/admin/staff" },
-    { label: "Export Data", href: "/admin/export" },
-    { label: "Email", href: "/admin/email" },
-  ],
-  super_admin: [
-    { label: "Overview", href: "/super-admin" },
-    { label: "Admins", href: "/super-admin/admins" },
-    { label: "Staff", href: "/super-admin/staff" },
-    { label: "Waitlist", href: "/super-admin/waitlist" },
-    { label: "Transfers", href: "/super-admin/transfers" },
-    { label: "Settings", href: "/super-admin/settings" },
-    { label: "Allocations", href: "/admin/allocations" },
-    { label: "Clusters", href: "/admin/clusters" },
-    { label: "Students", href: "/admin/students" },
-  ],
-  staff: [
-    { label: "Dashboard", href: "/staff" },
-  ],
-};
 
 export function MobileNav({ role, open, onClose, onLogout }: MobileNavProps) {
   const pathname = usePathname();

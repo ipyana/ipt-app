@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { verifyOtp } from "@/lib/otp";
+import { verifyToken } from "@/lib/otp";
 import { strongPasswordSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, code, newPassword } = await request.json();
-    if (!email || !code || !newPassword) {
-      return NextResponse.json({ error: "Email, code, and new password are required" }, { status: 400 });
+    const { email, token, newPassword } = await request.json();
+    if (!email || !token || !newPassword) {
+      return NextResponse.json({ error: "Email, token, and new password are required" }, { status: 400 });
     }
     const pwCheck = strongPasswordSchema.safeParse(newPassword);
     if (!pwCheck.success) {
       return NextResponse.json({ error: pwCheck.error.issues[0].message }, { status: 400 });
     }
 
-    const valid = await verifyOtp(email, code, "password_reset");
+    const valid = await verifyToken(email, token, "password_reset");
     if (!valid) {
-      return NextResponse.json({ error: "Invalid or expired code" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
     }
 
     const hashed = await bcrypt.hash(newPassword, 12);

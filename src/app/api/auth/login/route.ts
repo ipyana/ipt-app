@@ -3,6 +3,32 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { createToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
+import { sendLoginNotificationEmail } from "@/lib/email";
+import { parseUserAgent, getGeo } from "@/lib/useragent";
+
+function clientIp(request: NextRequest): string {
+  const fwd = request.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return request.headers.get("x-real-ip") || "Unknown";
+}
+
+async function notifyLogin(name: string, email: string, request: NextRequest) {
+  try {
+    const ua = request.headers.get("user-agent") || "";
+    const info = parseUserAgent(ua);
+    const ip = clientIp(request);
+    const location = await getGeo(ip);
+    await sendLoginNotificationEmail({
+      name,
+      email,
+      browser: info.browser,
+      os: info.os,
+      device: info.device,
+      location,
+      ip,
+    });
+  } catch { /* non-blocking */ }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +69,8 @@ export async function POST(request: NextRequest) {
         maxAge: 86400,
         path: "/",
       });
+
+      void notifyLogin(student.fullName, student.email, request);
 
       return response;
     }
@@ -87,6 +115,8 @@ export async function POST(request: NextRequest) {
         path: "/",
       });
 
+      void notifyLogin(staff.name, staff.email, request);
+
       return response;
     }
 
@@ -125,6 +155,8 @@ export async function POST(request: NextRequest) {
         maxAge: 86400,
         path: "/",
       });
+
+      void notifyLogin(admin.username, admin.email, request);
 
       return response;
     }
