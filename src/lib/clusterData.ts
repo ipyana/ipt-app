@@ -138,7 +138,7 @@ export const CLUSTER_SEED_DATA: ClusterSeed[] = [
   {
     name: "Artificial Intelligence and Signal Processing",
     description: "Apply machine learning, deep learning, data analytics, and signal processing to solve real problems. Covers Python, TensorFlow, data visualization, NLP, and computer vision.",
-    capacity: 129,
+    capacity: 130,
     location: "AI Research Lab",
     departmentSlots: { CSE: 26, ETE: 26, IF: 3, IST: 55, TED: 20 },
     staff: [
