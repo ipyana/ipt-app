@@ -154,17 +154,21 @@ export async function sendAccountActivationEmail(params: { name: string; email: 
   }
 }
 
-export async function sendAccountActivatedEmail(params: { name: string; email: string; clusterName?: string }) {
+export async function sendAccountActivatedEmail(params: { name: string; email: string; clusterName?: string; temporaryPassword?: string }) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
   const result = await sendTemplateEmail("account_activated", params.email, {
     name: params.name,
     loginLink: appUrl,
     clusterName: params.clusterName || "",
+    temporaryPassword: params.temporaryPassword || "",
     appName: "IPT System",
   });
   if (!result.success) {
+    const extra = params.temporaryPassword
+      ? ` Your temporary password is <strong>${params.temporaryPassword}</strong>. You will be required to change it after signing in.`
+      : "";
     await sendEmail(params.email, "Your IPT Portal account is now active",
-      buildSimpleHtml("Account Activated", `Your account is active. Sign in at ${appUrl}`));
+      buildSimpleHtml("Account Activated", `Your account is active. Sign in at ${appUrl}.${extra}`));
   }
 }
 

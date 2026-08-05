@@ -9,8 +9,9 @@ import { Input, Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDialog } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Move, Users, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2, Move, Users, RefreshCw, ClipboardCheck } from "lucide-react";
 import { DEPARTMENT_ABBREVIATIONS } from "@/lib/departments";
+import { StaffApproveDialog, StaffForReview } from "@/components/StaffApproveDialog";
 
 interface Cluster { id: number; name: string; }
 interface StaffMember {
@@ -31,6 +32,8 @@ export default function SuperAdminStaff() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<StaffMember | null>(null);
+  const [reviewRequiresPassword, setReviewRequiresPassword] = useState(false);
 
   async function load() {
     const [staffRes, clusterRes] = await Promise.all([
@@ -104,6 +107,21 @@ export default function SuperAdminStaff() {
     load();
   }
 
+  function openReview(s: StaffMember) {
+    setReviewRequiresPassword(s.status !== "pending_approval");
+    setReviewTarget(s);
+  }
+
+  async function handleApproveWithPassword(id: number, temporaryPassword?: string) {
+    const body: any = { id, action: "approve" };
+    if (temporaryPassword) body.temporaryPassword = temporaryPassword;
+    const res = await fetch("/api/super-admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to approve");
+    setReviewTarget(null);
+    load();
+  }
+
   async function handleResendActivation(id: number) {
     await fetch("/api/super-admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "resend-activation" }) });
     load();
@@ -168,6 +186,7 @@ export default function SuperAdminStaff() {
                         )}
                         {s.status === "pending_activation" && (
                           <>
+                            <Button size="sm" variant="primary" onClick={() => openReview(s)}><ClipboardCheck className="h-3 w-3" /> Review</Button>
                             <Button size="sm" variant="outline" onClick={() => handleResendActivation(s.id)}><RefreshCw className="h-3 w-3" /> Resend</Button>
                             <Button size="sm" variant="outline" onClick={() => handleReject(s.id)}>Reject</Button>
                           </>
@@ -176,7 +195,10 @@ export default function SuperAdminStaff() {
                           <Button size="sm" variant="outline" onClick={() => handleForceActivate(s.id)}><RefreshCw className="h-3 w-3" /> Reactivate</Button>
                         )}
                         {s.status === "rejected" && (
-                          <Button size="sm" variant="outline" onClick={() => handleForceActivate(s.id)}><RefreshCw className="h-3 w-3" /> Reactivate</Button>
+                          <>
+                            <Button size="sm" variant="primary" onClick={() => openReview(s)}><ClipboardCheck className="h-3 w-3" /> Review</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleForceActivate(s.id)}><RefreshCw className="h-3 w-3" /> Resend Link</Button>
+                          </>
                         )}
                         <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openMove(s)}><Move className="h-4 w-4 text-amber-600" /></Button>
@@ -255,6 +277,14 @@ export default function SuperAdminStaff() {
             <Button onClick={handleMove} disabled={saving}>{saving ? "Moving..." : "Move"}</Button>
           </DialogFooter>
         </Dialog>
+
+        <StaffApproveDialog
+          open={!!reviewTarget}
+          staff={reviewTarget as StaffForReview}
+          requirePassword={reviewRequiresPassword}
+          onClose={() => setReviewTarget(null)}
+          onApprove={handleApproveWithPassword}
+        />
 
         <ConfirmDialog
           open={!!deleteTarget}

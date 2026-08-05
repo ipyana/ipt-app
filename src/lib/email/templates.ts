@@ -201,6 +201,11 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
       "Account Activated",
       `<p>Dear <strong>{{name}}</strong>,</p>
     <p>Congratulations! Your account has been <strong style="color: #14763b;">activated</strong> successfully. You can now sign in using your email or phone number.</p>
+    {{#temporaryPassword}}<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0 0 6px;"><strong>Your temporary password:</strong></p>
+      <p style="margin: 0; font-family: monospace; font-size: 16px; color: #14763b; font-weight: bold;">{{temporaryPassword}}</p>
+      <p style="margin: 8px 0 0; color: #64748b; font-size: 13px;">You will be required to change it after signing in.</p>
+    </div>{{/temporaryPassword}}
     {{#clusterName}}<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
       <p style="margin: 0;"><strong>Assigned Cluster:</strong> {{clusterName}}</p>
     </div>{{/clusterName}}
@@ -209,7 +214,7 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     </div>
     <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>`
     ),
-    variables: ["name", "loginLink", "clusterName", "appName"],
+    variables: ["name", "loginLink", "clusterName", "temporaryPassword", "appName"],
     required: true,
   },
   {

@@ -55,24 +55,35 @@ export function createStaffRoute(guard: Guard, deleteGuard: Guard) {
     try {
       await guard();
       const body = await request.json();
-      const { id, name, email, phone, department, password, clusterId, isActive, action, reason } = body;
+      const { id, name, email, phone, department, password, clusterId, isActive, action, reason, temporaryPassword } = body;
       if (!id) return err("ID is required", 400);
 
       if (action === "approve") {
         const staff = await prisma.staff.findUnique({ where: { id } });
         if (!staff) return err("Not found", 404);
-        if (staff.status !== "pending_approval") {
-          return err("Only registrations that have set their password (pending approval) can be approved", 400);
+        if (!["pending_activation", "pending_approval", "rejected"].includes(staff.status)) {
+          return err("This facilitator cannot be approved in their current state", 400);
+        }
+        const hasRealPassword = staff.password && !staff.password.includes("placeholder");
+        const tempPassword = temporaryPassword?.trim();
+        if (!hasRealPassword && (!tempPassword || tempPassword.length < 6)) {
+          return err("This facilitator has not set a password. Set a temporary password (min 6 characters) so they can sign in.", 400);
+        }
+        const data: any = { status: "active", isActive: true };
+        if (tempPassword) {
+          data.password = await bcrypt.hash(tempPassword, 12);
+          data.mustChangePassword = true;
         }
         const updated = await prisma.staff.update({
           where: { id },
-          data: { status: "active", isActive: true },
+          data,
           include: { cluster: { select: { id: true, name: true, location: true } } },
         });
         await sendAccountActivatedEmail({
           name: updated.name,
           email: updated.email,
           clusterName: updated.cluster?.name || "",
+          temporaryPassword: tempPassword || undefined,
         });
         return NextResponse.json(updated);
       }
