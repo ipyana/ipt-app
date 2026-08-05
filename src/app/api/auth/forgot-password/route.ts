@@ -42,7 +42,14 @@ export async function POST(request: NextRequest) {
     const token = await generateToken(email, "password_reset");
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const resetLink = `${appUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-    await sendPasswordResetEmail({ name, email, resetLink });
+    const sent = await sendPasswordResetEmail({ name, email, resetLink });
+
+    if (!sent) {
+      return NextResponse.json(
+        { error: "Unable to send the reset email. Please try again later or contact support." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true, message: "Password reset link sent to your email" });
   } catch {

@@ -37,7 +37,7 @@ export function ReapplicationsConfig() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/super-admin/transfers");
+    const res = await fetch("/api/admin/transfers");
     const data = await res.json();
     const all = Array.isArray(data) ? data : [];
     setItems(all.filter((t: any) => t.type === "reapplication"));
@@ -50,7 +50,7 @@ export function ReapplicationsConfig() {
     setProcessing(reapp.id);
     setMessage(null);
     try {
-      const res = await fetch("/api/super-admin/transfers", {
+      const res = await fetch("/api/admin/transfers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: reapp.id, action, notes: reviewNotes }),

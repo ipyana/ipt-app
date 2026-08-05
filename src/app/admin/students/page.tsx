@@ -8,12 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDialog } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Search, Users, CheckCircle, Clock, GraduationCap } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Users, CheckCircle, Clock, GraduationCap, Eye, MapPin, Layers } from "lucide-react";
+
+interface Allocation {
+  id: number;
+  clusterId: number;
+  groupId: number | null;
+  phase: { id: number; phaseNumber: number; startDate: string; endDate: string };
+  cluster: { id: number; name: string; location: string } | null;
+  group: { id: number; name: string; venue: { id: number; name: string } | null } | null;
+}
 
 interface Student {
   id: number; studentId: string; fullName: string; department: string;
   program: string; email: string; createdAt: string;
-  application: { status: string; allocatedCluster: number | null } | null;
+  application: { status: string; allocatedCluster: number | null; clusterPref1?: number; clusterPref2?: number; allocations?: Allocation[] } | null;
   allocatedName: string | null;
 }
 
@@ -28,6 +37,7 @@ export default function AdminStudents() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
+  const [viewTarget, setViewTarget] = useState<Student | null>(null);
 
   async function load() {
     const [stuRes, deptRes] = await Promise.all([
@@ -152,6 +162,7 @@ export default function AdminStudents() {
                     <TableCell className="hidden md:table-cell text-xs">{s.allocatedName || <span className="text-slate-400">—</span>}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setViewTarget(s)} title="View details"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                       </div>
@@ -192,6 +203,75 @@ export default function AdminStudents() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : editing ? "Update" : "Create"}</Button>
+          </DialogFooter>
+        </Dialog>
+
+        <Dialog open={!!viewTarget} onClose={() => setViewTarget(null)}>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 dark:bg-teal-900/20">
+                <GraduationCap className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <DialogTitle>{viewTarget?.fullName}</DialogTitle>
+                <p className="text-xs text-slate-400">{viewTarget?.studentId} · {viewTarget?.program}</p>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogBody>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                <span className="text-slate-500">Application</span>
+                <Badge variant={viewTarget?.application?.status === "allocated" ? "success" : "warning"}>
+                  {viewTarget?.application?.status || "No application"}
+                </Badge>
+              </div>
+              {[1, 2].map((phaseNum) => {
+                const allocation = viewTarget?.application?.allocations?.find((a) => a.phase?.phaseNumber === phaseNum);
+                return (
+                  <div key={phaseNum} className="rounded-lg border border-border p-4 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${phaseNum === 1 ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400" : "bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400"}`}>
+                        <Layers className="h-3.5 w-3.5" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">Phase {phaseNum}</p>
+                    </div>
+                    {allocation ? (
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Cluster</span>
+                          <span className="font-medium text-slate-900 dark:text-white">{allocation.cluster?.name || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1 text-slate-500"><MapPin className="h-3.5 w-3.5" /> Location</span>
+                          <span className="text-slate-700 dark:text-slate-300">{allocation.cluster?.location || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Group</span>
+                          <span className="text-slate-700 dark:text-slate-300">{allocation.group?.name || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Venue</span>
+                          <span className="text-slate-700 dark:text-slate-300">{allocation.group?.venue?.name || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Dates</span>
+                          <span className="text-slate-700 dark:text-slate-300">
+                            {allocation.phase?.startDate ? new Date(allocation.phase.startDate).toLocaleDateString("en-TZ") : "—"}
+                            {allocation.phase?.endDate ? ` – ${new Date(allocation.phase.endDate).toLocaleDateString("en-TZ")}` : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400">Not allocated</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewTarget(null)}>Close</Button>
           </DialogFooter>
         </Dialog>
 

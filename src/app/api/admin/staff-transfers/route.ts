@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireCoordinatorOrAbove } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { sendStaffTransferResultEmail } from "@/lib/email";
 import { staffTransferReviewSchema } from "@/lib/validations";
 
@@ -10,7 +10,7 @@ function err(message: string, status: number) {
 
 export async function GET() {
   try {
-    await requireCoordinatorOrAbove();
+    await requireAdmin();
     const requests = await prisma.staffTransferRequest.findMany({
       include: {
         staff: { select: { id: true, name: true, email: true, department: true } },
@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await requireCoordinatorOrAbove();
+    const admin = await requireAdmin();
     const body = await request.json();
     const parsed = staffTransferReviewSchema.safeParse(body);
     if (!parsed.success) return err(parsed.error.issues[0].message, 400);

@@ -31,6 +31,8 @@ model Cluster {
   capacity          Int
   currentEnrolled   Int                 @default(0) @map("current_enrolled")
   location          String              @default("")
+  locationId        Int?                @map("location_id")
+  locationRef       Location?           @relation(fields: [locationId], references: [id], onDelete: SetNull)
   createdAt         DateTime            @default(now()) @map("created_at")
   staff             Staff[]
   allowedDepartments ClusterDepartment[]
@@ -40,6 +42,14 @@ model Cluster {
   groups            Group[]
   staffTransferRequestsFrom StaffTransferRequest[] @relation("staffFromCluster")
   staffTransferRequestsTo StaffTransferRequest[] @relation("staffToCluster")
+  phaseAllocations      PhaseAllocation[]
+}
+
+model Location {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  clusters  Cluster[]
 }
 
 model ClusterDepartment {
@@ -131,6 +141,7 @@ model PhaseAllocation {
   applicationId Int         @map("application_id")
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   clusterId     Int         @map("cluster_id")
+  cluster       Cluster     @relation(fields: [clusterId], references: [id])
   groupId       Int?        @map("group_id")
   group         Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
   createdAt     DateTime    @default(now()) @map("created_at")

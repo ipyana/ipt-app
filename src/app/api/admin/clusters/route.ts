@@ -10,6 +10,7 @@ export async function GET() {
       include: {
         staff: { select: { id: true, name: true, email: true } },
         allowedDepartments: { include: { department: { select: { id: true, name: true, abbreviation: true } } } },
+        locationRef: true,
       },
       orderBy: { id: "asc" },
     });
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
         capacity,
         description: data.description || "",
         location: data.location || "",
+        locationId: data.locationId || null,
       },
     });
 
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const created = await prisma.cluster.findUnique({
       where: { id: cluster.id },
-      include: { allowedDepartments: { include: { department: true } } },
+      include: { allowedDepartments: { include: { department: true } }, locationRef: true },
     });
 
     return NextResponse.json(created, { status: 201 });
@@ -81,6 +83,7 @@ export async function PUT(request: NextRequest) {
         ...data,
         description: data.description || "",
         location: data.location || "",
+        locationId: data.locationId || null,
       },
     });
 
@@ -106,6 +109,7 @@ export async function PUT(request: NextRequest) {
       include: {
         staff: true,
         allowedDepartments: { include: { department: { select: { id: true, name: true, abbreviation: true } } } },
+        locationRef: true,
       },
     });
 

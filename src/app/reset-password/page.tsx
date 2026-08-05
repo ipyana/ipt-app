@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/form";
-import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, MailQuestion } from "lucide-react";
 import { motion } from "framer-motion";
 
 function ResetPasswordForm() {
@@ -35,6 +35,33 @@ function ResetPasswordForm() {
       setTimeout(() => router.push("/"), 1500);
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
+  }
+
+  if (!initialToken) {
+    return (
+      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 items-center justify-center p-4">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="w-full max-w-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
+            <div className="flex justify-center mb-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/must_Logo.png" alt="MUST Logo" className="h-24 w-24 object-contain" />
+            </div>
+            <div className="flex justify-center mb-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-900/20">
+                <MailQuestion className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white text-center">Invalid reset link</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1">
+              Please use the reset link from the email we sent you. If your link has expired, request a new one.
+            </p>
+            <Button className="w-full h-10 mt-6" onClick={() => router.push("/forgot-password")}>
+              Request a new link
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
   }
 
   return (

@@ -9,7 +9,19 @@ export async function GET() {
     await requireAdmin();
     const students = await prisma.student.findMany({
       include: {
-        applications: { select: { id: true, status: true, allocatedCluster: true, submissionDate: true } },
+        applications: {
+          select: {
+            id: true, status: true, allocatedCluster: true, submissionDate: true,
+            clusterPref1: true, clusterPref2: true,
+            allocations: {
+              include: {
+                phase: true,
+                cluster: { select: { id: true, name: true, location: true } },
+                group: { include: { venue: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

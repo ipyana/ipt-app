@@ -115,16 +115,16 @@ export async function sendTransferRejectedEmail(params: ClusterEmailParams) {
   }
 }
 
-export async function sendPasswordResetEmail(params: { name: string; email: string; resetLink: string }) {
+export async function sendPasswordResetEmail(params: { name: string; email: string; resetLink: string }): Promise<boolean> {
   const result = await sendTemplateEmail("password_reset", params.email, {
     name: params.name,
     resetLink: params.resetLink,
     appName: "IPT System",
   });
-  if (!result.success) {
-    await sendEmail(params.email, "Reset your IPT password",
-      buildSimpleHtml("Password Reset", `Click here to reset your password: ${params.resetLink}`));
-  }
+  if (result.success) return true;
+  const fallback = await sendEmail(params.email, "Reset your IPT password",
+    buildSimpleHtml("Password Reset", `Click here to reset your password: ${params.resetLink}`));
+  return fallback.success;
 }
 
 export async function sendAccountCreatedEmail(params: { name: string; email: string; role: string }) {

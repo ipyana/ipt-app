@@ -61,7 +61,7 @@ export default function StaffDashboard() {
     );
   }
 
-  const { staff, cluster, phase1Students, phase2Students } = data;
+  const { staff, cluster, phase1Students, phase2Students, capacity, currentEnrolled, phase1, phase2 } = data;
 
   async function handleTransferSubmit() {
     setTransferMsg(null);
@@ -138,14 +138,20 @@ export default function StaffDashboard() {
                   <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Total Students</p>
+                  <p className="text-xs text-slate-500">Capacity Used</p>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">
-                    {(phase1Students?.length || 0) + (phase2Students?.length || 0)}
+                    {capacity ? `${Math.round((currentEnrolled / capacity) * 100)}%` : "—"}
+                    <span className="text-sm font-normal text-slate-400"> ({currentEnrolled}/{capacity})</span>
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <PhaseStatCard title="Phase 1" phase={phase1} />
+          <PhaseStatCard title="Phase 2" phase={phase2} />
         </div>
 
         <Card>
@@ -261,5 +267,36 @@ export default function StaffDashboard() {
         </DialogFooter>
       </Dialog>
     </AppLayout>
+  );
+}
+
+function PhaseStatCard({ title, phase }: { title: string; phase: any }) {
+  if (!phase) return null;
+  return (
+    <Card>
+      <CardContent className="p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">{title}</p>
+          <Badge>{phase.enrolled || 0} students</Badge>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Calendar className="h-3.5 w-3.5" />
+          {phase.startDate ? new Date(phase.startDate).toLocaleDateString("en-TZ") : "—"}
+          {phase.endDate ? ` – ${new Date(phase.endDate).toLocaleDateString("en-TZ")}` : ""}
+        </div>
+        {phase.groups?.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {phase.groups.map((g: any) => (
+              <span key={g.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">
+                <MapPin className="h-3 w-3 text-slate-400" />{g.name}
+                <span className="text-slate-400">({g.count})</span>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">No groups yet</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

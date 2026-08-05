@@ -82,12 +82,21 @@ async function main() {
 
   const clusterVenueIds: Record<string, number[]> = {};
   for (const cd of CLUSTER_SEED_DATA) {
+    let locationRef = null;
+    if (cd.location) {
+      locationRef = await prisma.location.upsert({
+        where: { name: cd.location },
+        update: {},
+        create: { name: cd.location },
+      });
+    }
     const cluster = await prisma.cluster.create({
       data: {
         name: cd.name,
         description: cd.description,
         capacity: cd.capacity,
         location: cd.location,
+        locationId: locationRef?.id || null,
       },
     });
 

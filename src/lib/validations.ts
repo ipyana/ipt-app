@@ -63,11 +63,16 @@ export const programSchema = z.object({
   departmentId: z.number().int().positive("Department is required"),
 });
 
+export const locationSchema = z.object({
+  name: z.string().min(1, "Location name is required").max(200),
+});
+
 export const clusterManageSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   capacity: z.number().int().min(0).optional(),
   location: z.string().optional(),
+  locationId: z.number().int().positive().optional().nullable(),
   departmentSlots: z
     .array(z.object({ departmentId: z.number(), slots: z.number().int().min(0) }))
     .optional(),

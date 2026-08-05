@@ -41,7 +41,7 @@ export function TransfersConfig() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/super-admin/transfers");
+    const res = await fetch("/api/admin/transfers");
     const data = await res.json();
     setTransfers(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -53,7 +53,7 @@ export function TransfersConfig() {
     setProcessing(transfer.id);
     setMessage(null);
     try {
-      const res = await fetch("/api/super-admin/transfers", {
+      const res = await fetch("/api/admin/transfers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: transfer.id, action, notes: reviewNotes }),
