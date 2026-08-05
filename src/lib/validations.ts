@@ -100,8 +100,17 @@ export const reapplySchema = z
     message: "Select two distinct clusters for reapplication",
     path: ["pref1"],
   })
-  .refine((d) => (d.type === "transfer" ? !!d.toClusterId && (d.reason || "").trim().length >= 10 : true), {
-    message: "Select a cluster and provide a reason (min 10 characters)",
+  .refine((d) => (d.type === "transfer" ? (d.reason || "").trim().length >= 10 : true), {
+    message: "Provide a reason (min 10 characters)",
+    path: ["reason"],
+  })
+  .refine((d) => {
+    if (d.type !== "transfer") return true;
+    const single = !!d.toClusterId;
+    const both = !!d.pref1 && !!d.pref2 && d.pref1 !== d.pref2;
+    return single || both;
+  }, {
+    message: "Select either one cluster to swap or two distinct clusters to change both",
     path: ["toClusterId"],
   });
 

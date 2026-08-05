@@ -49,9 +49,11 @@ export default function StudentReapply() {
     }).finally(() => setLoading(false));
   }, []);
 
+  // Exclude the student's current allocation clusters from reapplication choices
+  const currentClusters = application ? [application.clusterPref1, application.clusterPref2] : [];
   const eligibleClusters = clusters.filter((cl) =>
     cl.allowedDepartments?.some((cd) => cd.slots > 0 && cd.department.abbreviation === user?.department)
-  );
+  ).filter((c) => !currentClusters.includes(c.id));
 
   function getAvailableFor(current: number) {
     return eligibleClusters.filter((c) => ![pref1, pref2].includes(c.id) || c.id === current);

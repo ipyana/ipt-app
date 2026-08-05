@@ -21,6 +21,8 @@ interface Transfer {
   pref1NewName: string | null;
   pref2NewName: string | null;
   currentAllocName: string | null;
+  oldPref1Name: string | null;
+  oldPref2Name: string | null;
   application?: {
     clusterPref1?: number;
     clusterPref2?: number;
@@ -117,9 +119,25 @@ export function TransfersConfig() {
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{t.application?.student?.fullName}</p>
                     <p className="text-xs text-slate-400">{t.application?.student?.studentId} · {t.application?.student?.department}</p>
                   </TableCell>
-                  <TableCell><Badge variant="secondary">{t.currentAllocName || t.fromClusterName}</Badge></TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-1 text-sm">
+                      <Badge variant="secondary">{t.oldPref1Name || t.currentAllocName || t.fromClusterName}</Badge>
+                      <ArrowRight className="h-3 w-3 text-slate-400" />
+                      <Badge variant="secondary">{t.oldPref2Name || "—"}</Badge>
+                    </span>
+                  </TableCell>
                   <TableCell><ArrowRight className="h-4 w-4 text-slate-400" /></TableCell>
-                  <TableCell><Badge>{t.toClusterName || "—"}</Badge></TableCell>
+                  <TableCell>
+                    {t.pref1NewName && t.pref2NewName ? (
+                      <span className="inline-flex items-center gap-1 text-sm">
+                        <Badge>{t.pref1NewName}</Badge>
+                        <ArrowRight className="h-3 w-3 text-slate-400" />
+                        <Badge>{t.pref2NewName}</Badge>
+                      </span>
+                    ) : (
+                      <Badge>{t.toClusterName || "—"}</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-xs text-slate-500 max-w-[180px] truncate">{t.reason}</TableCell>
                   <TableCell className="text-xs text-slate-400">{new Date(t.createdAt).toLocaleDateString("en-TZ")}</TableCell>
                   <TableCell>
@@ -159,13 +177,44 @@ export function TransfersConfig() {
                   <span className="text-slate-500">Program:</span>
                   <span className="font-medium">{reviewDialog.application?.student?.program}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Current cluster:</span>
-                  <span className="font-medium">{reviewDialog.currentAllocName || reviewDialog.fromClusterName}</span>
-                </div>
+                {reviewDialog.pref1NewName && reviewDialog.pref2NewName ? (
+                  <>
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-1">
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Previous selections</p>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">1st:</span>
+                        <span className="font-medium">{reviewDialog.oldPref1Name || reviewDialog.fromClusterName}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">2nd:</span>
+                        <span className="font-medium">{reviewDialog.oldPref2Name || "—"}</span>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/10 p-3 space-y-1">
+                      <p className="text-xs font-semibold text-primary-600 uppercase">New selections (requested)</p>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">1st:</span>
+                        <span className="font-medium text-primary-700 dark:text-primary-400">{reviewDialog.pref1NewName}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">2nd:</span>
+                        <span className="font-medium text-primary-700 dark:text-primary-400">{reviewDialog.pref2NewName}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Current cluster:</span>
+                    <span className="font-medium">{reviewDialog.currentAllocName || reviewDialog.fromClusterName}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Requested target:</span>
-                  <span className="font-medium text-primary-600">{reviewDialog.toClusterName || "—"}</span>
+                  <span className="font-medium text-primary-600">
+                    {reviewDialog.pref1NewName && reviewDialog.pref2NewName
+                      ? `${reviewDialog.pref1NewName} → ${reviewDialog.pref2NewName}`
+                      : reviewDialog.toClusterName || "—"}
+                  </span>
                 </div>
                 <div className="text-sm">
                   <span className="text-slate-500">Reason:</span>

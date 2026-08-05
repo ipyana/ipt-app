@@ -19,6 +19,8 @@ interface Reapp {
   pref1NewName: string | null;
   pref2NewName: string | null;
   currentAllocName: string | null;
+  oldPref1Name: string | null;
+  oldPref2Name: string | null;
   application?: {
     student?: { fullName?: string; studentId?: string; department?: string; program?: string };
   };
@@ -112,7 +114,13 @@ export function ReapplicationsConfig() {
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{t.application?.student?.fullName}</p>
                     <p className="text-xs text-slate-400">{t.application?.student?.studentId} · {t.application?.student?.department}</p>
                   </TableCell>
-                  <TableCell><Badge variant="secondary">{t.currentAllocName || t.fromClusterName}</Badge></TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-1 text-sm">
+                      <Badge variant="secondary">{t.oldPref1Name || t.currentAllocName || t.fromClusterName}</Badge>
+                      <ArrowRight className="h-3 w-3 text-slate-400" />
+                      <Badge variant="secondary">{t.oldPref2Name || "—"}</Badge>
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center gap-1 text-sm">
                       <Badge>{t.pref1NewName || "—"}</Badge>
@@ -154,17 +162,33 @@ export function ReapplicationsConfig() {
                   <span className="font-medium">{reviewTarget.application?.student?.fullName} ({reviewTarget.application?.student?.studentId})</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Current cluster:</span>
-                  <span className="font-medium">{reviewTarget.currentAllocName || reviewTarget.fromClusterName}</span>
+                  <span className="text-slate-500">Program:</span>
+                  <span className="font-medium">{reviewTarget.application?.student?.program} · {reviewTarget.application?.student?.department}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Requested:</span>
-                  <span className="font-medium text-primary-600">
-                    {reviewTarget.pref1NewName} → {reviewTarget.pref2NewName}
-                  </span>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-1">
+                  <p className="text-xs font-semibold text-slate-400 uppercase">Previous selections</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">1st:</span>
+                    <span className="font-medium">{reviewTarget.oldPref1Name || "—"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">2nd:</span>
+                    <span className="font-medium">{reviewTarget.oldPref2Name || "—"}</span>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/10 p-3 space-y-1">
+                  <p className="text-xs font-semibold text-primary-600 uppercase">New selections (requested)</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">1st:</span>
+                    <span className="font-medium text-primary-700 dark:text-primary-400">{reviewTarget.pref1NewName || "—"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">2nd:</span>
+                    <span className="font-medium text-primary-700 dark:text-primary-400">{reviewTarget.pref2NewName || "—"}</span>
+                  </div>
                 </div>
                 <div className="text-sm">
-                  <span className="text-slate-500">Reason:</span>
+                  <span className="text-slate-500">Reason for reapplication:</span>
                   <p className="mt-1 text-slate-700 dark:text-slate-300">{reviewTarget.reason}</p>
                 </div>
               </div>

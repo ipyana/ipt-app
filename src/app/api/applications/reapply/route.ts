@@ -30,11 +30,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { type } = parsed.data;
+    const currentClusters = [application.clusterPref1, application.clusterPref2];
 
     if (type === "reapplication") {
       const { pref1, pref2 } = parsed.data;
       if (!pref1 || !pref2 || pref1 === pref2) {
         return err("Select two distinct clusters for reapplication", 400);
+      }
+      if (currentClusters.includes(pref1) || currentClusters.includes(pref2)) {
+        return err("New clusters must differ from your current allocation", 400);
       }
 
       const student = await prisma.student.findUnique({ where: { id: session.id } });
@@ -82,26 +86,45 @@ export async function POST(request: NextRequest) {
         });
       });
 
-      return NextResponse.json({ success: true, message: "Reapplication submitted. Wait for reallocation within 72 hours." }, { status: 201 });
+      return NextResponse.json({ success: true, message: "Reapplication submitted. Wait for review within 72 hours." }, { status: 201 });
     }
 
     if (type === "transfer") {
-      const { toClusterId, reason } = parsed.data;
-      if (!toClusterId || !reason || reason.trim().length < 10) {
-        return err("Select a cluster and provide a reason (min 10 characters)", 400);
-      }
-      if (toClusterId === application.clusterPref1 || toClusterId === application.clusterPref2) {
-        return err("You are already allocated to that cluster", 400);
+      const { toClusterId, pref1, pref2, reason } = parsed.data;
+      if ((reason || "").trim().length < 10) {
+        return err("Provide a reason (min 10 characters)", 400);
       }
 
       const student = await prisma.student.findUnique({ where: { id: session.id } });
       if (!student) return err("Student not found", 404);
 
-      const cd = await prisma.clusterDepartment.findFirst({
-        where: { clusterId: toClusterId, department: { abbreviation: student.department } },
-      });
-      if (!cd) return err("Your department is not eligible for that cluster", 403);
-      if (cd.enrolled >= cd.slots) return err("No available slots in that cluster", 409);
+      // Transfer can change one cluster (toClusterId) or both clusters (pref1+pref2)
+      if (toClusterId) {
+        if (currentClusters.includes(toClusterId)) {
+          return err("You are already allocated to that cluster", 400);
+        }
+        const cd = await prisma.clusterDepartment.findFirst({
+          where: { clusterId: toClusterId, department: { abbreviation: student.department } },
+        });
+        if (!cd) return err("Your department is not eligible for that cluster", 403);
+        if (cd.enrolled >= cd.slots) return err("No available slots in that cluster", 409);
+      } else if (pref1 && pref2) {
+        if (pref1 === pref2) return err("Select two distinct clusters", 400);
+        if (currentClusters.includes(pref1) || currentClusters.includes(pref2)) {
+          return err("New clusters must differ from your current allocation", 400);
+        }
+        const clusters = await prisma.cluster.findMany({
+          where: { id: { in: [pref1, pref2] } },
+          include: { allowedDepartments: { include: { department: true } } },
+        });
+        for (const cluster of clusters) {
+          const cd = cluster.allowedDepartments?.find((ad) => ad.department?.abbreviation === student.department);
+          if (!cd) return err(`Your department is not eligible for "${cluster.name}"`, 403);
+          if (cd.enrolled >= cd.slots) return err(`No available slots in "${cluster.name}"`, 409);
+        }
+      } else {
+        return err("Select either one cluster to swap or two distinct clusters to change both", 400);
+      }
 
       const pending = await prisma.transferRequest.findFirst({
         where: { applicationId: application.id, status: "pending" },
@@ -119,14 +142,16 @@ export async function POST(request: NextRequest) {
             applicationId: application.id,
             type: "transfer",
             fromClusterId: application.clusterPref1,
-            toClusterId,
-            reason,
+            toClusterId: toClusterId ?? null,
+            pref1New: pref1 ?? null,
+            pref2New: pref2 ?? null,
+            reason: reason || "",
             status: "pending",
           },
         });
       });
 
-      return NextResponse.json({ success: true, message: "Transfer submitted. Wait for reallocation within 72 hours." }, { status: 201 });
+      return NextResponse.json({ success: true, message: "Transfer submitted. Wait for review within 72 hours." }, { status: 201 });
     }
 
     return err("Invalid type. Use 'transfer' or 'reapplication'", 400);

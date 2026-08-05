@@ -68,6 +68,10 @@ export default function StudentDashboard() {
     c.allowedDepartments?.some((cd) => cd.slots > 0 && cd.department.abbreviation === user?.department)
   );
 
+  // Clusters excluding the student's current allocation (for reapply / transfer)
+  const currentClusters = application ? [application.clusterPref1, application.clusterPref2] : [];
+  const reapplyEligible = eligibleClusters.filter((c) => !currentClusters.includes(c.id));
+
   function getProgramSlot(cluster: Cluster) {
     const cd = cluster.allowedDepartments?.find((p) => p.department.abbreviation === user?.department);
     return cd || null;
@@ -341,7 +345,7 @@ export default function StudentDashboard() {
                   {reapplyStep === 1 ? (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       <p className="text-xs font-medium text-slate-400 uppercase">First Preference</p>
-                      {eligibleClusters.filter((c) => c.id !== reapplyPref2).map((c) => (
+                      {reapplyEligible.filter((c) => c.id !== reapplyPref2).map((c) => (
                         <button key={c.id} onClick={() => { setReapplyPref1(c.id); setReapplyStep(2); }}
                           className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${reapplyPref1 === c.id ? "border-primary-500" : "border-slate-200 hover:border-primary-200"}`}>
                           {c.name}
@@ -351,7 +355,7 @@ export default function StudentDashboard() {
                   ) : (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       <p className="text-xs font-medium text-slate-400 uppercase">Second Preference</p>
-                      {eligibleClusters.filter((c) => c.id !== reapplyPref1).map((c) => (
+                      {reapplyEligible.filter((c) => c.id !== reapplyPref1).map((c) => (
                         <button key={c.id} onClick={() => setReapplyPref2(c.id)}
                           className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${reapplyPref2 === c.id ? "border-primary-500" : "border-slate-200 hover:border-primary-200"}`}>
                           {c.name}
@@ -376,7 +380,7 @@ export default function StudentDashboard() {
                 <>
                   <p className="text-sm text-slate-500">Select a new cluster to replace one of your current ones:</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {eligibleClusters.filter((c) => c.id !== application?.clusterPref1 && c.id !== application?.clusterPref2).map((c) => (
+                    {reapplyEligible.map((c) => (
                       <button key={c.id} onClick={() => setTransferClusterId(c.id)}
                         className={`w-full text-left rounded-lg border-2 p-3 text-sm transition-all ${transferClusterId === c.id ? "border-primary-500" : "border-slate-200 hover:border-primary-200"}`}>
                         {c.name}

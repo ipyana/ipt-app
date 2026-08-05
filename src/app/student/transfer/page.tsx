@@ -58,13 +58,16 @@ export default function StudentTransfer() {
     cl.allowedDepartments?.some((cd) => cd.slots > 0 && cd.department.abbreviation === user?.department)
   );
 
+  // Exclude the student's current clusters entirely (cannot select same cluster for swap)
+  const currentClusters = application ? [application.clusterPref1, application.clusterPref2] : [];
+
   // For swapOne: clusters that aren't the student's current ones
-  const swapEligible = eligibleClusters.filter(
-    (c) => c.id !== application?.clusterPref1 && c.id !== application?.clusterPref2
-  );
+  const swapEligible = eligibleClusters.filter((c) => !currentClusters.includes(c.id));
 
   function getAvailableFor(current: number) {
-    return eligibleClusters.filter((c) => ![pref1, pref2].includes(c.id) || c.id === current);
+    return eligibleClusters
+      .filter((c) => !currentClusters.includes(c.id))
+      .filter((c) => ![pref1, pref2].includes(c.id) || c.id === current);
   }
 
   async function handleSubmit() {
@@ -86,7 +89,7 @@ export default function StudentTransfer() {
         body.toClusterId = toClusterId;
         body.reason = reason;
       } else {
-        body.type = "reapplication";
+        body.type = "transfer";
         body.pref1 = pref1;
         body.pref2 = pref2;
         body.reason = reason;

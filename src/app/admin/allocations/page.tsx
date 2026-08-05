@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Zap, User, Filter, CalendarDays, Bell } from "lucide-react";
+import { Zap, User, Filter, CalendarDays, Bell, RefreshCw } from "lucide-react";
 
 export default function AdminAllocations() {
+  const router = useRouter();
   const [apps, setApps] = useState<any[]>([]);
   const [clusters, setClusters] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
@@ -136,6 +138,10 @@ export default function AdminAllocations() {
             <p className="text-sm text-slate-500">{apps.filter((a) => a.status === "pending").length} pending</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push("/admin/reapplications")}>
+              <RefreshCw className="h-4 w-4" />
+              Re-applications ({apps.filter((a) => a.status === "reapplying").length})
+            </Button>
             <Button onClick={handleAutoAllocate} disabled={allocating === -1} variant="accent">
               <Zap className="h-4 w-4" />
               {allocating === -1 ? "Allocating..." : "Auto-Allocate All"}
