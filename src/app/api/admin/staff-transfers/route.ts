@@ -34,15 +34,30 @@ export async function POST(request: NextRequest) {
     const parsed = staffTransferReviewSchema.safeParse(body);
     if (!parsed.success) return err(parsed.error.issues[0].message, 400);
     const { id, action, notes } = parsed.data;
-    if (!id || !["approve", "reject"].includes(action)) {
-      return err("ID and action (approve/reject) are required", 400);
+    if (!id || !["approve", "reject", "reactivate"].includes(action)) {
+      return err("ID and action (approve/reject/reactivate) are required", 400);
     }
 
     const transfer = await prisma.staffTransferRequest.findUnique({
       where: { id },
       include: { staff: true, fromCluster: true, toCluster: true },
     });
-    if (!transfer || transfer.status !== "pending") {
+    if (!transfer) {
+      return err("Transfer request not found", 400);
+    }
+
+    if (action === "reactivate") {
+      if (transfer.status !== "rejected") {
+        return err("Only rejected transfer requests can be reactivated", 400);
+      }
+      await prisma.staffTransferRequest.update({
+        where: { id },
+        data: { status: "pending", reviewNotes: null, reviewedById: null, reviewedAt: null },
+      });
+      return NextResponse.json({ success: true, message: "Transfer request reactivated and reopened for review" });
+    }
+
+    if (transfer.status !== "pending") {
       return err("Transfer request not found or already processed", 400);
     }
 

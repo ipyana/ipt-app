@@ -175,6 +175,9 @@ export default function SuperAdminStaff() {
                         {s.status === "active" && !s.isActive && (
                           <Button size="sm" variant="outline" onClick={() => handleForceActivate(s.id)}><RefreshCw className="h-3 w-3" /> Reactivate</Button>
                         )}
+                        {s.status === "rejected" && (
+                          <Button size="sm" variant="outline" onClick={() => handleForceActivate(s.id)}><RefreshCw className="h-3 w-3" /> Reactivate</Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openMove(s)}><Move className="h-4 w-4 text-amber-600" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4 text-red-500" /></Button>

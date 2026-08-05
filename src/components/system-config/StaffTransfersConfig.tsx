@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
-import { ArrowRightLeft, Loader2 } from "lucide-react";
+import { ArrowRightLeft, Loader2, RefreshCw } from "lucide-react";
 
 interface Transfer {
   id: number;
@@ -53,6 +53,20 @@ export function StaffTransfersConfig() {
     const data = await res.json();
     setBusy(false);
     setReviewTarget(null); setReviewNotes("");
+    setMessage({ type: data.success ? "success" : "error", text: data.message || data.error || "Failed" });
+    await load();
+  }
+
+  async function handleReactivate(id: number) {
+    if (!confirm("Reactivate this rejected transfer request? It will be reopened for review and the facilitator can be approved again.")) return;
+    setBusy(true);
+    const res = await fetch("/api/admin/staff-transfers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "reactivate" }),
+    });
+    const data = await res.json();
+    setBusy(false);
     setMessage({ type: data.success ? "success" : "error", text: data.message || data.error || "Failed" });
     await load();
   }
@@ -108,6 +122,8 @@ export function StaffTransfersConfig() {
                       <Button size="sm" onClick={() => { setReviewTarget(t); setReviewAction("approve"); setReviewNotes(""); }}>
                         Review
                       </Button>
+                    ) : t.status === "rejected" ? (
+                      <Button size="sm" variant="outline" onClick={() => handleReactivate(t.id)}><RefreshCw className="h-3 w-3" /> Reactivate</Button>
                     ) : <span className="text-xs text-slate-400">{t.reviewNotes || "—"}</span>}
                   </TableCell>
                 </TableRow>

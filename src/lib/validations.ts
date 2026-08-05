@@ -166,7 +166,7 @@ export const groupActionSchema = z.object({
 
 export const staffTransferReviewSchema = z.object({
   id: z.number().int().positive(),
-  action: z.enum(["approve", "reject"]),
+  action: z.enum(["approve", "reject", "reactivate"]),
   notes: z.string().max(500).optional(),
 });
 
