@@ -32,9 +32,9 @@ export const metadata: Metadata = {
     description: "Industrial Practical Training Portal - Mbeya University of Science and Technology",
     images: [
       {
-        url: "/must_Logo.png",
-        width: 880,
-        height: 890,
+        url: "/og-card.png",
+        width: 1200,
+        height: 630,
         alt: "MUST Logo",
       },
     ],
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "MUST — IPT 2025/2026",
     description: "Industrial Practical Training Portal - Mbeya University of Science and Technology",
-    images: ["/must_Logo.png"],
+    images: ["/og-card.png"],
   },
 };
 
