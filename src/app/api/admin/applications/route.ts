@@ -9,6 +9,10 @@ export async function GET() {
     const applications = await prisma.application.findMany({
       include: {
         student: { select: { studentId: true, fullName: true, department: true, program: true, email: true } },
+        transferRequests: {
+          where: { status: "pending" },
+          select: { id: true, type: true, toClusterId: true, pref1New: true, pref2New: true, status: true },
+        },
       },
       orderBy: { submissionDate: "desc" },
     });
@@ -24,6 +28,7 @@ export async function GET() {
       pref1Name: clusterMap[app.clusterPref1] || "Unknown",
       pref2Name: clusterMap[app.clusterPref2] || "Unknown",
       allocatedName: app.allocatedCluster ? clusterMap[app.allocatedCluster] : null,
+      pendingRequest: app.transferRequests[0] || null,
     }));
 
     return NextResponse.json(enriched);

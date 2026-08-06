@@ -22,7 +22,7 @@ export function MobileNav({ role, userRole, open, onClose, onLogout }: MobileNav
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm lg:hidden"
             onClick={onClose}
           />
           <motion.div
@@ -30,7 +30,7 @@ export function MobileNav({ role, userRole, open, onClose, onLogout }: MobileNav
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar shadow-xl lg:hidden"
+            className="fixed inset-y-0 left-0 z-[60] w-64 bg-sidebar shadow-xl lg:hidden"
           >
             <div className="relative h-full">
               <button

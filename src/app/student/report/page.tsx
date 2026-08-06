@@ -6,26 +6,63 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   Upload,
   FileText,
   CheckCircle,
   AlertCircle,
   Clock,
-  X,
+  Eye,
+  Send,
+  CalendarDays,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+
+interface WeekEntry {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  reportUrl: string | null;
+  originalName: string | null;
+  submittedAt: string | null;
+  submitted: boolean;
+}
+
+interface PhaseReports {
+  phaseNumber: number;
+  clusterId: number;
+  startDate: string;
+  endDate: string;
+  weeks: WeekEntry[];
+  submittedCount: number;
+  totalWeeks: number;
+}
+
+interface ReportData {
+  weeksPerPhase: number;
+  phases: PhaseReports[];
+  totalSubmitted: number;
+  totalWeeks: number;
+}
 
 export default function StudentReport() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [application, setApplication] = useState<any>(null);
   const [clusters, setClusters] = useState<Record<number, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // weekly report state
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [selectedPhase, setSelectedPhase] = useState<number>(1);
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewName, setPreviewName] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -41,22 +78,47 @@ export default function StudentReport() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleUpload() {
-    if (!file) return;
+  useEffect(() => {
+    if (!application || application.status !== "allocated") return;
+    fetch("/api/applications/weekly")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.phases)) setReportData(d);
+      })
+      .catch(() => {});
+  }, [application]);
+
+  function openFilePicker(phase: number, week: number) {
+    setSelectedPhase(phase);
+    setSelectedWeek(week);
+    setFile(null);
+    setMessage(null);
+    fileInputRef.current?.click();
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) setFile(f);
+  }
+
+  async function handleSubmit() {
+    if (!file || !selectedWeek) return;
     setUploading(true);
     setMessage(null);
     try {
       const formData = new FormData();
       formData.append("report", file);
-      const res = await fetch("/api/applications/report", {
-        method: "POST",
-        body: formData,
-      });
+      formData.append("phaseNumber", String(selectedPhase));
+      formData.append("weekNumber", String(selectedWeek));
+      const res = await fetch("/api/applications/weekly", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
-      setMessage({ type: "success", text: "Report uploaded successfully!" });
+      setMessage({ type: "success", text: `Week ${selectedWeek} (Phase ${selectedPhase}) report submitted successfully!` });
       setFile(null);
-      setApplication((prev: any) => ({ ...prev, reportUrl: data.url }));
+      setSelectedWeek(null);
+      const refresh = await fetch("/api/applications/weekly");
+      const refreshed = await refresh.json();
+      if (Array.isArray(refreshed.phases)) setReportData(refreshed);
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     } finally {
@@ -64,9 +126,10 @@ export default function StudentReport() {
     }
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (f) setFile(f);
+  function handlePreview(week: WeekEntry) {
+    setPreviewUrl(week.reportUrl);
+    setPreviewName(week.originalName);
+    setPreviewOpen(true);
   }
 
   if (loading) {
@@ -117,16 +180,18 @@ export default function StudentReport() {
   }
 
   const allocatedName = clusters[application.allocatedCluster] || "Unknown Cluster";
+  const totalWeeks = reportData?.totalWeeks || 0;
+  const totalSubmitted = reportData?.totalSubmitted || 0;
 
   return (
     <AppLayout role="student">
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Upload Report
+            Weekly Reports
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Submit your IPT report for <strong>{allocatedName}</strong>
+            Submit your weekly IPT reports for <strong>{allocatedName}</strong>
           </p>
         </div>
 
@@ -149,87 +214,191 @@ export default function StudentReport() {
           </motion.div>
         )}
 
+        {/* Progress summary */}
         <Card>
-          <CardHeader>
-            <CardTitle>Report File</CardTitle>
-            <CardDescription>Upload a PDF or Word document (max 10MB)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 p-12 cursor-pointer hover:border-primary-400 dark:hover:border-primary-600 transition-colors"
-            >
-              <Upload className="h-10 w-10 text-slate-400 mb-3" />
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {file ? file.name : "Click to select a file"}
+          <CardContent className="p-5 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-500">Overall Progress</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                {totalSubmitted} / {totalWeeks || 0}
               </p>
-              <p className="text-xs text-slate-400 mt-1">
-                {file
-                  ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                  : "PDF, DOC, or DOCX — up to 10MB"}
-              </p>
+              <p className="text-xs text-slate-400">weekly reports submitted</p>
             </div>
-
-            {file && (
-              <div className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-primary-600" />
-                  <div>
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{file.name}</p>
-                    <p className="text-xs text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                  className="rounded-full p-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                  aria-label="Remove file"
-                >
-                  <X className="h-4 w-4 text-slate-400" />
-                </button>
-              </div>
-            )}
-
-            <Button
-              onClick={handleUpload}
-              disabled={!file || uploading}
-              className="w-full"
-              size="lg"
-            >
-              {uploading ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  Upload Report
-                </>
-              )}
-            </Button>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20">
+              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                {totalWeeks ? Math.round((totalSubmitted / totalWeeks) * 100) : 0}%
+              </span>
+            </div>
           </CardContent>
         </Card>
 
-        {application.reportUrl && (
-          <Card className="border-l-4 border-l-emerald-500">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-emerald-600" />
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-white">Report Submitted</p>
-                  <p className="text-sm text-slate-500">Your report has been received.</p>
+        {/* Week grid */}
+        {(reportData?.phases || []).map((phase) => (
+          <Card key={phase.phaseNumber}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-primary-600" />
+                  <CardTitle className="text-base">Phase {phase.phaseNumber}</CardTitle>
+                  <Badge variant={phase.submittedCount === phase.totalWeeks ? "success" : "warning"}>
+                    {phase.submittedCount}/{phase.totalWeeks} submitted
+                  </Badge>
                 </div>
+              </div>
+              <CardDescription>
+                {new Date(phase.startDate).toLocaleDateString("en-TZ")} – {new Date(phase.endDate).toLocaleDateString("en-TZ")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {phase.weeks.map((week) => {
+                  const isSelected = selectedWeek === week.weekNumber && selectedPhase === phase.phaseNumber;
+                  return (
+                    <div
+                      key={week.weekNumber}
+                      className={`rounded-lg border p-4 transition-colors ${
+                        week.submitted
+                          ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-900/10"
+                          : "border-slate-200 dark:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-slate-900 dark:text-white">Week {week.weekNumber}</p>
+                        {week.submitted ? (
+                          <CheckCircle className="h-5 w-5 text-emerald-600" />
+                        ) : (
+                          <Clock className="h-5 w-5 text-slate-400" />
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {new Date(week.startDate).toLocaleDateString("en-TZ")} – {new Date(week.endDate).toLocaleDateString("en-TZ")}
+                      </p>
+
+                      {week.submitted ? (
+                        <div className="mt-3 space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+                            <FileText className="h-3.5 w-3.5" />
+                            <span className="truncate">{week.originalName || "Report uploaded"}</span>
+                          </div>
+                          <Button size="sm" variant="outline" className="w-full" onClick={() => handlePreview(week)}>
+                            <Eye className="h-3.5 w-3.5" /> View Report
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant={isSelected ? "primary" : "outline"}
+                          className="w-full mt-3"
+                          onClick={() => openFilePicker(phase.phaseNumber, week.weekNumber)}
+                        >
+                          <Upload className="h-3.5 w-3.5" /> Upload Report
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
-        )}
+        ))}
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.doc,.docx"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {/* Preview & Submit dialog */}
+        <AnimatePresence>
+          {file && selectedWeek && (
+            <Dialog open={!!file} onClose={() => setFile(null)}>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+                    <FileText className="h-5 w-5 text-primary-600" />
+                  </div>
+                  <DialogTitle>Preview & Submit — Week {selectedWeek} (Phase {selectedPhase})</DialogTitle>
+                </div>
+              </DialogHeader>
+              <DialogBody>
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
+                    <p className="font-medium text-slate-900 dark:text-white">{file.name}</p>
+                    <p className="text-xs text-slate-400 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-xs text-amber-700 dark:text-amber-400">
+                    <p className="flex items-center gap-1.5">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      Once you submit this report, it cannot be withdrawn or changed. Review your file carefully before submitting.
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Please verify the file is the correct report for Week {selectedWeek}. After submission, it is final.
+                  </p>
+                </div>
+              </DialogBody>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setFile(null)}>Cancel</Button>
+                <Button onClick={handleSubmit} disabled={uploading}>
+                  {uploading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" /> Submit Report
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </Dialog>
+          )}
+        </AnimatePresence>
+
+        {/* View submitted report dialog */}
+        <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)}>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+              </div>
+              <DialogTitle>Submitted Report</DialogTitle>
+            </div>
+          </DialogHeader>
+          <DialogBody>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                <span className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-slate-400" /> {previewName || "Report"}
+                </span>
+                <Badge variant="success">Submitted</Badge>
+              </div>
+              {previewUrl && (
+                <div className="flex h-64 w-full items-center justify-center rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
+                  <a href={previewUrl} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-2 text-primary-600 hover:underline">
+                    <Eye className="h-8 w-8" />
+                    <span className="text-sm">Open / Download Report</span>
+                  </a>
+                </div>
+              )}
+              <p className="text-xs text-slate-400">
+                This report has been submitted and is final. No withdrawal is allowed.
+              </p>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>Close</Button>
+            {previewUrl && (
+              <Button asChild>
+                <a href={previewUrl} target="_blank" rel="noreferrer"><Eye className="h-4 w-4" /> Open Report</a>
+              </Button>
+            )}
+          </DialogFooter>
+        </Dialog>
       </div>
     </AppLayout>
   );

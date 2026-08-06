@@ -232,7 +232,9 @@ export default function AdminAllocations() {
                     </TableCell>
                     <TableCell>
                       {app.status === "reapplying" ? (
-                        <Badge variant="warning">Reapplying</Badge>
+                        <Badge variant={app.pendingRequest?.type === "transfer" ? "secondary" : "warning"}>
+                          {app.pendingRequest?.type === "transfer" ? "Transfer Request" : "Re-application"}
+                        </Badge>
                       ) : app.status === "allocated" ? (
                         <Badge variant="success">{app.allocatedName || "Allocated"}</Badge>
                       ) : (

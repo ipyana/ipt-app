@@ -195,8 +195,22 @@ model Application {
   allocations      PhaseAllocation[]
   waitlistEntries  WaitlistEntry[]
   transferRequests TransferRequest[]
+  weeklyReports    WeeklyReport[]
 
   @@unique([studentId])
+}
+
+model WeeklyReport {
+  id            Int         @id @default(autoincrement())
+  applicationId Int         @map("application_id")
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  phaseNumber   Int         @map("phase_number")
+  weekNumber    Int         @map("week_number")
+  reportUrl     String      @map("report_url")
+  originalName  String      @map("original_name")
+  submittedAt   DateTime    @default(now()) @map("submitted_at")
+
+  @@unique([applicationId, phaseNumber, weekNumber])
 }
 
 model Setting {
