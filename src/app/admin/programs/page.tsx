@@ -10,6 +10,8 @@ import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDialog } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import { useBulkSelection } from "@/lib/useBulkSelection";
+import { BulkDeleteDialog } from "@/components/BulkDeleteDialog";
 
 interface Dept { id: number; name: string; abbreviation: string; }
 interface Program { id: number; name: string; departmentId: number; department: Dept; }
@@ -23,6 +25,9 @@ export default function AdminPrograms() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Program | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const bulk = useBulkSelection(items);
 
   async function load() {
     const [progs, depts] = await Promise.all([
@@ -68,6 +73,21 @@ export default function AdminPrograms() {
     setDeleteTarget(null); load();
   }
 
+  async function handleBulkDelete() {
+    const res = await fetch("/api/admin/programs", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: Array.from(bulk.selected) }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to delete");
+    const count = data.deleted ?? bulk.selected.size;
+    bulk.clear();
+    setBulkOpen(false);
+    setBulkMsg({ type: "success", text: `Deleted ${count} program${count !== 1 ? "s" : ""}` });
+    load();
+  }
+
   return (
     <AppLayout role="admin">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -84,6 +104,9 @@ export default function AdminPrograms() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <input type="checkbox" checked={bulk.allSelected} onChange={bulk.toggleAll} className="h-4 w-4 accent-primary-600" title="Select all" />
+                  </TableHead>
                   <TableHead>Program Name</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
@@ -91,7 +114,15 @@ export default function AdminPrograms() {
               </TableHeader>
               <TableBody>
                 {items.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className={bulk.selected.has(p.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={bulk.selected.has(p.id)}
+                        onChange={() => bulk.toggleOne(p.id)}
+                        className="h-4 w-4 accent-primary-600"
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell><Badge>{p.department?.abbreviation}</Badge> <span className="text-sm text-slate-500 ml-2">{p.department?.name}</span></TableCell>
                     <TableCell>
@@ -106,6 +137,26 @@ export default function AdminPrograms() {
             </Table>
           </CardContent>
         </Card>
+
+        {bulkMsg && (
+          <div className={`rounded-lg border px-3 py-2 text-sm ${
+            bulkMsg.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
+          }`}>{bulkMsg.text}</div>
+        )}
+
+        {bulk.someSelected && (
+          <div className="sticky bottom-4 z-30 flex items-center justify-between rounded-xl border border-primary-200 bg-primary-600 px-4 py-2.5 text-white shadow-lg">
+            <p className="text-sm font-medium">{bulk.selected.size} selected</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={bulk.clear}>
+                Clear
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setBulkOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete Selected
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
           <DialogHeader>
@@ -133,6 +184,14 @@ export default function AdminPrograms() {
             <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : editing ? "Update" : "Create"}</Button>
           </DialogFooter>
         </Dialog>
+
+        <BulkDeleteDialog
+          open={bulkOpen}
+          count={bulk.selected.size}
+          label="program"
+          onClose={() => setBulkOpen(false)}
+          onConfirm={handleBulkDelete}
+        />
 
         <ConfirmDialog
           open={!!deleteTarget}

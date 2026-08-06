@@ -79,6 +79,7 @@ model Staff {
   createdAt          DateTime  @default(now()) @map("created_at")
   announcements      Announcement[]
   transferRequests   StaffTransferRequest[]
+  announcementReads  StaffAnnouncementRead[]
 }
 
 model Student {
@@ -247,16 +248,18 @@ model Otp {
 
 model Announcement {
   id             Int                  @id @default(autoincrement())
-  clusterId      Int                  @map("cluster_id")
-  cluster        Cluster              @relation(fields: [clusterId], references: [id], onDelete: Cascade)
-  staffId        Int                  @map("staff_id")
-  staff          Staff                @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  clusterId      Int?                 @map("cluster_id")
+  cluster        Cluster?             @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  staffId        Int?                 @map("staff_id")
+  staff          Staff?               @relation(fields: [staffId], references: [id], onDelete: Cascade)
   title          String
   body           String
+  audience       String               @default("students")
   attachmentUrl  String?              @map("attachment_url")
   attachmentName String?              @map("attachment_name")
   createdAt      DateTime             @default(now()) @map("created_at")
   reads          AnnouncementRead[]
+  staffReads     StaffAnnouncementRead[]
 
   @@index([clusterId, createdAt])
 }
@@ -270,6 +273,17 @@ model AnnouncementRead {
   readAt         DateTime     @default(now()) @map("read_at")
 
   @@unique([announcementId, studentId])
+}
+
+model StaffAnnouncementRead {
+  id             Int          @id @default(autoincrement())
+  announcementId Int          @map("announcement_id")
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  staffId        Int          @map("staff_id")
+  staff          Staff        @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now()) @map("read_at")
+
+  @@unique([announcementId, staffId])
 }
 
 model StaffTransferRequest {

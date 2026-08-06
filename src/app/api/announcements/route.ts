@@ -28,8 +28,7 @@ export async function GET(request: NextRequest) {
       include: { staff: { select: { id: true, name: true } } },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ cluster: staff.cluster, announcements });
-  } catch (e: any) {
+    return NextResponse.json({ cluster: staff.cluster, announcements });  } catch (e: any) {
     if (e.message === "Unauthorized") return err("Unauthorized", 401);
     if (e.message === "Forbidden") return err("Forbidden", 403);
     return err("Failed", 500);
@@ -71,6 +70,7 @@ export async function POST(request: NextRequest) {
         staffId: staff.id,
         title: title.trim(),
         body: body.trim(),
+        audience: "students",
         attachmentUrl,
         attachmentName,
       },

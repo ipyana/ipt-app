@@ -5,20 +5,41 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LogOut, ChevronDown } from "lucide-react";
-import { navMap } from "@/lib/nav";
+import { navMap, NavItem } from "@/lib/nav";
 import { navIcon } from "@/lib/navIcons";
 
 interface SidebarProps {
   role: string;
+  userRole?: string;
   onLogout: () => void;
   isMobile?: boolean;
   onNavigate?: () => void;
 }
 
-export function Sidebar({ role, onLogout, isMobile = false, onNavigate }: SidebarProps) {
+const COORDINATOR_BLOCKED = [
+  "/admin/system-config/email-provider",
+  "/admin/system-config/email-templates",
+  "/admin/system-config/email-logs",
+];
+
+function filterItems(items: NavItem[], role: string): NavItem[] {
+  if (role !== "coordinator") return items;
+  return items
+    .map((item) => {
+      if (item.children) {
+        const children = item.children.filter((c) => !COORDINATOR_BLOCKED.includes(c.href || ""));
+        return children.length > 0 ? { ...item, children } : null;
+      }
+      return item;
+    })
+    .filter((item): item is NavItem => !!item);
+}
+
+export function Sidebar({ role, userRole, onLogout, isMobile = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const items = navMap[role] || navMap.admin;
+  const effectiveRole = userRole || role;
+  const items = filterItems(navMap[effectiveRole] || navMap.admin, effectiveRole);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     for (const item of items) {

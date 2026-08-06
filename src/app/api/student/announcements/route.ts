@@ -21,10 +21,14 @@ export async function GET(request: NextRequest) {
     if (app?.allocatedCluster) clusters.add(app.allocatedCluster);
     if (app?.clusterPref1) clusters.add(app.clusterPref1);
     if (app?.clusterPref2) clusters.add(app.clusterPref2);
-    if (clusters.size === 0) return NextResponse.json({ announcements: [], unreadCount: 0 });
 
     const announcements = await prisma.announcement.findMany({
-      where: { clusterId: { in: Array.from(clusters) } },
+      where: {
+        OR: [
+          ...(clusters.size > 0 ? [{ clusterId: { in: Array.from(clusters) } }] : []),
+          { audience: { in: ["students", "all"] } },
+        ],
+      },
       include: {
         staff: { select: { id: true, name: true } },
         cluster: { select: { id: true, name: true } },

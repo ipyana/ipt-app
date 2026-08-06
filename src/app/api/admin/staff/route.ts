@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { requireAdmin, requireAdminOnly } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { createStaffRoute } from "@/lib/staffRoutes";
 
-const { GET, POST, PUT, DELETE } = createStaffRoute(requireAdmin, requireAdminOnly);
+const { GET, POST, PUT, DELETE } = createStaffRoute(requireAdmin, requireAdmin);
 
 export { GET, POST, PUT, DELETE };

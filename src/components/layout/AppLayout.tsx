@@ -55,9 +55,9 @@ export function AppLayout({ children, role }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-surface">
       <div className="hidden lg:block fixed inset-y-0 left-0 z-40 w-60">
-        <Sidebar role={role} onLogout={handleLogout} />
+        <Sidebar role={role} userRole={user?.role} onLogout={handleLogout} />
       </div>
-      <MobileNav role={role} open={mobileOpen} onClose={() => setMobileOpen(false)} onLogout={handleLogout} />
+      <MobileNav role={role} userRole={user?.role} open={mobileOpen} onClose={() => setMobileOpen(false)} onLogout={handleLogout} />
       <TopNav user={user} onMenuToggle={() => setMobileOpen(true)} />
       <main className={cn("pt-12 transition-all duration-200 ease-in-out lg:pl-60")}>
         <div className="animate-fade-in">{children}</div>

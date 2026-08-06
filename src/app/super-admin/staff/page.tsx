@@ -12,6 +12,8 @@ import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDia
 import { Plus, Pencil, Trash2, Move, Users, RefreshCw, ClipboardCheck } from "lucide-react";
 import { DEPARTMENT_ABBREVIATIONS } from "@/lib/departments";
 import { StaffApproveDialog, StaffForReview } from "@/components/StaffApproveDialog";
+import { useBulkSelection } from "@/lib/useBulkSelection";
+import { BulkDeleteDialog } from "@/components/BulkDeleteDialog";
 
 interface Cluster { id: number; name: string; }
 interface StaffMember {
@@ -34,6 +36,9 @@ export default function SuperAdminStaff() {
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [reviewTarget, setReviewTarget] = useState<StaffMember | null>(null);
   const [reviewRequiresPassword, setReviewRequiresPassword] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const bulk = useBulkSelection(items);
 
   async function load() {
     const [staffRes, clusterRes] = await Promise.all([
@@ -102,6 +107,21 @@ export default function SuperAdminStaff() {
     setDeleteTarget(null); load();
   }
 
+  async function handleBulkDelete() {
+    const res = await fetch("/api/super-admin/staff", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: Array.from(bulk.selected) }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to delete");
+    const count = data.deleted ?? bulk.selected.size;
+    bulk.clear();
+    setBulkOpen(false);
+    setBulkMsg({ type: "success", text: `Deleted ${count} staff member${count !== 1 ? "s" : ""}` });
+    load();
+  }
+
   async function handleApprove(id: number) {
     await fetch("/api/super-admin/staff", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "approve" }) });
     load();
@@ -148,11 +168,20 @@ export default function SuperAdminStaff() {
           <Button onClick={openAdd}><Plus className="h-4 w-4" /> Add Staff</Button>
         </div>
 
+        {bulkMsg && (
+          <div className={`rounded-lg border px-3 py-2 text-sm ${
+            bulkMsg.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
+          }`}>{bulkMsg.text}</div>
+        )}
+
         <Card>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <input type="checkbox" checked={bulk.allSelected} onChange={bulk.toggleAll} className="h-4 w-4 accent-primary-600" title="Select all" />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Department</TableHead>
@@ -165,7 +194,16 @@ export default function SuperAdminStaff() {
                 {items.length === 0 ? (
                   <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-slate-400">No facilitators registered yet. Facilitators can self-register, or you can add one.</TableCell></TableRow>
                 ) : items.map((s) => (
-                  <TableRow key={s.id}>
+                  <TableRow key={s.id} className={bulk.selected.has(s.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={bulk.selected.has(s.id)}
+                        onChange={() => bulk.toggleOne(s.id)}
+                        className="h-4 w-4 accent-primary-600"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell className="text-sm text-slate-500">{s.email}</TableCell>
                     <TableCell>{s.department ? <Badge variant="secondary">{s.department}</Badge> : <span className="text-sm text-slate-400">—</span>}</TableCell>
@@ -211,6 +249,20 @@ export default function SuperAdminStaff() {
             </Table>
           </CardContent>
         </Card>
+
+        {bulk.someSelected && (
+          <div className="sticky bottom-4 z-30 flex items-center justify-between rounded-xl border border-primary-200 bg-primary-600 px-4 py-2.5 text-white shadow-lg">
+            <p className="text-sm font-medium">{bulk.selected.size} selected</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={bulk.clear}>
+                Clear
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setBulkOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete Selected
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
           <DialogHeader>
@@ -277,6 +329,14 @@ export default function SuperAdminStaff() {
             <Button onClick={handleMove} disabled={saving}>{saving ? "Moving..." : "Move"}</Button>
           </DialogFooter>
         </Dialog>
+
+        <BulkDeleteDialog
+          open={bulkOpen}
+          count={bulk.selected.size}
+          label="staff member"
+          onClose={() => setBulkOpen(false)}
+          onConfirm={handleBulkDelete}
+        />
 
         <StaffApproveDialog
           open={!!reviewTarget}

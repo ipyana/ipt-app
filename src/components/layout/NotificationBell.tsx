@@ -13,30 +13,37 @@ interface AnnouncementItem {
   body: string;
   attachmentUrl: string | null;
   attachmentName: string | null;
+  audience?: string;
   createdAt: string;
   read: boolean;
-  cluster: { id: number; name: string };
-  staff: { id: number; name: string };
+  cluster: { id: number; name: string } | null;
+  staff: { id: number; name: string } | null;
 }
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  role?: "student" | "staff";
+}
+
+export function NotificationBell({ role = "student" }: NotificationBellProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const endpoint = role === "staff" ? "/api/staff/announcements" : "/api/student/announcements";
+  const readEndpoint = role === "staff" ? "/api/staff/announcements/read" : "/api/student/announcements/read";
 
   useEffect(() => {
     if (unread > 0 || announcements.length > 0) return;
-    fetch("/api/student/announcements")
+    fetch(endpoint)
       .then((r) => r.json())
       .then((d) => {
         setAnnouncements(Array.isArray(d.announcements) ? d.announcements : []);
         setUnread(d.unreadCount || 0);
       })
       .catch(() => {});
-  }, [unread, announcements.length]);
+  }, [endpoint, unread, announcements.length]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -52,12 +59,12 @@ export function NotificationBell() {
     if (next && unread > 0) {
       setLoading(true);
       try {
-        await fetch("/api/student/announcements/read", {
+        await fetch(readEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
         });
-        const res = await fetch("/api/student/announcements");
+        const res = await fetch(endpoint);
         const d = await res.json();
         setAnnouncements(Array.isArray(d.announcements) ? d.announcements : []);
         setUnread(d.unreadCount || 0);
@@ -94,7 +101,7 @@ export function NotificationBell() {
             <div className="max-h-[360px] overflow-y-auto">
               {loading && <p className="py-6 text-center text-xs text-slate-400">Loading...</p>}
               {!loading && announcements.length === 0 && (
-                <p className="py-8 text-center text-sm text-slate-400">No announcements for your clusters yet</p>
+                <p className="py-8 text-center text-sm text-slate-400">No announcements yet</p>
               )}
               {announcements.map((a) => (
                 <div key={a.id} className={cn("border-b border-border px-4 py-3", !a.read && "bg-primary-50/50 dark:bg-primary-900/10")}>
@@ -104,7 +111,7 @@ export function NotificationBell() {
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{a.body}</p>
                   <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400">
-                    <span>{a.cluster?.name}</span>
+                    <span>{a.cluster?.name || (a.audience === "all" ? "All" : "General")}</span>
                     {a.attachmentUrl && (
                       <a href={a.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-primary-600 hover:underline">
                         <Paperclip className="h-2.5 w-2.5" /> {a.attachmentName || "File"}
@@ -116,7 +123,7 @@ export function NotificationBell() {
               ))}
             </div>
             <div className="border-t border-border p-2">
-              <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setOpen(false); router.push("/student/dashboard"); }}>
+              <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setOpen(false); router.push(role === "staff" ? "/staff" : "/student/dashboard"); }}>
                 View Dashboard
               </Button>
             </div>

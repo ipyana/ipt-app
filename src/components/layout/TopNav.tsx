@@ -91,7 +91,8 @@ export function TopNav({ user, onMenuToggle }: TopNavProps) {
       <div className="flex items-center gap-1.5">
         {mounted && <ThemeToggle compact />}
 
-        {user?.role === "student" && <NotificationBell />}
+        {user?.role === "student" && <NotificationBell role="student" />}
+        {user?.role === "staff" && <NotificationBell role="staff" />}
 
         <motion.div
           className="flex items-center gap-2.5 pl-3 border-l border-border ml-1"

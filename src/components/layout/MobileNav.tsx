@@ -6,12 +6,13 @@ import { Sidebar } from "./Sidebar";
 
 interface MobileNavProps {
   role: string;
+  userRole?: string;
   open: boolean;
   onClose: () => void;
   onLogout: () => void;
 }
 
-export function MobileNav({ role, open, onClose, onLogout }: MobileNavProps) {
+export function MobileNav({ role, userRole, open, onClose, onLogout }: MobileNavProps) {
   return (
     <AnimatePresence>
       {open && (
@@ -39,7 +40,7 @@ export function MobileNav({ role, open, onClose, onLogout }: MobileNavProps) {
               >
                 <X className="h-4 w-4" />
               </button>
-              <Sidebar role={role} onLogout={onLogout} isMobile onNavigate={onClose} />
+              <Sidebar role={role} userRole={userRole} onLogout={onLogout} isMobile onNavigate={onClose} />
             </div>
           </motion.div>
         </>

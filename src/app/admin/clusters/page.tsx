@@ -9,6 +9,8 @@ import { Input, Label } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDialog } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Layers, MapPin, BookOpen, CalendarDays, Users } from "lucide-react";
+import { useBulkSelection } from "@/lib/useBulkSelection";
+import { BulkDeleteDialog } from "@/components/BulkDeleteDialog";
 
 interface Dept { id: number; name: string; abbreviation: string }
 interface ClusterDept { department: Dept; slots: number; enrolled: number }
@@ -36,6 +38,9 @@ export default function AdminClustersManage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Cluster | null>(null);
   const [viewTarget, setViewTarget] = useState<Cluster | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const bulk = useBulkSelection(clusters);
   const [phaseView, setPhaseView] = useState<0 | 1 | 2>(0);
   const [phases, setPhases] = useState<PhaseInfo[]>([]);
   const [sessionInfo, setSessionInfo] = useState<{ name: string; startDate: string; endDate: string; weeksPerPhase: number } | null>(null);
@@ -114,6 +119,21 @@ export default function AdminClustersManage() {
     setDeleteTarget(null); load();
   }
 
+  async function handleBulkDelete() {
+    const res = await fetch("/api/admin/clusters", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: Array.from(bulk.selected) }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to delete");
+    const count = data.deleted ?? bulk.selected.size;
+    bulk.clear();
+    setBulkOpen(false);
+    setBulkMsg({ type: "success", text: `Deleted ${count} cluster${count !== 1 ? "s" : ""}` });
+    load();
+  }
+
   const totalPossibleSlots = form.departmentSlots.reduce((s, p) => s + (isNaN(p.slots) ? 0 : p.slots), 0);
 
   return (
@@ -148,40 +168,52 @@ export default function AdminClustersManage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input type="checkbox" checked={bulk.allSelected} onChange={bulk.toggleAll} className="h-4 w-4 accent-primary-600" title="Select all" />
+                    </TableHead>
                     <TableHead>Cluster</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead>Enrolled</TableHead>
-                  <TableHead>Department Allocations</TableHead>
-                  <TableHead className="w-24">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clusters.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-sm text-slate-400">No clusters found</TableCell></TableRow>
-                ) : clusters.map((c) => (
-                  <TableRow key={c.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => setViewTarget(c)}>
-                    <TableCell><p className="font-medium text-sm">{c.name}</p><p className="text-xs text-slate-400">{c.locationRef?.name || c.location}</p></TableCell>
-                    <TableCell><span className="text-sm font-semibold">{c.capacity}</span></TableCell>
-                    <TableCell><span className={`text-sm font-semibold ${c.currentEnrolled >= c.capacity ? "text-red-600" : "text-emerald-600"}`}>{c.currentEnrolled}</span><span className="text-xs text-slate-400"> / {c.capacity}</span></TableCell>
-                    <TableCell>
-                      <div className="space-y-0.5">
-                        {c.allowedDepartments?.slice(0, 3).map((cd) => (
-                          <div key={cd.department.id} className="text-xs"><span className="font-medium">{cd.department.name.slice(0, 30)}</span><span className="text-slate-400"> — {cd.enrolled}/{cd.slots}</span></div>
-                        ))}
-                        {(c.allowedDepartments?.length || 0) > 3 && <span className="text-xs text-slate-400">+{c.allowedDepartments!.length - 3} more</span>}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(c); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                      </div>
-                    </TableCell>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Enrolled</TableHead>
+                    <TableHead>Department Allocations</TableHead>
+                    <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
+                </TableHeader>
+                <TableBody>
+                  {clusters.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-sm text-slate-400">No clusters found</TableCell></TableRow>
+                  ) : clusters.map((c) => (
+                    <TableRow key={c.id} className={`cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 ${bulk.selected.has(c.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""}`} onClick={() => setViewTarget(c)}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={bulk.selected.has(c.id)}
+                          onChange={() => bulk.toggleOne(c.id)}
+                          className="h-4 w-4 accent-primary-600"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </TableCell>
+                      <TableCell><p className="font-medium text-sm">{c.name}</p><p className="text-xs text-slate-400">{c.locationRef?.name || c.location}</p></TableCell>
+                      <TableCell><span className="text-sm font-semibold">{c.capacity}</span></TableCell>
+                      <TableCell><span className={`text-sm font-semibold ${c.currentEnrolled >= c.capacity ? "text-red-600" : "text-emerald-600"}`}>{c.currentEnrolled}</span><span className="text-xs text-slate-400"> / {c.capacity}</span></TableCell>
+                      <TableCell>
+                        <div className="space-y-0.5">
+                          {c.allowedDepartments?.slice(0, 3).map((cd) => (
+                            <div key={cd.department.id} className="text-xs"><span className="font-medium">{cd.department.name.slice(0, 30)}</span><span className="text-slate-400"> — {cd.enrolled}/{cd.slots}</span></div>
+                          ))}
+                          {(c.allowedDepartments?.length || 0) > 3 && <span className="text-xs text-slate-400">+{c.allowedDepartments!.length - 3} more</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(c); }}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
         </Card>
         )}
 
@@ -236,6 +268,26 @@ export default function AdminClustersManage() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {bulkMsg && (
+          <div className={`rounded-lg border px-3 py-2 text-sm ${
+            bulkMsg.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
+          }`}>{bulkMsg.text}</div>
+        )}
+
+        {bulk.someSelected && (
+          <div className="sticky bottom-4 z-30 flex items-center justify-between rounded-xl border border-primary-200 bg-primary-600 px-4 py-2.5 text-white shadow-lg">
+            <p className="text-sm font-medium">{bulk.selected.size} selected</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={bulk.clear}>
+                Clear
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setBulkOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete Selected
+              </Button>
+            </div>
+          </div>
         )}
 
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
@@ -300,6 +352,14 @@ export default function AdminClustersManage() {
             <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : editing ? "Update" : "Create"}</Button>
           </DialogFooter>
         </Dialog>
+
+        <BulkDeleteDialog
+          open={bulkOpen}
+          count={bulk.selected.size}
+          label="cluster"
+          onClose={() => setBulkOpen(false)}
+          onConfirm={handleBulkDelete}
+        />
 
         <ConfirmDialog
           open={!!deleteTarget}

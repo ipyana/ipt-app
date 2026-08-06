@@ -147,6 +147,8 @@ export const activateAccountSchema = z.object({
 export const announcementSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   body: z.string().min(1, "Message is required").max(5000),
+  audience: z.enum(["students", "staff", "all"]).default("students"),
+  clusterId: z.number().int().positive().optional().nullable(),
 });
 
 export const groupActionSchema = z.object({

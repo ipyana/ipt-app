@@ -52,6 +52,12 @@ export async function requireAdminOnly() {
   return session;
 }
 
+export async function requireEmailAdmin() {
+  const session = await requireAuth();
+  if (!["admin", "super_admin"].includes(session.role)) throw new Error("Forbidden");
+  return session;
+}
+
 export async function requireSuperAdmin() {
   const session = await requireAuth();
   if (session.role !== "super_admin") throw new Error("Forbidden");

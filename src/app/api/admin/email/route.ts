@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdminOnly } from "@/lib/auth";
+import { requireEmailAdmin } from "@/lib/auth";
 import { listEmailLogs } from "@/lib/email/logs";
 import { sendEmail } from "@/lib/email/service";
 import { testSmtpConnection } from "@/lib/email/smtp";
@@ -12,7 +12,7 @@ function err(message: string, status: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdminOnly();
+    await requireEmailAdmin();
     const { searchParams } = new URL(request.url);
     const tab = searchParams.get("tab") || "logs";
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminOnly();
+    await requireEmailAdmin();
     const { action, to } = await request.json();
 
     if (action === "test") {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdminOnly();
+    await requireEmailAdmin();
     const { key, value } = await request.json();
     if (!key) return err("Key is required", 400);
 

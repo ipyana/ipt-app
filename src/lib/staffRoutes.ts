@@ -153,8 +153,14 @@ export function createStaffRoute(guard: Guard, deleteGuard: Guard) {
     try {
       await deleteGuard();
       const body = await request.json();
-      await prisma.staff.delete({ where: { id: body.id } });
-      return NextResponse.json({ success: true });
+      const ids = Array.isArray(body.ids)
+        ? body.ids.map(Number).filter(Boolean)
+        : body.id
+          ? [Number(body.id)]
+          : [];
+      if (ids.length === 0) return err("ID or IDs required", 400);
+      const result = await prisma.staff.deleteMany({ where: { id: { in: ids } } });
+      return NextResponse.json({ success: true, deleted: result.count });
     } catch (e: any) {
       return handleErr(e);
     }

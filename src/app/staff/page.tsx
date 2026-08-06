@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/form";
 import { Select } from "@/components/ui/select";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, MapPin, Calendar, BookOpen, GraduationCap, ArrowRightLeft } from "lucide-react";
+import { Users, MapPin, Calendar, BookOpen, GraduationCap, ArrowRightLeft, Megaphone, Paperclip } from "lucide-react";
 
 export default function StaffDashboard() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function StaffDashboard() {
   const [transferMsg, setTransferMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [transferSaving, setTransferSaving] = useState(false);
   const [allClusters, setAllClusters] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/staff/students")
@@ -33,6 +34,10 @@ export default function StaffDashboard() {
       .then((d) => setAllClusters(Array.isArray(d) ? d : []))
       .catch(() => {})
       .finally(() => setLoading(false));
+    fetch("/api/staff/announcements")
+      .then((r) => r.json())
+      .then((d) => setAnnouncements(Array.isArray(d.announcements) ? d.announcements : []))
+      .catch(() => {});
   }, []);
 
   if (loading) {
@@ -225,6 +230,42 @@ export default function StaffDashboard() {
                 ))}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Megaphone className="h-4 w-4 text-primary-600" />
+              <CardTitle className="text-base">Announcements</CardTitle>
+              <Badge>{announcements.length}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {announcements.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-400">No announcements yet</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {announcements.map((a) => (
+                  <div key={a.id} className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{a.title}</p>
+                      {!a.read && <span className="h-2 w-2 rounded-full bg-primary-500" />}
+                    </div>
+                    <p className="mt-0.5 text-sm text-slate-500 whitespace-pre-wrap">{a.body}</p>
+                    <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400">
+                      <span>{a.cluster?.name || (a.audience === "all" ? "All" : "General")}</span>
+                      {a.attachmentUrl && (
+                        <a href={a.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-primary-600 hover:underline">
+                          <Paperclip className="h-2.5 w-2.5" /> {a.attachmentName || "File"}
+                        </a>
+                      )}
+                      <span>· {new Date(a.createdAt).toLocaleDateString("en-TZ")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
