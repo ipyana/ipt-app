@@ -29,13 +29,11 @@ export async function POST(request: NextRequest) {
     } else {
       await prisma.student.update({
         where: { id: session.id },
-        data: { password: hashed },
+        data: { password: hashed, mustChangePassword: false },
       });
     }
 
-    const response = NextResponse.json({ success: true });
-    response.cookies.set("token", "", { maxAge: 0, path: "/" });
-    return response;
+    return NextResponse.json({ success: true, message: "Password changed" });
   } catch (e: any) {
     if (e.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     return NextResponse.json({ error: "Failed to change password" }, { status: 500 });

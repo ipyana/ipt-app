@@ -90,6 +90,7 @@ model Student {
   email        String        @unique
   password     String
   role         String        @default("student")
+  mustChangePassword Boolean @default(false) @map("must_change_password")
   createdAt    DateTime      @default(now()) @map("created_at")
   applications Application[]
   announcementReads AnnouncementRead[]

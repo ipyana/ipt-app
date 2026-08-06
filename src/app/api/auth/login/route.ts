@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
         program: student.program,
         email: student.email,
         role: student.role,
+        mustChangePassword: student.mustChangePassword,
       });
 
       response.cookies.set("token", token, {

@@ -175,6 +175,31 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     required: true,
   },
   {
+    key: "account_credentials",
+    name: "Account Credentials",
+    category: "auth",
+    subject: "Your IPT Portal login credentials, {{name}}",
+    body: emailLayout(
+      "Your IPT Portal Credentials",
+      `<p>Dear <strong>{{name}}</strong>,</p>
+    <p>Your <strong>{{role}}</strong> account on the IPT Portal has been created. Use the temporary password below to sign in for the first time:</p>
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0 0 6px;"><strong>Your temporary password:</strong></p>
+      <p style="margin: 0; font-family: monospace; font-size: 16px; color: #14763b; font-weight: bold;">{{temporaryPassword}}</p>
+      <p style="margin: 8px 0 0; color: #64748b; font-size: 13px;">You will be required to set a new password after signing in.</p>
+    </div>
+    {{#approvalNote}}<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin: 16px 0;">
+      <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>Note:</strong> {{approvalNote}}</p>
+    </div>{{/approvalNote}}
+    <div style="text-align: center; margin: 20px 0;">
+      <a href="{{loginLink}}" style="${BTN_PRIMARY}">Sign In</a>
+    </div>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>`
+    ),
+    variables: ["name", "role", "temporaryPassword", "loginLink", "approvalNote", "appName"],
+    required: true,
+  },
+  {
     key: "account_activation",
     name: "Account Activation",
     category: "auth",

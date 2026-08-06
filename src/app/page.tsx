@@ -28,10 +28,10 @@ export default function HomePage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [programId, setProgramId] = useState<number>(0);
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [programs, setPrograms] = useState<GroupedPrograms>({});
   const [selectedDept, setSelectedDept] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [existsOpen, setExistsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -56,10 +56,6 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
-      if (data.mustChangePassword) {
-        router.push("/change-password");
-        return;
-      }
       if (data.role === "super_admin") router.push("/super-admin");
       else if (["admin", "coordinator"].includes(data.role)) router.push("/admin/dashboard");
       else if (data.role === "staff") router.push("/staff");
@@ -72,14 +68,13 @@ export default function HomePage() {
     e.preventDefault();
     if (!selectedDept) { setError("Please select your department"); return; }
     if (!programId) { setError("Please select your program of study"); return; }
-    if (password !== confirmPassword) { setError("Passwords do not match"); return; }
     setError("");
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId, fullName, email, password, confirmPassword, programId }),
+        body: JSON.stringify({ studentId, fullName, email, programId }),
       });
       const data = await res.json();
       if (data?.code === "USER_EXISTS" || res.status === 409) {
@@ -87,7 +82,9 @@ export default function HomePage() {
         return;
       }
       if (!res.ok) throw new Error(data.error || "Registration failed");
-      router.push("/student/dashboard");
+      setMode("login");
+      setError("");
+      setSuccess(data.message || "Registration successful. Check your email for your temporary password to sign in.");
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
   }
@@ -142,6 +139,9 @@ export default function HomePage() {
               {error && (
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">{error}</div>
               )}
+              {success && (
+                <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">{success}</div>
+              )}
 
               {mode === "register" ? (
                 <form onSubmit={handleRegister} className="space-y-4">
@@ -173,19 +173,9 @@ export default function HomePage() {
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" className="h-10" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} placeholder="Min 8 chars, 1 cap, 1 number, 1 special" className="h-10 pr-10" />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="confirmPassword">Re-Enter Password</Label>
-                    <Input id="confirmPassword" type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} placeholder="Re-enter your password" className="h-10" />
-                  </div>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/50 rounded-md p-2">
+                    A temporary password will be sent to your email for your first sign-in. You will be asked to set a new password after logging in.
+                  </p>
                   <Button type="submit" disabled={loading} className="w-full h-10 mt-2">
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>

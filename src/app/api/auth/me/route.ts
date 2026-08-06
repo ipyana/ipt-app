@@ -17,6 +17,7 @@ export async function GET() {
         email: admin?.email,
         phone: admin?.phone,
         role: admin?.role,
+        mustChangePassword: admin?.mustChangePassword,
       });
     }
 
@@ -33,6 +34,7 @@ export async function GET() {
         role: staff?.role,
         clusterId: staff?.clusterId,
         clusterName: staff?.cluster?.name,
+        mustChangePassword: staff?.mustChangePassword,
       });
     }
 
@@ -53,6 +55,7 @@ export async function GET() {
       program: student.program,
       email: student.email,
       role: student.role,
+      mustChangePassword: student.mustChangePassword,
       application: student.applications[0] || null,
     });
   } catch {

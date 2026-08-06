@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { createToken } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations";
-import { sendAccountCreatedEmail } from "@/lib/email";
+import { generateTemporaryPassword } from "@/lib/password";
+import { sendAccountCredentialsEmail } from "@/lib/email";
 import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const { studentId, fullName, email, password, programId } = parsed.data;
+    const { studentId, fullName, email, programId } = parsed.data;
 
     const [existingStudent, existingStaff, existingAdmin] = await Promise.all([
       prisma.student.findFirst({ where: { OR: [{ email }, { studentId }] } }),
@@ -38,9 +38,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid program selected" }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const temporaryPassword = generateTemporaryPassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
 
-    const student = await prisma.student.create({
+    await prisma.student.create({
       data: {
         studentId,
         fullName,
@@ -49,34 +50,23 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         role: "student",
+        mustChangePassword: true,
       },
     });
 
-    const token = await createToken({ id: student.id, role: student.role, studentId: student.studentId });
-
     try {
-      await sendAccountCreatedEmail({ name: student.fullName, email: student.email, role: "student" });
+      await sendAccountCredentialsEmail({
+        name: fullName,
+        email,
+        role: "student",
+        temporaryPassword,
+      });
     } catch { /* non-blocking */ }
 
-    const response = NextResponse.json({
-      id: student.id,
-      studentId: student.studentId,
-      fullName: student.fullName,
-      department: student.department,
-      program: student.program,
-      email: student.email,
-      role: student.role,
-    });
-
-    response.cookies.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 86400,
-      path: "/",
-    });
-
-    return response;
+    return NextResponse.json({
+      success: true,
+      message: "Registration successful. Check your email for your temporary password to sign in.",
+    }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }

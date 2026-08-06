@@ -22,12 +22,7 @@ export const registerSchema = z.object({
     }),
   fullName: z.string().min(2, "Full name is required"),
   email: z.string().email("Invalid email address"),
-  password: strongPasswordSchema,
-  confirmPassword: z.string().min(1, "Please confirm your password"),
   programId: z.number().int().positive("Please select your program of study"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
 });
 
 export const staffRegisterSchema = z.object({

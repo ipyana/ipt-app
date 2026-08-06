@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { staffRegisterSchema } from "@/lib/validations";
-import { generateToken } from "@/lib/otp";
-import { sendAccountActivationEmail } from "@/lib/email";
+import { generateTemporaryPassword } from "@/lib/password";
+import { sendAccountCredentialsEmail } from "@/lib/email";
 import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
@@ -29,34 +30,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User Already Exists, Contact your facilitator or Admin, or reset password", code: "USER_EXISTS" }, { status: 409 });
     }
 
-    const placeholder = "$2b$12$placeholderplaceholderplaceholderplaceholderplaceholderp";
+    const temporaryPassword = generateTemporaryPassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
     const staff = await prisma.staff.create({
       data: {
         name,
         email,
         phone: phone || null,
-        password: placeholder,
+        password: hashedPassword,
         role: "staff",
         isActive: false,
-        status: "pending_activation",
+        status: "pending_approval",
+        mustChangePassword: true,
         department,
         clusterId,
       },
     });
 
     try {
-      const token = await generateToken(email, "staff_activation");
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
-      const activationLink = `${baseUrl}/activate-account?token=${token}&email=${encodeURIComponent(email)}`;
-      await sendAccountActivationEmail({ name: staff.name, email: staff.email, activationLink });
+      await sendAccountCredentialsEmail({
+        name: staff.name,
+        email: staff.email,
+        role: "facilitator",
+        temporaryPassword,
+        approvalNote: "Your registration is awaiting approval. You can sign in with this password once your account has been approved.",
+      });
     } catch { /* non-blocking */ }
 
     return NextResponse.json({
       id: staff.id,
       name: staff.name,
       email: staff.email,
-      status: "pending_activation",
-      message: "Registration submitted. Check your email to activate your account.",
+      status: "pending_approval",
+      message: "Registration submitted. Check your email for your temporary password. You can sign in once your registration is approved.",
     }, { status: 201 });
   } catch (e: any) {
     if (e.code === "P2002") return NextResponse.json({ error: "User Already Exists, Contact your facilitator or Admin, or reset password", code: "USER_EXISTS" }, { status: 409 });

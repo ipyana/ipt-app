@@ -127,17 +127,21 @@ export async function sendPasswordResetEmail(params: { name: string; email: stri
   return fallback.success;
 }
 
-export async function sendAccountCreatedEmail(params: { name: string; email: string; role: string }) {
+export async function sendAccountCredentialsEmail(params: { name: string; email: string; role: string; temporaryPassword: string; approvalNote?: string }) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
-  const result = await sendTemplateEmail("account_created", params.email, {
+  const result = await sendTemplateEmail("account_credentials", params.email, {
     name: params.name,
     role: params.role,
+    temporaryPassword: params.temporaryPassword,
     loginLink: appUrl,
+    approvalNote: params.approvalNote || "",
     appName: "IPT System",
   });
   if (!result.success) {
-    await sendEmail(params.email, `Welcome to the IPT Portal, ${params.name}`,
-      buildSimpleHtml("Account Created", `Your ${params.role} account has been created. Sign in at ${appUrl}`));
+    const note = params.approvalNote ? ` ${params.approvalNote}` : "";
+    await sendEmail(params.email, `Your IPT Portal login credentials, ${params.name}`,
+      buildSimpleHtml("Your IPT Portal Credentials",
+        `Your ${params.role} account has been created. Temporary password: ${params.temporaryPassword}. Sign in at ${appUrl}.${note}`));
   }
 }
 

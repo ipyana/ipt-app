@@ -50,7 +50,7 @@ export default function StaffRegister() {
         return;
       }
       if (!res.ok) throw new Error(data.error || "Registration failed");
-      setSuccess(data.message || "Registration submitted. Check your email to activate your account.");
+      setSuccess(data.message || "Registration submitted. Check your email for your temporary password.");
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
   }
@@ -64,7 +64,7 @@ export default function StaffRegister() {
             <img src="/must_Logo.png" alt="MUST Logo" className="h-24 w-24 object-contain" />
           </div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white text-center">Facilitator Registration</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Register as a cluster facilitator. Set your password via the email link, then wait for approval.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1 mb-6">Register as a cluster facilitator. We will email you a temporary password, then wait for approval.</p>
 
           {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
           {success && (
@@ -104,7 +104,7 @@ export default function StaffRegister() {
                   {clusters.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
                 </Select>
               </div>
-              <p className="text-xs text-slate-400">After submission, you will receive an email with a link to set your password. Your account will be activated once an administrator approves your registration.</p>
+              <p className="text-xs text-slate-400">After submission, you will receive an email with a temporary password. You can sign in with it once an administrator approves your registration, then you will set a new password.</p>
               <Button type="submit" disabled={loading} className="w-full h-10">
                 {loading ? "Submitting..." : "Submit for Approval"} <ArrowRight className="h-4 w-4" />
               </Button>

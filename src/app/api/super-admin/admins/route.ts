@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth";
-import { generateToken } from "@/lib/otp";
-import { sendAccountActivationEmail } from "@/lib/email";
+import { generateTemporaryPassword } from "@/lib/password";
+import { sendAccountCredentialsEmail } from "@/lib/email";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -27,18 +28,20 @@ export async function POST(request: NextRequest) {
     const { username, email, phone, role } = body;
     if (!username || !email) return err("Username and email are required", 400);
 
-    const placeholder = "$2b$12$placeholderplaceholderplaceholderplaceholderplaceholderp";
+    const temporaryPassword = generateTemporaryPassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
     const admin = await prisma.admin.create({
-      data: { username, email, phone: phone || null, password: placeholder, role: role || "admin", status: "pending" },
+      data: { username, email, phone: phone || null, password: hashedPassword, role: role || "admin", status: "active", mustChangePassword: true },
     });
 
-    const token = await generateToken(email, "admin_activation");
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
-    const activationLink = `${baseUrl}/activate-account?token=${token}`;
+    await sendAccountCredentialsEmail({
+      name: username,
+      email,
+      role: "administrator",
+      temporaryPassword,
+    });
 
-    await sendAccountActivationEmail({ name: username, email, activationLink });
-
-    return NextResponse.json({ ...admin, message: "Admin created. Activation email sent." }, { status: 201 });
+    return NextResponse.json({ ...admin, password: undefined, message: "Admin created. Temporary password emailed." }, { status: 201 });
   } catch (e: any) {
     if (e.message === "Unauthorized") return err("Unauthorized", 401);
     if (e.message === "Forbidden") return err("Forbidden", 403);

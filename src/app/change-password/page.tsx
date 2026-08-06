@@ -40,7 +40,11 @@ export default function ChangePassword() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      router.push("/");
+      const role = user?.role;
+      if (role === "super_admin") router.push("/super-admin");
+      else if (["admin", "coordinator"].includes(role)) router.push("/admin/dashboard");
+      else if (role === "staff") router.push("/staff");
+      else router.push("/student/dashboard");
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
   }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { sendStaffRejectedEmail, sendAccountActivatedEmail, sendAccountActivationEmail } from "@/lib/email";
+import { sendStaffRejectedEmail, sendAccountActivatedEmail, sendAccountActivationEmail, sendAccountCredentialsEmail } from "@/lib/email";
 import { generateToken } from "@/lib/otp";
+import { generateTemporaryPassword } from "@/lib/password";
 import bcrypt from "bcryptjs";
 
 function err(message: string, status: number) {
@@ -31,20 +32,24 @@ export function createStaffRoute(guard: Guard, deleteGuard: Guard) {
       const { name, email, phone, department, clusterId } = body;
       if (!name || !email || !clusterId) return err("Name, email, and cluster are required", 400);
 
-      const placeholder = "$2b$12$placeholderplaceholderplaceholderplaceholderplaceholderp";
+      const temporaryPassword = generateTemporaryPassword();
+      const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
       const staff = await prisma.staff.create({
-        data: { name, email, phone: phone || null, department: department || null, password: placeholder, role: "staff", clusterId, status: "pending_activation", isActive: false },
+        data: { name, email, phone: phone || null, department: department || null, password: hashedPassword, role: "staff", status: "pending_approval", isActive: false, mustChangePassword: true, clusterId },
         include: { cluster: { select: { id: true, name: true } } },
       });
 
       try {
-        const token = await generateToken(email, "staff_activation");
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
-        const activationLink = `${baseUrl}/activate-account?token=${token}&email=${encodeURIComponent(email)}`;
-        await sendAccountActivationEmail({ name: staff.name, email: staff.email, activationLink });
+        await sendAccountCredentialsEmail({
+          name: staff.name,
+          email: staff.email,
+          role: "facilitator",
+          temporaryPassword,
+          approvalNote: "This account is awaiting approval. The facilitator can sign in with the emailed temporary password once approved.",
+        });
       } catch { /* non-blocking */ }
 
-      return NextResponse.json({ ...staff, message: "Facilitator created. Activation email sent." }, { status: 201 });
+      return NextResponse.json({ ...staff, password: undefined, message: "Facilitator created. Temporary password emailed." }, { status: 201 });
     } catch (e: any) {
       if (e.code === "P2002") return err("That email or phone already exists", 409);
       return handleErr(e);

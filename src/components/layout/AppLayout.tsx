@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { ForcePasswordModal } from "@/components/ForcePasswordModal";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -61,6 +62,11 @@ export function AppLayout({ children, role }: AppLayoutProps) {
       <main className={cn("pt-12 transition-all duration-200 ease-in-out lg:pl-60")}>
         <div className="animate-fade-in">{children}</div>
       </main>
+      <ForcePasswordModal
+        open={!!user?.mustChangePassword}
+        displayName={user?.name || user?.username || user?.fullName}
+        onChanged={() => setUser({ ...user, mustChangePassword: false })}
+      />
     </div>
   );
 }
