@@ -147,23 +147,23 @@ export default function AdminClustersManage() {
           <Button onClick={openAdd}><Plus className="h-4 w-4" /> New Cluster</Button>
         </div>
 
-        <div className="flex gap-1 rounded-lg border border-border bg-panel p-1 w-fit">
+        <div className="flex gap-1 rounded-lg border border-border bg-panel p-1 w-full lg:w-fit overflow-x-auto">
           <button
             onClick={() => setPhaseView(0)}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${phaseView === 0 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"}`}
+            className={`shrink-0 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${phaseView === 0 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"}`}
           >All</button>
           <button
             onClick={() => { setPhaseView(1); loadPhases(); }}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${phaseView === 1 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"}`}
+            className={`shrink-0 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${phaseView === 1 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"}`}
           >Phase 1</button>
           <button
             onClick={() => { setPhaseView(2); loadPhases(); }}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${phaseView === 2 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"}`}
+            className={`shrink-0 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${phaseView === 2 ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"}`}
           >Phase 2</button>
         </div>
 
         {phaseView === 0 && (
-          <Card>
+          <Card className="hidden lg:block">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -215,6 +215,58 @@ export default function AdminClustersManage() {
               </Table>
             </CardContent>
         </Card>
+        )}
+
+        {/* Mobile cluster cards (below lg, All view) */}
+        {phaseView === 0 && (
+          <div className="space-y-3 lg:hidden pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+            {clusters.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-sm text-slate-400">No clusters found</CardContent></Card>
+            ) : clusters.map((c) => {
+              const selected = bulk.selected.has(c.id);
+              const pct = c.capacity ? Math.round((c.currentEnrolled / c.capacity) * 100) : 0;
+              return (
+                <Card key={c.id} className={selected ? "border-primary-300 dark:border-primary-600" : ""}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => bulk.toggleOne(c.id)}
+                        className="mt-1 h-5 w-5 shrink-0 accent-primary-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900 dark:text-white">{c.name}</p>
+                            <p className="text-xs text-slate-400">{c.locationRef?.name || c.location || "No location"}</p>
+                          </div>
+                          <Badge variant={c.currentEnrolled >= c.capacity ? "danger" : "success"}>{pct}%</Badge>
+                        </div>
+                        <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                          <span className="font-semibold">{c.currentEnrolled}</span>
+                          <span className="text-slate-400"> / {c.capacity} enrolled</span>
+                        </div>
+                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div className={`h-full rounded-full ${c.currentEnrolled >= c.capacity ? "bg-red-500" : "bg-primary-500"}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                        </div>
+                        {c.allowedDepartments?.slice(0, 2).map((cd) => (
+                          <p key={cd.department.id} className="mt-1.5 text-xs text-slate-500">
+                            <span className="font-medium">{cd.department.name.slice(0, 30)}</span>
+                            <span className="text-slate-400"> — {cd.enrolled}/{cd.slots}</span>
+                          </p>
+                        ))}
+                        <div className="mt-3 flex gap-2">
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
+                          <Button variant="outline" size="sm" className="flex-1 text-red-600" onClick={() => setDeleteTarget(c)}><Trash2 className="h-3.5 w-3.5" /> Delete</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
 
         {phaseView !== 0 && (
@@ -277,7 +329,7 @@ export default function AdminClustersManage() {
         )}
 
         {bulk.someSelected && (
-          <div className="sticky bottom-4 z-30 flex items-center justify-between rounded-xl border border-primary-200 bg-primary-600 px-4 py-2.5 text-white shadow-lg">
+          <div className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-primary-200 bg-primary-600 px-4 py-3 text-white shadow-lg lg:bottom-4 lg:rounded-xl lg:border lg:mx-4 lg:px-4 lg:py-2.5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:pb-2.5">
             <p className="text-sm font-medium">{bulk.selected.size} selected</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={bulk.clear}>

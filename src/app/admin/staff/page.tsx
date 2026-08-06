@@ -174,7 +174,7 @@ export default function AdminStaff() {
           }`}>{bulkMsg.text}</div>
         )}
 
-        <Card>
+        <Card className="hidden lg:block">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -254,8 +254,84 @@ export default function AdminStaff() {
           </CardContent>
         </Card>
 
+        {/* Mobile card list (below lg) */}
+        <div className="space-y-3 lg:hidden pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          {items.length === 0 ? (
+            <Card><CardContent className="p-6 text-center text-sm text-slate-400">No facilitators registered yet</CardContent></Card>
+          ) : (
+            items.map((s) => {
+              const selected = bulk.selected.has(s.id);
+              const statusLabel =
+                s.status === "pending_activation" ? "Awaiting Activation"
+                : s.status === "pending_approval" ? "Pending"
+                : s.status === "rejected" ? "Rejected"
+                : s.isActive ? "Active" : "Inactive";
+              const statusVariant =
+                s.status === "rejected" ? "danger"
+                : s.status === "pending_activation" || s.status === "pending_approval" ? "warning"
+                : s.isActive ? "success" : "secondary" as any;
+              return (
+                <Card key={s.id} className={selected ? "border-primary-300 dark:border-primary-600" : ""}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => bulk.toggleOne(s.id)}
+                        className="mt-1 h-5 w-5 shrink-0 accent-primary-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate">{s.name}</p>
+                            <p className="text-xs text-slate-400 truncate">{s.email}</p>
+                          </div>
+                          <Badge variant={statusVariant}>{statusLabel}</Badge>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {s.department && <Badge variant="secondary">{s.department}</Badge>}
+                          <span className="text-xs text-slate-400">{s.cluster?.name || "No cluster"}</span>
+                          {s.phone && <span className="text-xs text-slate-400">{s.phone}</span>}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {s.status === "pending_approval" && (
+                            <>
+                              <Button variant="primary" size="sm" className="flex-1" onClick={() => handleApprove(s.id)}>Approve</Button>
+                              <Button variant="outline" size="sm" className="flex-1" onClick={() => handleReject(s.id)}>Reject</Button>
+                            </>
+                          )}
+                          {s.status === "pending_activation" && (
+                            <>
+                              <Button variant="primary" size="sm" className="flex-1" onClick={() => openReview(s)}><ClipboardCheck className="h-3.5 w-3.5" /> Review</Button>
+                              <Button variant="outline" size="sm" onClick={() => handleResendActivation(s.id)}><RefreshCw className="h-3.5 w-3.5" /></Button>
+                              <Button variant="outline" size="sm" onClick={() => handleReject(s.id)}>Reject</Button>
+                            </>
+                          )}
+                          {s.status === "rejected" && (
+                            <>
+                              <Button variant="primary" size="sm" className="flex-1" onClick={() => openReview(s)}><ClipboardCheck className="h-3.5 w-3.5" /> Review</Button>
+                              <Button variant="outline" size="sm" className="flex-1" onClick={() => handleForceActivate(s.id)}><RefreshCw className="h-3.5 w-3.5" /> Resend Link</Button>
+                            </>
+                          )}
+                          {(s.status === "active" && s.isActive) || (!["pending_approval", "pending_activation", "rejected"].includes(s.status)) ? (
+                            <div className="flex w-full gap-2">
+                              <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(s)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
+                              <Button variant="outline" size="sm" className="flex-1" onClick={() => openMove(s)}><Move className="h-3.5 w-3.5 text-amber-600" /> Move</Button>
+                              <Button variant="outline" size="sm" className="flex-1 text-red-600" onClick={() => setDeleteTarget(s)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
+
         {bulk.someSelected && (
-          <div className="sticky bottom-4 z-30 flex items-center justify-between rounded-xl border border-primary-200 bg-primary-600 px-4 py-2.5 text-white shadow-lg">
+          <div className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-primary-200 bg-primary-600 px-4 py-3 text-white shadow-lg lg:bottom-4 lg:rounded-xl lg:border lg:mx-4 lg:px-4 lg:py-2.5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:pb-2.5">
             <p className="text-sm font-medium">{bulk.selected.size} selected</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={bulk.clear}>

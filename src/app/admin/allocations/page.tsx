@@ -137,20 +137,20 @@ export default function AdminAllocations() {
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Allocations</h2>
             <p className="text-sm text-slate-500">{apps.filter((a) => a.status === "pending").length} pending</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push("/admin/reapplications")}>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 lg:flex-wrap lg:overflow-visible">
+            <Button variant="outline" className="shrink-0" onClick={() => router.push("/admin/reapplications")}>
               <RefreshCw className="h-4 w-4" />
               Re-applications ({apps.filter((a) => a.status === "reapplying").length})
             </Button>
-            <Button onClick={handleAutoAllocate} disabled={allocating === -1} variant="accent">
+            <Button onClick={handleAutoAllocate} disabled={allocating === -1} variant="accent" className="shrink-0">
               <Zap className="h-4 w-4" />
               {allocating === -1 ? "Allocating..." : "Auto-Allocate All"}
             </Button>
-            <Button onClick={handlePhase2} disabled={phase2Busy} variant="outline">
+            <Button onClick={handlePhase2} disabled={phase2Busy} variant="outline" className="shrink-0">
               <CalendarDays className="h-4 w-4" />
               {phase2Busy ? "Preparing..." : "Phase 2 Allocation"}
             </Button>
-            <Button onClick={handleReminder} disabled={reminderBusy} variant="outline">
+            <Button onClick={handleReminder} disabled={reminderBusy} variant="outline" className="shrink-0">
               <Bell className="h-4 w-4" />
               {reminderBusy ? "Sending..." : "Send Shift Reminder"}
             </Button>
@@ -179,7 +179,7 @@ export default function AdminAllocations() {
             </Button>
           ))}
           <div className="flex items-center gap-2 ml-auto">
-            <Filter className="h-4 w-4 text-slate-400" />
+            <Filter className="h-4 w-4 text-slate-400 shrink-0" />
             <Select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value)}
@@ -193,7 +193,7 @@ export default function AdminAllocations() {
           </div>
         </div>
 
-        <Card>
+        <Card className="hidden lg:block">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -262,6 +262,58 @@ export default function AdminAllocations() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Mobile allocation cards (below lg) */}
+        <div className="space-y-3 lg:hidden pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          {filtered.length === 0 ? (
+            <Card><CardContent className="p-6 text-center text-sm text-slate-400">No applications found</CardContent></Card>
+          ) : filtered.map((app) => (
+            <Card key={app.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700">
+                      <User className="h-4 w-4 text-slate-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{app.student?.fullName}</p>
+                      <p className="text-xs text-slate-400">{app.student?.studentId} · {app.student?.department}</p>
+                    </div>
+                  </div>
+                  {app.status === "reapplying" ? (
+                    <Badge variant={app.pendingRequest?.type === "transfer" ? "secondary" : "warning"} className="shrink-0">
+                      {app.pendingRequest?.type === "transfer" ? "Transfer" : "Re-app"}
+                    </Badge>
+                  ) : app.status === "allocated" ? (
+                    <Badge variant="success" className="shrink-0">Allocated</Badge>
+                  ) : (
+                    <Badge variant="warning" className="shrink-0">Pending</Badge>
+                  )}
+                </div>
+                <div className="mt-3 rounded-lg bg-muted/40 p-3 text-xs space-y-1">
+                  <p><span className="text-amber-600 font-semibold">Pref 1:</span> {app.pref1Name}</p>
+                  <p className="text-slate-500">Pref 2: {app.pref2Name}</p>
+                  {app.allocatedName && <p className="text-emerald-600">Allocated: {app.allocatedName}</p>}
+                </div>
+                <div className="mt-3">
+                  <Select
+                    value={app.allocatedCluster || ""}
+                    onChange={(e) => handleAllocate(app.id, Number(e.target.value))}
+                    disabled={allocating === app.id || app.status === "reapplying"}
+                    className="w-full text-sm h-11"
+                  >
+                    <option value="">
+                      {app.status === "allocated" ? "Reallocate to..." : "Allocate to..."}
+                    </option>
+                    {eligibleFor(app.student?.department).map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name.slice(0, 40)}</option>
+                    ))}
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </AppLayout>
   );

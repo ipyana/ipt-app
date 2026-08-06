@@ -15,6 +15,7 @@ import {
   Eye,
   Send,
   CalendarDays,
+  ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
@@ -63,6 +64,7 @@ export default function StudentReport() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState<string | null>(null);
+  const [openPhases, setOpenPhases] = useState<Record<number, boolean>>({ 1: true, 2: false });
 
   useEffect(() => {
     Promise.all([
@@ -232,75 +234,90 @@ export default function StudentReport() {
           </CardContent>
         </Card>
 
-        {/* Week grid */}
-        {(reportData?.phases || []).map((phase) => (
-          <Card key={phase.phaseNumber}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-primary-600" />
-                  <CardTitle className="text-base">Phase {phase.phaseNumber}</CardTitle>
-                  <Badge variant={phase.submittedCount === phase.totalWeeks ? "success" : "warning"}>
-                    {phase.submittedCount}/{phase.totalWeeks} submitted
-                  </Badge>
-                </div>
-              </div>
-              <CardDescription>
-                {new Date(phase.startDate).toLocaleDateString("en-TZ")} – {new Date(phase.endDate).toLocaleDateString("en-TZ")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {phase.weeks.map((week) => {
-                  const isSelected = selectedWeek === week.weekNumber && selectedPhase === phase.phaseNumber;
-                  return (
-                    <div
-                      key={week.weekNumber}
-                      className={`rounded-lg border p-4 transition-colors ${
-                        week.submitted
-                          ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-900/10"
-                          : "border-slate-200 dark:border-slate-700"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-slate-900 dark:text-white">Week {week.weekNumber}</p>
-                        {week.submitted ? (
-                          <CheckCircle className="h-5 w-5 text-emerald-600" />
-                        ) : (
-                          <Clock className="h-5 w-5 text-slate-400" />
-                        )}
-                      </div>
-                      <p className="mt-1 text-xs text-slate-400">
-                        {new Date(week.startDate).toLocaleDateString("en-TZ")} – {new Date(week.endDate).toLocaleDateString("en-TZ")}
-                      </p>
-
-                      {week.submitted ? (
-                        <div className="mt-3 space-y-2">
-                          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
-                            <FileText className="h-3.5 w-3.5" />
-                            <span className="truncate">{week.originalName || "Report uploaded"}</span>
-                          </div>
-                          <Button size="sm" variant="outline" className="w-full" onClick={() => handlePreview(week)}>
-                            <Eye className="h-3.5 w-3.5" /> View Report
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant={isSelected ? "primary" : "outline"}
-                          className="w-full mt-3"
-                          onClick={() => openFilePicker(phase.phaseNumber, week.weekNumber)}
-                        >
-                          <Upload className="h-3.5 w-3.5" /> Upload Report
-                        </Button>
-                      )}
+        {/* Week grid — thumb-first collapsible phases */}
+        {(reportData?.phases || []).map((phase) => {
+          const open = openPhases[phase.phaseNumber] ?? phase.phaseNumber === 1;
+          return (
+            <Card key={phase.phaseNumber}>
+              <button
+                type="button"
+                onClick={() => setOpenPhases((p) => ({ ...p, [phase.phaseNumber]: !open }))}
+                className="w-full text-left"
+                aria-expanded={open}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CalendarDays className="h-4 w-4 text-primary-600 shrink-0" />
+                      <CardTitle className="text-base">Phase {phase.phaseNumber}</CardTitle>
+                      <Badge variant={phase.submittedCount === phase.totalWeeks ? "success" : "warning"} className="shrink-0">
+                        {phase.submittedCount}/{phase.totalWeeks}
+                      </Badge>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "" : "-rotate-90"}`}
+                    />
+                  </div>
+                  <CardDescription>
+                    {new Date(phase.startDate).toLocaleDateString("en-TZ")} – {new Date(phase.endDate).toLocaleDateString("en-TZ")}
+                  </CardDescription>
+                </CardHeader>
+              </button>
+              {open && (
+                <CardContent>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {phase.weeks.map((week) => {
+                      const isSelected = selectedWeek === week.weekNumber && selectedPhase === phase.phaseNumber;
+                      return (
+                        <div
+                          key={week.weekNumber}
+                          className={`rounded-lg border p-4 transition-colors ${
+                            week.submitted
+                              ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-900/10"
+                              : "border-slate-200 dark:border-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-slate-900 dark:text-white">Week {week.weekNumber}</p>
+                            {week.submitted ? (
+                              <CheckCircle className="h-5 w-5 text-emerald-600" />
+                            ) : (
+                              <Clock className="h-5 w-5 text-slate-400" />
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {new Date(week.startDate).toLocaleDateString("en-TZ")} – {new Date(week.endDate).toLocaleDateString("en-TZ")}
+                          </p>
+
+                          {week.submitted ? (
+                            <div className="mt-3 space-y-2">
+                              <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+                                <FileText className="h-3.5 w-3.5" />
+                                <span className="truncate">{week.originalName || "Report uploaded"}</span>
+                              </div>
+                              <Button size="sm" variant="outline" className="w-full h-10" onClick={() => handlePreview(week)}>
+                                <Eye className="h-4 w-4" /> View Report
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant={isSelected ? "primary" : "outline"}
+                              className="w-full mt-3 h-10"
+                              onClick={() => openFilePicker(phase.phaseNumber, week.weekNumber)}
+                            >
+                              <Upload className="h-4 w-4" /> Upload Report
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
 
         {/* Hidden file input */}
         <input

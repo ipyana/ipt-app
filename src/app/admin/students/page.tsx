@@ -158,7 +158,7 @@ export default function AdminStudents() {
           }`}>{bulkMsg.text}</div>
         )}
 
-        <Card>
+        <Card className="hidden lg:block">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -212,8 +212,62 @@ export default function AdminStudents() {
           </CardContent>
         </Card>
 
+        {/* Mobile card list (below lg) */}
+        <div className="space-y-3 lg:hidden pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          {filtered.length === 0 ? (
+            <Card><CardContent className="p-6 text-center text-sm text-slate-400">No students found</CardContent></Card>
+          ) : (
+            filtered.map((s) => {
+              const selected = bulk.selected.has(s.id);
+              return (
+                <Card key={s.id} className={selected ? "border-primary-300 dark:border-primary-600" : ""}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => bulk.toggleOne(s.id)}
+                        className="mt-1 h-5 w-5 shrink-0 accent-primary-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate">{s.fullName}</p>
+                            <p className="text-xs text-slate-400">{s.studentId}</p>
+                          </div>
+                          {s.application ? (
+                            <Badge variant={s.application.status === "allocated" ? "success" : "warning"}>{s.application.status}</Badge>
+                          ) : <Badge variant="secondary">No app</Badge>}
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <Badge variant="secondary">{s.department}</Badge>
+                          <span className="text-xs text-slate-400 truncate">{s.program}</span>
+                        </div>
+                        <div className="mt-1.5 text-xs text-slate-500">
+                          {s.allocatedName ? `Allocated: ${s.allocatedName}` : "Not allocated"}
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => setViewTarget(s)}>
+                            <Eye className="h-3.5 w-3.5" /> View
+                          </Button>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(s)}>
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </Button>
+                          <Button variant="outline" size="sm" className="flex-1 text-red-600" onClick={() => setDeleteTarget(s)}>
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
+
         {bulk.someSelected && (
-          <div className="sticky bottom-4 z-30 flex items-center justify-between rounded-xl border border-primary-200 bg-primary-600 px-4 py-2.5 text-white shadow-lg">
+          <div className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-primary-200 bg-primary-600 px-4 py-3 text-white shadow-lg lg:bottom-4 lg:rounded-xl lg:border lg:mx-4 lg:px-4 lg:py-2.5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:pb-2.5">
             <p className="text-sm font-medium">{bulk.selected.size} selected</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={bulk.clear}>

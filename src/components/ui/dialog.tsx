@@ -29,7 +29,7 @@ export function Dialog({ open, onClose, children }: DialogProps) {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -39,11 +39,11 @@ export function Dialog({ open, onClose, children }: DialogProps) {
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.98, y: 8 }}
+            initial={{ opacity: 0, scale: 0.98, y: 32 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 8 }}
-            transition={{ duration: 0.15, ease: "easeInOut" }}
-            className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-lg border border-border bg-panel shadow-xl"
+            exit={{ opacity: 0, scale: 0.98, y: 32 }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
+            className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-xl sm:rounded-lg border border-border bg-panel shadow-xl pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
             role="dialog"
             aria-modal="true"
           >

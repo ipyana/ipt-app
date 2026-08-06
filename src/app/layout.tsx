@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PWA } from "@/components/PWA";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -48,6 +49,16 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#14763b" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0a09" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,6 +72,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-surface text-foreground" suppressHydrationWarning>
         <ThemeProvider>{children}</ThemeProvider>
+        <PWA />
       </body>
     </html>
   );
