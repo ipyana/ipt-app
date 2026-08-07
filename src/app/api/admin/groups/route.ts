@@ -49,12 +49,20 @@ export async function POST(request: NextRequest) {
     const { action, clusterId } = body;
 
     if (action === "create-group") {
-      const { phaseId, name, venueId } = body;
+      const { phaseId, name, venueId, location, capacity } = body;
       if (!phaseId || !name) return err("Phase ID and group name are required", 400);
       const phase = await prisma.phase.findFirst({ where: { id: phaseId, clusterId } });
       if (!phase) return err("Invalid phase", 400);
+      const venue = venueId ? await prisma.venue.findUnique({ where: { id: Number(venueId) } }) : null;
       const group = await prisma.group.create({
-        data: { clusterId, phaseId, venueId: venueId ? Number(venueId) : null, name },
+        data: {
+          clusterId,
+          phaseId,
+          venueId: venueId ? Number(venueId) : null,
+          name,
+          location: location?.trim() || venue?.name || "",
+          capacity: capacity ? Number(capacity) : 0,
+        },
       });
       return NextResponse.json(group, { status: 201 });
     }
@@ -93,7 +101,7 @@ export async function POST(request: NextRequest) {
           studentId: allocation.application.student.studentId,
           clusterName: cluster?.name || "Your cluster",
           phaseLabel: `Phase ${allocation.phase?.phaseNumber || 1}`,
-          venue: group.venue?.name || group.name,
+          venue: group.location || group.venue?.name || group.name,
           group: group.name,
         });
       } catch { /* non-blocking */ }

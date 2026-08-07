@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Steps } from "@/components/ui/steps";
-import { MapPin, Users, Check, AlertTriangle, ArrowRight } from "lucide-react";
+import { MapPin, Users, Check, AlertTriangle, ArrowRight, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 
 interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number }
 interface Cluster {
@@ -31,6 +32,7 @@ export default function StudentApply() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [fullCluster, setFullCluster] = useState<Cluster | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -54,6 +56,12 @@ export default function StudentApply() {
     return cluster.allowedDepartments?.find((cd) => cd.department.abbreviation === user?.department) || null;
   }
 
+  function isFull(cluster: Cluster): boolean {
+    const cp = getProgramSlot(cluster);
+    if (!cp) return true;
+    return cp.slots > 0 && cp.enrolled >= cp.slots;
+  }
+
   const selectedIds = [pref1, pref2].filter(Boolean);
 
   function getAvailableFor(current: number) {
@@ -66,6 +74,11 @@ export default function StudentApply() {
   }
 
   function selectAndAdvance(clusterId: number) {
+    const cluster = clusters.find((c) => c.id === clusterId);
+    if (cluster && isFull(cluster)) {
+      setFullCluster(cluster);
+      return;
+    }
     const { set } = currentPref();
     set(clusterId);
     if (step < 2) setTimeout(() => setStep(step + 1), 200);
@@ -151,22 +164,25 @@ export default function StudentApply() {
               {getAvailableFor(val).map((cluster) => {
                 const cp = getProgramSlot(cluster)!;
                 const selected = val === cluster.id;
+                const full = isFull(cluster);
                 return (
                   <button key={cluster.id} onClick={() => selectAndAdvance(cluster.id)}
                     className={`text-left rounded-lg border-2 p-4 transition-all duration-200 ${
                       selected ? "border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 ring-1 ring-primary-500"
+                      : full ? "border-red-200 bg-red-50/50 dark:border-red-900/40 dark:bg-red-900/10 opacity-80"
                       : "border-slate-200 bg-white hover:border-primary-200 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-primary-700"}`}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h4 className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">{cluster.name}</h4>
                       {selected && <Badge variant="default" className="shrink-0 text-[10px] px-1.5"><Check className="h-3 w-3" /></Badge>}
+                      {full && !selected && <Badge variant="danger" className="shrink-0 text-[10px] px-1.5">FULL</Badge>}
                     </div>
                     <p className="text-[11px] text-slate-500 line-clamp-2 mb-2">{cluster.description}</p>
                     <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-2">
                       <MapPin className="h-3 w-3" /><span className="truncate">{cluster.location}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-primary-600">{cp.enrolled}/{cp.slots}</span>
-                      <span className="text-slate-400">{cp.slots > 0 && cp.enrolled < cp.slots ? "Available" : "Full"}</span>
+                      <span className={`font-medium ${full ? "text-red-600" : "text-primary-600"}`}>{cp.enrolled}/{cp.slots}</span>
+                      <span className={full ? "text-red-500 font-semibold" : "text-slate-400"}>{full ? "NO VACANT" : "Available"}</span>
                     </div>
                   </button>
                 );
@@ -193,6 +209,42 @@ export default function StudentApply() {
           )}
         </div>
       </div>
+
+      <Dialog open={!!fullCluster} onClose={() => setFullCluster(null)}>
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20">
+              <XCircle className="h-5 w-5 text-red-600" />
+            </div>
+            <DialogTitle>Cluster is Full</DialogTitle>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            <strong>{fullCluster?.name}</strong> is currently <strong>full</strong> for your program.
+          </p>
+          <p className="text-sm text-slate-500 mt-2">
+            Please choose another available cluster from the list, or check back later. Your second preference is reserved for the next phase.
+          </p>
+          <div className="rounded-lg border border-border bg-muted/40 p-3 mt-3">
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Available clusters:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {eligibleClusters.filter((c) => !isFull(c)).map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setFullCluster(null); selectAndAdvance(c.id); }}
+                  className="rounded-full border border-border bg-panel px-3 py-1 text-xs text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setFullCluster(null)}>Close</Button>
+        </DialogFooter>
+      </Dialog>
     </AppLayout>
   );
 }

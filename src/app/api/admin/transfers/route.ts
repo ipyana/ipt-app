@@ -134,9 +134,21 @@ export async function POST(request: NextRequest) {
         });
 
         const [cluster1, cluster2] = await Promise.all([
-          prisma.cluster.findUnique({ where: { id: newPref1 } }),
-          prisma.cluster.findUnique({ where: { id: newPref2 } }),
+          prisma.cluster.findUnique({
+            where: { id: newPref1 },
+            include: { staff: { select: { id: true, name: true, phone: true, email: true } } },
+          }),
+          prisma.cluster.findUnique({
+            where: { id: newPref2 },
+            include: { staff: { select: { id: true, name: true, phone: true, email: true } } },
+          }),
         ]);
+        const newAllocs = await prisma.phaseAllocation.findMany({
+          where: { applicationId: app.id },
+          include: { phase: true, group: true },
+        });
+        const g1 = newAllocs.find((a) => a.phase?.clusterId === newPref1 && a.phase?.phaseNumber === 1)?.group;
+        const g2 = newAllocs.find((a) => a.phase?.clusterId === newPref2 && a.phase?.phaseNumber === 2)?.group;
         await sendReapplicationResultEmail({
           studentName: app.student.fullName,
           studentEmail: app.student.email,
@@ -144,6 +156,12 @@ export async function POST(request: NextRequest) {
           status: "approved",
           cluster1: cluster1?.name || "Unknown",
           cluster2: cluster2?.name || "Unknown",
+          cluster1Location: cluster1?.location || "",
+          cluster2Location: cluster2?.location || "",
+          group1: g1?.name || "",
+          group2: g2?.name || "",
+          facilitators1: cluster1?.staff || [],
+          facilitators2: cluster2?.staff || [],
         });
 
         return NextResponse.json({ success: true, message: "Reapplication approved" });
@@ -217,15 +235,30 @@ export async function POST(request: NextRequest) {
         });
 
         const [cluster1, cluster2] = await Promise.all([
-          prisma.cluster.findUnique({ where: { id: newPref1 } }),
-          prisma.cluster.findUnique({ where: { id: newPref2 } }),
+          prisma.cluster.findUnique({
+            where: { id: newPref1 },
+            include: { staff: { select: { id: true, name: true, phone: true, email: true } } },
+          }),
+          prisma.cluster.findUnique({
+            where: { id: newPref2 },
+            include: { staff: { select: { id: true, name: true, phone: true, email: true } } },
+          }),
         ]);
+        const newAllocs = await prisma.phaseAllocation.findMany({
+          where: { applicationId: app.id },
+          include: { phase: true, group: true },
+        });
+        const g1 = newAllocs.find((a) => a.phase?.clusterId === newPref1 && a.phase?.phaseNumber === 1)?.group;
+        const g2 = newAllocs.find((a) => a.phase?.clusterId === newPref2 && a.phase?.phaseNumber === 2)?.group;
         await sendTransferApprovedEmail({
           studentName: app.student.fullName,
           studentEmail: app.student.email,
           studentId: app.student.studentId,
           clusterName: cluster1?.name || "Unknown",
           clusterLocation: cluster1?.location || "",
+          groupName: g1?.name || "",
+          groupLocation: g1?.location || "",
+          facilitators: cluster1?.staff || [],
         });
 
         return NextResponse.json({ success: true, message: "Transfer approved" });
@@ -295,13 +328,24 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      const targetCluster = await prisma.cluster.findUnique({ where: { id: toClusterId } });
+      const targetCluster = await prisma.cluster.findUnique({
+        where: { id: toClusterId },
+        include: { staff: { select: { id: true, name: true, phone: true, email: true } } },
+      });
+      const newAllocs = await prisma.phaseAllocation.findMany({
+        where: { applicationId: app.id },
+        include: { group: true },
+      });
+      const newGroup = newAllocs.find((a) => a.group)?.group || null;
       await sendTransferApprovedEmail({
         studentName: app.student.fullName,
         studentEmail: app.student.email,
         studentId: app.student.studentId,
         clusterName: targetCluster?.name || "Unknown",
         clusterLocation: targetCluster?.location || "",
+        groupName: newGroup?.name || "",
+        groupLocation: newGroup?.location || "",
+        facilitators: targetCluster?.staff || [],
       });
     } else {
       await prisma.transferRequest.update({

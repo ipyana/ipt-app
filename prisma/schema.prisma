@@ -328,14 +328,16 @@ model Venue {
 }
 
 model Group {
-  id        Int      @id @default(autoincrement())
-  clusterId Int      @map("cluster_id")
-  cluster   Cluster  @relation(fields: [clusterId], references: [id], onDelete: Cascade)
-  phaseId   Int?     @map("phase_id")
-  phase     Phase?   @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  venueId   Int?     @map("venue_id")
-  venue     Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
+  id          Int               @id @default(autoincrement())
+  clusterId   Int               @map("cluster_id")
+  cluster     Cluster           @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  phaseId     Int?              @map("phase_id")
+  phase       Phase?            @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  venueId     Int?              @map("venue_id")
+  venue       Venue?            @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  name        String
+  location    String            @default("")
+  capacity    Int               @default(0)
+  createdAt   DateTime          @default(now()) @map("created_at")
   allocations PhaseAllocation[]
 }

@@ -67,7 +67,7 @@ export async function POST() {
         studentEmail: app.student.email,
         studentId: app.student.studentId,
         clusterName: clusterMap[app.allocatedCluster]?.name || "Your cluster",
-        venue: group?.venue?.name || group?.name || "",
+        venue: group?.location || group?.venue?.name || group?.name || "",
         group: group?.name || "",
         phaseDates: `${phase2.startDate.toLocaleDateString("en-TZ")} – ${phase2.endDate.toLocaleDateString("en-TZ")}`,
       });

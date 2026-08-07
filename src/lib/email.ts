@@ -13,6 +13,9 @@ interface ClusterEmailParams extends EmailParams {
   clusterName: string;
   clusterLocation?: string;
   reason?: string;
+  facilitators?: any[];
+  groupName?: string;
+  groupLocation?: string;
 }
 
 interface SubmissionEmailParams extends EmailParams {
@@ -31,6 +34,36 @@ function toIso(d: string) {
   return new Date(d).toISOString();
 }
 
+/** Format a list of facilitators as "Name (phone · email)" lines, omitting missing phone. */
+function formatFacilitators(staff: any[] | undefined | null): string {
+  if (!staff || staff.length === 0) return "";
+  return staff
+    .map((s) => {
+      const name = s?.name || "";
+      const phone = s?.phone ? ` · ${s.phone}` : "";
+      const email = s?.email ? ` · ${s.email}` : "";
+      return `${name}${phone}${email}`.trim();
+    })
+    .filter(Boolean)
+    .join("<br/>");
+}
+
+/** Build HTML facilitator rows for an email template. */
+function facilitatorsHtml(staff: any[] | undefined | null): string {
+  if (!staff || staff.length === 0) return "";
+  return staff
+    .map((s) => {
+      const name = s?.name || "";
+      const phone = s?.phone ? `<span>Phone: ${s.phone}</span>` : "";
+      const email = s?.email ? `<span>Email: ${s.email}</span>` : "";
+      return `<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin: 6px 0;">
+        <p style="margin: 0; font-weight: bold; color: #1e293b; font-size: 13px;">${name}</p>
+        <p style="margin: 2px 0 0; color: #475569; font-size: 12px;">${phone} ${phone && email ? "&nbsp;&nbsp;" : ""}${email}</p>
+      </div>`;
+    })
+    .join("");
+}
+
 export async function sendSubmissionEmail(params: SubmissionEmailParams) {
   const { studentEmail, studentName, studentId, allocations, phases, clusters } = params;
   const clusterMap = Object.fromEntries(clusters.map((c: any) => [c.id, c]));
@@ -47,22 +80,26 @@ export async function sendSubmissionEmail(params: SubmissionEmailParams) {
 
   const p1Group = p1a?.group?.name || "";
   const p2Group = p2a?.group?.name || "";
-  const p1Venue = p1a?.group?.venue?.name || c1?.location || "";
-  const p2Venue = p2a?.group?.venue?.name || c2?.location || "";
+  const p1Venue = p1a?.group?.location || p1a?.group?.venue?.name || c1?.location || "";
+  const p2Venue = p2a?.group?.location || p2a?.group?.venue?.name || c2?.location || "";
+  const p1Facilitators = facilitatorsHtml(c1?.staff);
+  const p2Facilitators = facilitatorsHtml(c2?.staff);
 
   const result = await sendTemplateEmail("submission_confirmed", studentEmail, {
     studentName,
     studentId,
     phase1Cluster: c1?.name || "TBD",
     phase1Dates: ph1 ? `${fmtDate(ph1.startDate)} – ${fmtDate(ph1.endDate)}` : "TBD",
-    phase1Staff: c1?.staff?.map((s: any) => s.name).join(", ") || "TBD",
+    phase1Staff: formatFacilitators(c1?.staff) || "TBD",
+    phase1Facilitators: p1Facilitators,
     phase1Venue: p1Venue,
     phase1Group: p1Group,
     phase1CalendarGoogle: ph1 ? buildGoogleCalendarUrl({ title: p1Title, description: `IPT Phase 1 cluster placement: ${c1?.name}`, location: p1Venue, startDate: toIso(ph1.startDate), endDate: toIso(ph1.endDate) }) : "",
     phase1CalendarIcs: ph1 ? buildIcsApiUrl({ title: p1Title, description: `IPT Phase 1 cluster placement: ${c1?.name}`, location: p1Venue, startDate: toIso(ph1.startDate), endDate: toIso(ph1.endDate) }) : "",
     phase2Cluster: c2?.name || "TBD",
     phase2Dates: ph2 ? `${fmtDate(ph2.startDate)} – ${fmtDate(ph2.endDate)}` : "TBD",
-    phase2Staff: c2?.staff?.map((s: any) => s.name).join(", ") || "TBD",
+    phase2Staff: formatFacilitators(c2?.staff) || "TBD",
+    phase2Facilitators: p2Facilitators,
     phase2Venue: p2Venue,
     phase2Group: p2Group,
     phase2CalendarGoogle: ph2 ? buildGoogleCalendarUrl({ title: p2Title, description: `IPT Phase 2 cluster placement: ${c2?.name}`, location: p2Venue, startDate: toIso(ph2.startDate), endDate: toIso(ph2.endDate) }) : "",
@@ -95,9 +132,13 @@ export async function sendTransferApprovedEmail(params: ClusterEmailParams) {
     studentId: params.studentId,
     clusterName: params.clusterName,
     clusterLocation: params.clusterLocation || "",
+    groupName: params.groupName || "",
+    groupLocation: params.groupLocation || "",
+    facilitators: facilitatorsHtml(params.facilitators),
   });
   if (!result.success) {
-    const html = buildSimpleHtml("Transfer Approved", `Your transfer to ${params.clusterName} has been approved.`);
+    const facs = params.facilitators?.length ? `<br/>Facilitators:<br/>${formatFacilitators(params.facilitators)}` : "";
+    const html = buildSimpleHtml("Transfer Approved", `Your transfer to ${params.clusterName} has been approved.${params.groupName ? ` Group: ${params.groupName}` : ""}${params.groupLocation ? ` (${params.groupLocation})` : ""}${facs}`);
     await sendEmail(params.studentEmail, `Transfer Approved — ${params.clusterName}`, html);
   }
 }
@@ -234,6 +275,12 @@ export async function sendReapplicationResultEmail(params: {
   status: "approved" | "rejected";
   cluster1: string;
   cluster2: string;
+  cluster1Location?: string;
+  cluster2Location?: string;
+  facilitators1?: any[];
+  facilitators2?: any[];
+  group1?: string;
+  group2?: string;
   reason?: string;
 }) {
   const approved = params.status === "approved";
@@ -244,6 +291,12 @@ export async function sendReapplicationResultEmail(params: {
     statusColor: approved ? "#14763b" : "#7a1315",
     cluster1: params.cluster1,
     cluster2: params.cluster2,
+    cluster1Location: params.cluster1Location || "",
+    cluster2Location: params.cluster2Location || "",
+    group1: params.group1 || "",
+    group2: params.group2 || "",
+    facilitators1: facilitatorsHtml(params.facilitators1),
+    facilitators2: facilitatorsHtml(params.facilitators2),
     reason: params.reason || "",
     message: approved
       ? "Your new cluster preferences have been confirmed. Please report to your assigned clusters."
@@ -413,8 +466,8 @@ function buildFallbackSubmissionHtml(params: SubmissionEmailParams): string {
     </div>
     <div style="background: #f8fafc; padding: 16px 24px 28px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
       <p>Dear ${escapeHtml(params.studentName)},</p>
-      <p>${c1 ? `Phase 1: ${escapeHtml(c1.name)}` : ""}</p>
-      <p>${c2 ? `Phase 2: ${escapeHtml(c2.name)}` : ""}</p>
+      ${c1 ? `<p><strong>Phase 1:</strong> ${escapeHtml(c1.name)}</p><p>Venue: ${escapeHtml(p1?.group?.location || p1?.group?.venue?.name || c1?.location || "")}</p><p>Facilitators:<br/>${formatFacilitators(c1.staff)}</p>` : ""}
+      ${c2 ? `<p><strong>Phase 2:</strong> ${escapeHtml(c2.name)}</p><p>Venue: ${escapeHtml(p2?.group?.location || p2?.group?.venue?.name || c2?.location || "")}</p><p>Facilitators:<br/>${formatFacilitators(c2.staff)}</p>` : ""}
     </div>
   </div>`;
 }

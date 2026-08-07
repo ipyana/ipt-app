@@ -19,6 +19,7 @@ export default function AdminGroups() {
   const [createDialog, setCreateDialog] = useState<any>(null);
   const [createName, setCreateName] = useState("");
   const [createVenue, setCreateVenue] = useState("");
+  const [createLocation, setCreateLocation] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function loadClusters() {
@@ -50,11 +51,11 @@ export default function AdminGroups() {
     const res = await fetch("/api/admin/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "create-group", clusterId, phaseId: createDialog.id, name: createName.trim(), venueId: createVenue || undefined }),
+      body: JSON.stringify({ action: "create-group", clusterId, phaseId: createDialog.id, name: createName.trim(), venueId: createVenue || undefined, location: createLocation || undefined }),
     });
     const d = await res.json();
     if (!res.ok) return setMessage({ type: "error", text: d.error || "Failed" });
-    setCreateDialog(null); setCreateName(""); setCreateVenue("");
+    setCreateDialog(null); setCreateName(""); setCreateVenue(""); setCreateLocation("");
     setMessage({ type: "success", text: "Group created" });
     await loadData(clusterId);
   }
@@ -144,7 +145,7 @@ export default function AdminGroups() {
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-white">{group.name}</p>
                         <p className="text-xs text-slate-400 flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {group.venue?.name || "No venue"}
+                          <MapPin className="h-3 w-3" /> {group.location || group.venue?.name || "No location"}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -207,6 +208,7 @@ export default function AdminGroups() {
                 {(data?.venues || []).map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </Select>
             </div>
+            <div className="space-y-1"><Label>Location / Building (optional)</Label><Input value={createLocation} onChange={(e) => setCreateLocation(e.target.value)} placeholder="e.g. Block B, Floor 2" /></div>
           </div>
         </DialogBody>
         <DialogFooter>

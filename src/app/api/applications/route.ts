@@ -111,7 +111,10 @@ export async function POST(request: NextRequest) {
 
     const clusters = await prisma.cluster.findMany({
       where: { id: { in: [pref1, pref2] } },
-      include: { allowedDepartments: { include: { department: true } } },
+      include: {
+        allowedDepartments: { include: { department: true } },
+        staff: { select: { id: true, name: true, phone: true, email: true } },
+      },
     });
 
     if (clusters.length !== 2) return err("One or more selected clusters do not exist", 400);
@@ -229,7 +232,10 @@ export async function PUT(request: NextRequest) {
 
     const clusters = await prisma.cluster.findMany({
       where: { id: { in: [pref1, pref2] } },
-      include: { allowedDepartments: { include: { department: true } } },
+      include: {
+        allowedDepartments: { include: { department: true } },
+        staff: { select: { id: true, name: true, phone: true, email: true } },
+      },
     });
 
     if (clusters.length !== 2) return err("Invalid cluster selection", 400);

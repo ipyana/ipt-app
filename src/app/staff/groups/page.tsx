@@ -28,6 +28,7 @@ export default function StaffGroups() {
   const [createDialog, setCreateDialog] = useState<Phase | null>(null);
   const [createName, setCreateName] = useState("");
   const [createVenue, setCreateVenue] = useState("");
+  const [createLocation, setCreateLocation] = useState("");
 
   async function load() {
     const res = await fetch("/api/staff/groups");
@@ -46,11 +47,11 @@ export default function StaffGroups() {
     const res = await fetch("/api/staff/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "create-group", phaseId: createDialog.id, name: createName.trim(), venueId: createVenue || undefined }),
+      body: JSON.stringify({ action: "create-group", phaseId: createDialog.id, name: createName.trim(), venueId: createVenue || undefined, location: createLocation || undefined }),
     });
     const data = await res.json();
     if (!res.ok) return setMessage({ type: "error", text: data.error || "Failed" });
-    setCreateDialog(null); setCreateName(""); setCreateVenue("");
+    setCreateDialog(null); setCreateName(""); setCreateVenue(""); setCreateLocation("");
     setMessage({ type: "success", text: "Group created" });
     await load();
   }
@@ -109,7 +110,7 @@ export default function StaffGroups() {
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-white">{group.name}</p>
                         <p className="text-xs text-slate-400 flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {group.venue?.name || "No venue"}
+                          <MapPin className="h-3 w-3" /> {group.location || group.venue?.name || "No location"}
                         </p>
                       </div>
                       <Badge variant="secondary">{group._count?.allocations || 0} students</Badge>
@@ -163,6 +164,7 @@ export default function StaffGroups() {
                 {venues.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </Select>
             </div>
+            <div className="space-y-1"><Label>Location / Building (optional)</Label><Input value={createLocation} onChange={(e) => setCreateLocation(e.target.value)} placeholder="e.g. Block B, Floor 2" /></div>
           </div>
         </DialogBody>
         <DialogFooter>

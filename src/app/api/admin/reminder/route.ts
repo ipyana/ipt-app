@@ -34,7 +34,7 @@ export async function POST() {
       const phase2 = phase2ByCluster.get(clusterId);
       if (!phase2) continue;
       const phase2Alloc = app.allocations.find((a: any) => a.phaseId === phase2.id);
-      const venue = phase2Alloc?.group?.venue?.name || phase2Alloc?.group?.name || clusterMap[clusterId]?.location || "";
+      const venue = phase2Alloc?.group?.location || phase2Alloc?.group?.venue?.name || phase2Alloc?.group?.name || clusterMap[clusterId]?.location || "";
       const group = phase2Alloc?.group?.name || "";
       const nextCluster = (phase2Alloc?.clusterId && clusterMap[phase2Alloc.clusterId]?.name) || clusterMap[clusterId]?.name || "Your cluster";
       try {

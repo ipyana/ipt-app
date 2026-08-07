@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Group" ADD COLUMN     "capacity" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "location" TEXT NOT NULL DEFAULT '';

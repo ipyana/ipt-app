@@ -43,16 +43,18 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
       <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
         <h3 style="margin: 0 0 8px; color: #14763b;">Phase 1 — {{phase1Cluster}}</h3>
         <p style="margin: 0; color: #64748b; font-size: 13px;">{{phase1Dates}}</p>
-        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Supervisors: {{phase1Staff}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Venue: {{phase1Venue}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Group: {{phase1Group}}</p>
+        <p style="margin: 10px 0 4px; color: #1e293b; font-size: 13px; font-weight: bold;">Your Facilitators:</p>
+        {{phase1Facilitators}}
       </div>
       <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
         <h3 style="margin: 0 0 8px; color: #14763b;">Phase 2 — {{phase2Cluster}}</h3>
         <p style="margin: 0; color: #64748b; font-size: 13px;">{{phase2Dates}}</p>
-        <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Supervisors: {{phase2Staff}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Venue: {{phase2Venue}}</p>
         <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Group: {{phase2Group}}</p>
+        <p style="margin: 10px 0 4px; color: #1e293b; font-size: 13px; font-weight: bold;">Your Facilitators:</p>
+        {{phase2Facilitators}}
       </div>
       <div style="padding: 16px 20px; text-align: center;">
         <p style="margin: 0 0 10px; color: #475569; font-size: 13px;"><strong>Save your schedule to your calendar:</strong></p>
@@ -66,7 +68,7 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     <p style="color: #64748b; font-size: 14px;">Please report to your assigned cluster on the start date.</p>`,
       "Industrial Practical Training 2025/2026"
     ),
-    variables: ["studentName", "studentId", "phase1Cluster", "phase1Dates", "phase1Staff", "phase1Venue", "phase1Group", "phase1CalendarGoogle", "phase1CalendarIcs", "phase2Cluster", "phase2Dates", "phase2Staff", "phase2Venue", "phase2Group", "phase2CalendarGoogle", "phase2CalendarIcs"],
+    variables: ["studentName", "studentId", "phase1Cluster", "phase1Dates", "phase1Facilitators", "phase1Venue", "phase1Group", "phase1CalendarGoogle", "phase1CalendarIcs", "phase2Cluster", "phase2Dates", "phase2Facilitators", "phase2Venue", "phase2Group", "phase2CalendarGoogle", "phase2CalendarIcs"],
     required: true,
   },
   {
@@ -99,10 +101,12 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
       <p style="margin: 0; font-size: 18px; font-weight: bold; color: #14763b;">{{clusterName}}</p>
       <p style="margin: 8px 0 0; color: #64748b;">Location: {{clusterLocation}}</p>
+      {{#groupName}}<p style="margin: 4px 0 0; color: #64748b;">Group: {{groupName}}{{#groupLocation}} ({{groupLocation}}){{/groupLocation}}</p>{{/groupName}}
+      {{#facilitators}}<p style="margin: 10px 0 4px; color: #1e293b; font-size: 13px; font-weight: bold;">Your Facilitators:</p>{{facilitators}}{{/facilitators}}
     </div>
     <p style="color: #64748b; font-size: 14px;">Please report to your new cluster immediately.</p>`
     ),
-    variables: ["studentName", "studentId", "clusterName", "clusterLocation"],
+    variables: ["studentName", "studentId", "clusterName", "clusterLocation", "groupName", "groupLocation", "facilitators"],
     required: true,
   },
   {
@@ -295,14 +299,16 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
       `<p>Dear <strong>{{studentName}}</strong> ({{studentId}}),</p>
     <p>Your IPT reapplication request has been <strong style="color: {{statusColor}};">{{status}}</strong>.</p>
     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-      <p style="margin: 4px 0;">1. <strong>{{cluster1}}</strong></p>
-      <p style="margin: 4px 0;">2. <strong>{{cluster2}}</strong></p>
+      <p style="margin: 4px 0;">1. <strong>{{cluster1}}</strong>{{#cluster1Location}} — {{cluster1Location}}{{/cluster1Location}}{{#group1}} · Group: {{group1}}{{/group1}}</p>
+      {{#facilitators1}}<p style="margin: 8px 0 4px; color: #1e293b; font-size: 13px; font-weight: bold;">Facilitators:</p>{{facilitators1}}{{/facilitators1}}
+      <p style="margin: 12px 0 4px;">2. <strong>{{cluster2}}</strong>{{#cluster2Location}} — {{cluster2Location}}{{/cluster2Location}}{{#group2}} · Group: {{group2}}{{/group2}}</p>
+      {{#facilitators2}}<p style="margin: 8px 0 4px; color: #1e293b; font-size: 13px; font-weight: bold;">Facilitators:</p>{{facilitators2}}{{/facilitators2}}
     </div>
     {{#reason}}<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;"><p style="margin: 0; font-size: 14px; color: #991b1b;"><strong>Reason:</strong> {{reason}}</p></div>{{/reason}}
     <p style="color: #64748b; font-size: 14px;">{{message}}</p>
     <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>`
     ),
-    variables: ["studentName", "studentId", "status", "statusColor", "cluster1", "cluster2", "reason", "message", "appName"],
+    variables: ["studentName", "studentId", "status", "statusColor", "cluster1", "cluster2", "cluster1Location", "cluster2Location", "group1", "group2", "facilitators1", "facilitators2", "reason", "message", "appName"],
     required: true,
   },
   {

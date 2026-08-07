@@ -4,10 +4,14 @@ import { requireAdmin } from "@/lib/auth";
 import { studentAdminSchema } from "@/lib/validations";
 import bcrypt from "bcryptjs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
+    const clusterId = Number(request.nextUrl.searchParams.get("clusterId") || "0");
     const students = await prisma.student.findMany({
+      where: clusterId
+        ? { applications: { some: { status: "allocated", allocatedCluster: clusterId } } }
+        : undefined,
       include: {
         applications: {
           select: {
