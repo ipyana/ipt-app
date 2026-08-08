@@ -8,10 +8,13 @@ export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
     const clusterId = Number(request.nextUrl.searchParams.get("clusterId") || "0");
+    const status = request.nextUrl.searchParams.get("status") || undefined;
+    const where: any = status ? { status } : {};
+    if (clusterId) {
+      where.applications = { some: { status: "allocated", allocatedCluster: clusterId } };
+    }
     const students = await prisma.student.findMany({
-      where: clusterId
-        ? { applications: { some: { status: "allocated", allocatedCluster: clusterId } } }
-        : undefined,
+      where,
       include: {
         applications: {
           select: {
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (existing) return NextResponse.json({ error: "Student with that email or registration number already exists" }, { status: 409 });
 
     const student = await prisma.student.create({
-      data: { ...rest, password: hashed, role: "student" },
+      data: { ...rest, password: hashed, role: "student", status: "active", mustChangePassword: false },
     });
 
     return NextResponse.json({ ...student, password: undefined }, { status: 201 });

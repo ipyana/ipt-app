@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/db";
+import { acquireSendSlot } from "./throttle";
 
 interface SmtpConfig {
   host: string;
@@ -46,6 +47,23 @@ async function loadSmtpConfig(): Promise<SmtpConfig | null> {
   };
 }
 
+function isTransient(err: any): boolean {
+  const msg = String(err?.message || err || "").toLowerCase();
+  return (
+    msg.includes("450") ||
+    msg.includes("throttl") ||
+    msg.includes("limit") ||
+    msg.includes("rate") ||
+    msg.includes("ecoonreset") ||
+    msg.includes("etimedout") ||
+    msg.includes("econn") ||
+    msg.includes("temporarily unavailable") ||
+    msg.includes("try again later")
+  );
+}
+
+const RETRY_DELAYS_MS = [1000, 3000, 8000];
+
 export async function sendViaSmtp(to: string, subject: string, html: string): Promise<{ success: boolean; error?: string }> {
   const config = await loadSmtpConfig();
   if (!config) {
@@ -59,17 +77,27 @@ export async function sendViaSmtp(to: string, subject: string, html: string): Pr
     auth: { user: config.user, pass: config.pass },
   });
 
-  try {
-    await transporter.sendMail({
-      from: `"${config.senderName}" <${config.from}>`,
-      to,
-      subject,
-      html,
-    });
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "SMTP send failed" };
+  let lastError: string | undefined;
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    await acquireSendSlot();
+    try {
+      await transporter.sendMail({
+        from: `"${config.senderName}" <${config.from}>`,
+        to,
+        subject,
+        html,
+      });
+      return { success: true };
+    } catch (err: any) {
+      lastError = err?.message || "SMTP send failed";
+      // Only retry transient/throttling failures; abort immediately on hard rejects.
+      if (!isTransient(err) || attempt === RETRY_DELAYS_MS.length) {
+        return { success: false, error: lastError };
+      }
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+    }
   }
+  return { success: false, error: lastError };
 }
 
 export async function testSmtpConnection(): Promise<{ success: boolean; message: string }> {

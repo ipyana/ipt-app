@@ -64,8 +64,15 @@ export default function StudentApply() {
 
   const selectedIds = [pref1, pref2].filter(Boolean);
 
-  function getAvailableFor(current: number) {
-    return eligibleClusters.filter((c) => !selectedIds.includes(c.id) || c.id === current);
+  function getAvailableFor() {
+    return eligibleClusters;
+  }
+
+  // A cluster already chosen for the other preference (Phase 1/2) must not be
+  // selectable twice — show it greyed out with a "Chosen as …" badge.
+  function isChosenOther(c: Cluster): boolean {
+    const otherPref = step === 1 ? pref2 : pref1;
+    return otherPref > 0 && otherPref === c.id;
   }
 
   function currentPref() {
@@ -79,6 +86,10 @@ export default function StudentApply() {
       setFullCluster(cluster);
       return;
     }
+    if (cluster && isChosenOther(cluster)) {
+      setError(step === 1 ? "This cluster is already selected as your 2nd choice. Pick a different one." : "This cluster is already selected as your 1st choice. Pick a different one.");
+      return;
+    }
     const { set } = currentPref();
     set(clusterId);
     if (step < 2) setTimeout(() => setStep(step + 1), 200);
@@ -90,6 +101,7 @@ export default function StudentApply() {
 
   async function handleSubmit() {
     if (!pref1 || !pref2) { setError("Select both preferences before submitting."); return; }
+    if (pref1 === pref2) { setError("Preferences must be 2 distinct clusters."); return; }
     setError(""); setSuccess(""); setSubmitting(true);
     try {
       const res = await fetch("/api/applications", {
@@ -161,20 +173,23 @@ export default function StudentApply() {
               <p className="text-sm text-slate-400">Select one cluster</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {getAvailableFor(val).map((cluster) => {
+              {getAvailableFor().map((cluster) => {
                 const cp = getProgramSlot(cluster)!;
                 const selected = val === cluster.id;
                 const full = isFull(cluster);
+                const chosenOther = isChosenOther(cluster);
                 return (
-                  <button key={cluster.id} onClick={() => selectAndAdvance(cluster.id)}
+                  <button key={cluster.id} onClick={() => selectAndAdvance(cluster.id)} disabled={chosenOther}
                     className={`text-left rounded-lg border-2 p-4 transition-all duration-200 ${
-                      selected ? "border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 ring-1 ring-primary-500"
+                      chosenOther ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-50 dark:border-slate-800 dark:bg-slate-900"
+                      : selected ? "border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 ring-1 ring-primary-500"
                       : full ? "border-red-200 bg-red-50/50 dark:border-red-900/40 dark:bg-red-900/10 opacity-80"
                       : "border-slate-200 bg-white hover:border-primary-200 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-primary-700"}`}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h4 className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">{cluster.name}</h4>
                       {selected && <Badge variant="default" className="shrink-0 text-[10px] px-1.5"><Check className="h-3 w-3" /></Badge>}
-                      {full && !selected && <Badge variant="danger" className="shrink-0 text-[10px] px-1.5">FULL</Badge>}
+                      {chosenOther && <Badge variant="secondary" className="shrink-0 text-[10px] px-1.5">{step === 1 ? "Chosen as 2nd" : "Chosen as 1st"}</Badge>}
+                      {full && !selected && !chosenOther && <Badge variant="danger" className="shrink-0 text-[10px] px-1.5">FULL</Badge>}
                     </div>
                     <p className="text-[11px] text-slate-500 line-clamp-2 mb-2">{cluster.description}</p>
                     <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-2">

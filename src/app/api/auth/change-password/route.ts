@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     } else {
       await prisma.student.update({
         where: { id: session.id },
-        data: { password: hashed, mustChangePassword: false },
+        data: { password: hashed, mustChangePassword: false, status: "active", temporaryPasswordExpiresAt: null },
       });
     }
 

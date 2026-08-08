@@ -25,7 +25,7 @@ interface Allocation {
 
 interface Student {
   id: number; studentId: string; fullName: string; department: string;
-  program: string; email: string; createdAt: string;
+  program: string; email: string; createdAt: string; status?: string;
   application: { status: string; allocatedCluster: number | null; clusterPref1?: number; clusterPref2?: number; allocations?: Allocation[] } | null;
   allocatedName: string | null;
 }
@@ -34,6 +34,7 @@ export default function AdminStudents() {
   const [students, setStudents] = useState<Student[]>([]);
   const [departments, setDepartments] = useState<{ abbreviation: string; name: string }[]>([]);
   const [deptFilter, setDeptFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("active");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
@@ -44,18 +45,31 @@ export default function AdminStudents() {
   const [viewTarget, setViewTarget] = useState<Student | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkMsg, setBulkMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
+  const [cleanupRunning, setCleanupRunning] = useState(false);
+  const [stats, setStats] = useState<{ total: number; applied: number; allocated: number; pending: number }>({ total: 0, applied: 0, allocated: 0, pending: 0 });
   const bulk = useBulkSelection(students);
 
   async function load() {
-    const [stuRes, deptRes] = await Promise.all([
-      fetch("/api/admin/students").then((r) => r.json()),
+    const qs = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
+    const [stuRes, deptRes, countsRes] = await Promise.all([
+      fetch(`/api/admin/students${qs}`).then((r) => r.json()),
       fetch("/api/admin/departments").then((r) => r.json()),
+      fetch("/api/admin/cleanup").then((r) => r.json()).catch(() => null),
     ]);
     setStudents(Array.isArray(stuRes) ? stuRes : []);
     setDepartments(Array.isArray(deptRes) ? deptRes : []);
+    if (countsRes && typeof countsRes.pending === "number") {
+      setStats({
+        total: countsRes.active ?? 0,
+        applied: statusFilter === "active" && Array.isArray(stuRes) ? stuRes.filter((s: Student) => s.application).length : 0,
+        allocated: statusFilter === "active" && Array.isArray(stuRes) ? stuRes.filter((s: Student) => s.application?.status === "allocated").length : 0,
+        pending: countsRes.pending,
+      });
+    }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [statusFilter]);
 
   function openAdd() {
     setEditing(null);
@@ -106,6 +120,27 @@ export default function AdminStudents() {
     load();
   }
 
+  async function handleCleanup() {
+    setCleanupRunning(true);
+    setBulkMsg(null);
+    try {
+      const res = await fetch("/api/admin/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Cleanup failed");
+      setCleanupOpen(false);
+      setBulkMsg({ type: "success", text: `Removed ${data.removed} unactivated account${data.removed !== 1 ? "s" : ""} (${data.emailed} notified)` });
+      load();
+    } catch (e: any) {
+      setBulkMsg({ type: "error", text: e.message });
+    } finally {
+      setCleanupRunning(false);
+    }
+  }
+
   const filtered = students.filter((s) => {
     if (deptFilter && s.department !== deptFilter) return false;
     if (search) {
@@ -118,13 +153,6 @@ export default function AdminStudents() {
   const pagination = usePagination(filtered, 25);
   const pageStudents = pagination.pageItems;
 
-  const stats = {
-    total: students.length,
-    applied: students.filter((s) => s.application).length,
-    allocated: students.filter((s) => s.application?.status === "allocated").length,
-    pending: students.filter((s) => s.application?.status === "pending").length,
-  };
-
   const deptAbbrevs = [...new Set(students.map((s) => s.department).filter(Boolean))].sort();
 
   return (
@@ -133,9 +161,16 @@ export default function AdminStudents() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Students</h2>
-            <p className="text-sm text-slate-500 mt-1">{students.length} registered</p>
+            <p className="text-sm text-slate-500 mt-1">{stats.total} registered{stats.pending > 0 ? ` · ${stats.pending} activation pending` : ""}</p>
           </div>
-          <Button onClick={openAdd}><Plus className="h-4 w-4" /> Add Student</Button>
+          <div className="flex items-center gap-2">
+            {stats.pending > 0 && (
+              <Button variant="outline" onClick={() => setCleanupOpen(true)} title="Remove unactivated accounts">
+                <Trash2 className="h-4 w-4" /> Clean Unactivated
+              </Button>
+            )}
+            <Button onClick={openAdd}><Plus className="h-4 w-4" /> Add Student</Button>
+          </div>
         </div>
 
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
@@ -150,6 +185,11 @@ export default function AdminStudents() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, ID, or email..." className="pl-9" />
           </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm w-44 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+            <option value="active">Registered</option>
+            <option value="pending_activation">Activation Pending</option>
+          </select>
           <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}
             className="h-10 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm w-44 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
             <option value="">All Departments</option>
@@ -198,7 +238,9 @@ export default function AdminStudents() {
                     <TableCell className="hidden sm:table-cell text-xs text-slate-500 max-w-[180px] truncate">{s.program}</TableCell>
                     <TableCell><Badge variant="secondary">{s.department}</Badge></TableCell>
                     <TableCell>
-                      {s.application ? (
+                      {(s.status ?? "active") === "pending_activation" ? (
+                        <Badge variant="warning">Activation Pending</Badge>
+                      ) : s.application ? (
                         <Badge variant={s.application.status === "allocated" ? "success" : "warning"}>{s.application.status}</Badge>
                       ) : (<span className="text-xs text-slate-400">—</span>)}
                     </TableCell>
@@ -240,7 +282,9 @@ export default function AdminStudents() {
                             <p className="font-semibold text-slate-900 dark:text-white truncate">{s.fullName}</p>
                             <p className="text-xs text-slate-400">{s.studentId}</p>
                           </div>
-                          {s.application ? (
+                          {(s.status ?? "active") === "pending_activation" ? (
+                            <Badge variant="warning">Activation Pending</Badge>
+                          ) : s.application ? (
                             <Badge variant={s.application.status === "allocated" ? "success" : "warning"}>{s.application.status}</Badge>
                           ) : <Badge variant="secondary">No app</Badge>}
                         </div>
@@ -401,6 +445,30 @@ export default function AdminStudents() {
           onClose={() => setBulkOpen(false)}
           onConfirm={handleBulkDelete}
         />
+
+        <Dialog open={cleanupOpen} onClose={() => !cleanupRunning && setCleanupOpen(false)}>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <DialogTitle>Clean Up Unactivated Accounts</DialogTitle>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              This will remove all <strong>{stats.pending}</strong> student account(s) that never activated (no temporary-password sign-in). Each will be emailed a notice to start a fresh registration.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCleanupOpen(false)} disabled={cleanupRunning}>Cancel</Button>
+            <Button variant="destructive" onClick={handleCleanup} disabled={cleanupRunning}>
+              {cleanupRunning ? "Cleaning..." : "Remove All"}
+            </Button>
+          </DialogFooter>
+        </Dialog>
 
         <ConfirmDialog
           open={!!deleteTarget}

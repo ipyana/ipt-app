@@ -3,33 +3,10 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { createToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
-import { sendLoginNotificationEmail } from "@/lib/email";
-import { parseUserAgent, getGeo } from "@/lib/useragent";
-import { checkRateLimit, clientKey } from "@/lib/rateLimit";
+import { checkRateLimit, clientKey, isEmailBlocked, recordEmailAttempt, clearEmailLimit } from "@/lib/rateLimit";
 
-function clientIp(request: NextRequest): string {
-  const fwd = request.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return request.headers.get("x-real-ip") || "Unknown";
-}
-
-async function notifyLogin(name: string, email: string, request: NextRequest) {
-  try {
-    const ua = request.headers.get("user-agent") || "";
-    const info = parseUserAgent(ua);
-    const ip = clientIp(request);
-    const location = await getGeo(ip);
-    await sendLoginNotificationEmail({
-      name,
-      email,
-      browser: info.browser,
-      os: info.os,
-      device: info.device,
-      location,
-      ip,
-    });
-  } catch { /* non-blocking */ }
-}
+const LOGIN_TRIAL_WINDOW_MS = 6 * 60 * 60 * 1000;
+const LOGIN_TRIAL_MAX = 3;
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,15 +24,33 @@ export async function POST(request: NextRequest) {
 
     const { identifier, password } = parsed.data;
 
+    const blocked = await isEmailBlocked(identifier, "login", LOGIN_TRIAL_MAX, LOGIN_TRIAL_WINDOW_MS);
+    if (blocked.blocked) {
+      return NextResponse.json(
+        { error: `Too many sign-in attempts. You have been blocked for 6 hours. Try again in ${Math.ceil((blocked.retryAfterSec || 0) / 3600)} hour(s).` },
+        { status: 429 }
+      );
+    }
+
+    const recordFailure = () => recordEmailAttempt(identifier, "login", LOGIN_TRIAL_WINDOW_MS);
+    const clearFailure = () => clearEmailLimit(identifier, "login");
+
     const student = await prisma.student.findFirst({
       where: { OR: [{ studentId: identifier }, { email: identifier }] },
     });
 
     if (student) {
+      if (student.mustChangePassword && student.temporaryPasswordExpiresAt && student.temporaryPasswordExpiresAt < new Date()) {
+        return NextResponse.json({ error: "Your temporary password has expired. Please create a new account." }, { status: 403 });
+      }
+
       const valid = await bcrypt.compare(password, student.password);
       if (!valid) {
+        await recordFailure();
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
+
+      await clearFailure();
 
       const token = await createToken({ id: student.id, role: student.role, studentId: student.studentId });
 
@@ -68,6 +63,7 @@ export async function POST(request: NextRequest) {
         email: student.email,
         role: student.role,
         mustChangePassword: student.mustChangePassword,
+        status: student.status,
       });
 
       response.cookies.set("token", token, {
@@ -77,8 +73,6 @@ export async function POST(request: NextRequest) {
         maxAge: 86400,
         path: "/",
       });
-
-      void notifyLogin(student.fullName, student.email, request);
 
       return response;
     }
@@ -103,8 +97,11 @@ export async function POST(request: NextRequest) {
 
       const valid = await bcrypt.compare(password, staff.password);
       if (!valid) {
+        await recordFailure();
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
+
+      await clearFailure();
 
       const token = await createToken({ id: staff.id, role: staff.role });
 
@@ -126,8 +123,6 @@ export async function POST(request: NextRequest) {
         path: "/",
       });
 
-      void notifyLogin(staff.name, staff.email, request);
-
       return response;
     }
 
@@ -145,8 +140,11 @@ export async function POST(request: NextRequest) {
 
       const valid = await bcrypt.compare(password, admin.password);
       if (!valid) {
+        await recordFailure();
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
+
+      await clearFailure();
 
       const token = await createToken({ id: admin.id, role: admin.role });
 
@@ -167,11 +165,10 @@ export async function POST(request: NextRequest) {
         path: "/",
       });
 
-      void notifyLogin(admin.username, admin.email, request);
-
       return response;
     }
 
+    await recordFailure();
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   } catch {
     return NextResponse.json({ error: "Login failed" }, { status: 500 });

@@ -217,6 +217,20 @@ export async function sendAccountActivatedEmail(params: { name: string; email: s
   }
 }
 
+export async function sendAccountCleanupEmail(params: { name: string; email: string }) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ipt.herpydevs.com";
+  const result = await sendTemplateEmail("account_cleanup", params.email, {
+    name: params.name,
+    registerLink: appUrl,
+    appName: "IPT System",
+  });
+  if (!result.success) {
+    await sendEmail(params.email, "Your IPT Portal registration could not be completed",
+      buildSimpleHtml("Registration Not Completed",
+        `Your IPT Portal registration could not be completed because the account was not activated. Please start a fresh registration at ${appUrl}.`));
+  }
+}
+
 export async function sendLoginNotificationEmail(params: {
   name: string;
   email: string;

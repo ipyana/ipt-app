@@ -1,4 +1,4 @@
-const DEFAULT_CONCURRENCY = 10;
+const DEFAULT_CONCURRENCY = 4;
 
 export async function mapLimit<T, R>(
   items: T[],

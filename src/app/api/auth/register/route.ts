@@ -4,7 +4,11 @@ import { prisma } from "@/lib/db";
 import { registerSchema } from "@/lib/validations";
 import { generateTemporaryPassword } from "@/lib/password";
 import { sendAccountCredentialsEmail } from "@/lib/email";
-import { checkRateLimit, clientKey } from "@/lib/rateLimit";
+import { checkRateLimit, clientKey, checkEmailLimit, isEmailBlocked } from "@/lib/rateLimit";
+
+const REGISTER_TRIAL_WINDOW_MS = 24 * 60 * 60 * 1000;
+const REGISTER_TRIAL_MAX = 3;
+const TEMP_PASSWORD_TTL_MS = 8 * 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,13 +25,32 @@ export async function POST(request: NextRequest) {
 
     const { studentId, fullName, email, programId } = parsed.data;
 
+    const blocked = await isEmailBlocked(email, "register", REGISTER_TRIAL_MAX, REGISTER_TRIAL_WINDOW_MS);
+    if (blocked.blocked) {
+      return NextResponse.json(
+        { error: `Too many registration attempts for this email. You have been blocked for 24 hours. Try again in ${Math.ceil((blocked.retryAfterSec || 0) / 3600)} hour(s).` },
+        { status: 429 }
+      );
+    }
+
     const [existingStudent, existingStaff, existingAdmin] = await Promise.all([
       prisma.student.findFirst({ where: { OR: [{ email }, { studentId }] } }),
       prisma.staff.findUnique({ where: { email } }),
       prisma.admin.findUnique({ where: { email } }),
     ]);
     if (existingStudent || existingStaff || existingAdmin) {
-      return NextResponse.json({ error: "User Already Exists, Contact your facilitator or Admin, or reset password", code: "USER_EXISTS" }, { status: 409 });
+      await checkEmailLimit(email, "register", REGISTER_TRIAL_MAX, REGISTER_TRIAL_WINDOW_MS);
+      let error: string;
+      if (existingStudent?.status === "pending_activation") {
+        error = "Same credentials have been used to create an account. Try to activate it using the temporary password sent to your email.";
+      } else if (existingStudent) {
+        error = "Same credentials have been used to create an account. Try to activate, or reset your password.";
+      } else if (existingStaff || existingAdmin) {
+        error = "User Already Exists. Contact your facilitator or Admin, or reset password.";
+      } else {
+        error = "User Already Exists. Contact your facilitator or Admin, or reset password.";
+      }
+      return NextResponse.json({ error, code: "USER_EXISTS" }, { status: 409 });
     }
 
     const program = await prisma.program.findUnique({
@@ -40,6 +63,7 @@ export async function POST(request: NextRequest) {
 
     const temporaryPassword = generateTemporaryPassword();
     const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+    const tempPasswordExpiresAt = new Date(Date.now() + TEMP_PASSWORD_TTL_MS);
 
     await prisma.student.create({
       data: {
@@ -51,6 +75,8 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         role: "student",
         mustChangePassword: true,
+        status: "pending_activation",
+        temporaryPasswordExpiresAt: tempPasswordExpiresAt,
       },
     });
 
@@ -65,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Registration successful. Check your email for your temporary password to sign in.",
+      message: "Registration successful. Check your email for your temporary password to activate your account (expires in 8 hours).",
     }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });

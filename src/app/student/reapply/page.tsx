@@ -55,8 +55,13 @@ export default function StudentReapply() {
     cl.allowedDepartments?.some((cd) => cd.slots > 0 && cd.department.abbreviation === user?.department)
   ).filter((c) => !currentClusters.includes(c.id));
 
-  function getAvailableFor(current: number) {
-    return eligibleClusters.filter((c) => ![pref1, pref2].includes(c.id) || c.id === current);
+  function getAvailableFor() {
+    return eligibleClusters;
+  }
+
+  function isChosenOther(c: Cluster): boolean {
+    const otherPref = step === 1 ? pref2 : pref1;
+    return otherPref > 0 && otherPref === c.id;
   }
 
   async function handleSubmit() {
@@ -171,19 +176,23 @@ export default function StudentReapply() {
                   {step === 1 ? "Select your new 1st preference" : "Select your new 2nd preference"}
                 </h3>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {getAvailableFor(step === 1 ? pref1 : pref2).map((cluster) => {
+                  {getAvailableFor().map((cluster) => {
                     const isSelected = (step === 1 && pref1 === cluster.id) || (step === 2 && pref2 === cluster.id);
+                    const chosenOther = isChosenOther(cluster);
                     return (
-                      <button key={cluster.id} onClick={() => {
+                      <button key={cluster.id} disabled={chosenOther} onClick={() => {
                         if (step === 1) { setPref1(cluster.id); setTimeout(() => setStep(2), 200); }
                         else setPref2(cluster.id);
                       }}
                         className={`text-left rounded-lg border-2 p-3 transition-all ${
-                          isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-slate-200 hover:border-primary-200 dark:border-slate-700"
+                          chosenOther ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-50 dark:border-slate-800 dark:bg-slate-900"
+                          : isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-slate-200 hover:border-primary-200 dark:border-slate-700"
                         }`}>
                         <p className="text-sm font-semibold text-slate-900 dark:text-white">{cluster.name}</p>
                         <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{cluster.location}</p>
-                        {isSelected && <Check className="h-4 w-4 text-primary-600 mt-1" />}
+                        {chosenOther ? (
+                          <span className="text-[11px] font-medium text-slate-400 mt-1">{step === 1 ? "Chosen as 2nd" : "Chosen as 1st"}</span>
+                        ) : isSelected && <Check className="h-4 w-4 text-primary-600 mt-1" />}
                       </button>
                     );
                   })}

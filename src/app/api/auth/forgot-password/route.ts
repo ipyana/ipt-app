@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateToken } from "@/lib/otp";
 import { sendPasswordResetEmail } from "@/lib/email";
-import { checkRateLimit, clientKey } from "@/lib/rateLimit";
+import { checkRateLimit, clientKey, checkEmailLimit, isEmailBlocked } from "@/lib/rateLimit";
 import { forgotPasswordSchema } from "@/lib/validations";
+
+const FORGOT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const FORGOT_MAX = 3;
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,13 +22,41 @@ export async function POST(request: NextRequest) {
     }
 
     const { email } = parsed.data;
-    if (!email || !email.includes("@")) {
-      return NextResponse.json({ error: "A valid email is required" }, { status: 400 });
+
+    const blocked = await isEmailBlocked(email, "forgot", FORGOT_MAX, FORGOT_WINDOW_MS);
+    if (blocked.blocked) {
+      return NextResponse.json(
+        { error: `Too many reset requests for this email. You have been blocked for 24 hours. Try again in ${Math.ceil((blocked.retryAfterSec || 0) / 3600)} hour(s).` },
+        { status: 429 }
+      );
     }
 
     const student = await prisma.student.findUnique({ where: { email } });
     const staff = await prisma.staff.findUnique({ where: { email } });
     const admin = await prisma.admin.findUnique({ where: { email } });
+
+    if (!student && !staff && !admin) {
+      await checkEmailLimit(email, "forgot", FORGOT_MAX, FORGOT_WINDOW_MS);
+      return NextResponse.json({ error: "There is no record related to this email." }, { status: 404 });
+    }
+
+    if (student && student.status === "pending_activation") {
+      await checkEmailLimit(email, "forgot", FORGOT_MAX, FORGOT_WINDOW_MS);
+      return NextResponse.json(
+        { error: "Your account has not been activated. Visit your email and use the temporary password to activate." },
+        { status: 403 }
+      );
+    }
+
+    if (staff && (staff.status === "pending_activation" || staff.status === "pending_approval")) {
+      await checkEmailLimit(email, "forgot", FORGOT_MAX, FORGOT_WINDOW_MS);
+      return NextResponse.json({ error: "Your account has not been fully activated yet." }, { status: 403 });
+    }
+
+    if (staff && staff.status === "rejected") {
+      await checkEmailLimit(email, "forgot", FORGOT_MAX, FORGOT_WINDOW_MS);
+      return NextResponse.json({ error: "Your registration was not approved." }, { status: 403 });
+    }
 
     let name = "";
     if (student) name = student.fullName;
@@ -34,11 +65,14 @@ export async function POST(request: NextRequest) {
       if (admin.role === "super_admin") {
         return NextResponse.json({ error: "Super admin password resets are handled separately" }, { status: 400 });
       }
+      if (admin.status === "pending") {
+        await checkEmailLimit(email, "forgot", FORGOT_MAX, FORGOT_WINDOW_MS);
+        return NextResponse.json({ error: "Your account has not been activated." }, { status: 403 });
+      }
       name = admin.username;
-    } else {
-      return NextResponse.json({ error: "No account found with that email" }, { status: 404 });
     }
 
+    await checkEmailLimit(email, "forgot", FORGOT_MAX, FORGOT_WINDOW_MS);
     const token = await generateToken(email, "password_reset");
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const resetLink = `${appUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;

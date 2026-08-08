@@ -35,7 +35,15 @@ export async function resendEmail(log: {
     const tempPassword = generateTemporaryPassword();
     const hashed = await bcrypt.hash(tempPassword, 12);
     if (student) {
-      await prisma.student.update({ where: { id: student.id }, data: { password: hashed, mustChangePassword: true } });
+      await prisma.student.update({
+        where: { id: student.id },
+        data: {
+          password: hashed,
+          mustChangePassword: true,
+          status: "pending_activation",
+          temporaryPasswordExpiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000),
+        },
+      });
     } else if (staff) {
       await prisma.staff.update({ where: { id: staff.id }, data: { password: hashed, mustChangePassword: true } });
     } else if (admin && admin.role !== "super_admin") {

@@ -83,18 +83,20 @@ model Staff {
 }
 
 model Student {
-  id           Int           @id @default(autoincrement())
-  studentId    String        @unique @map("student_id")
-  fullName     String        @map("full_name")
-  department   String
-  program      String
-  email        String        @unique
-  password     String
-  role         String        @default("student")
-  mustChangePassword Boolean @default(false) @map("must_change_password")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  applications Application[]
-  announcementReads AnnouncementRead[]
+  id                       Int            @id @default(autoincrement())
+  studentId                String         @unique @map("student_id")
+  fullName                 String         @map("full_name")
+  department               String
+  program                  String
+  email                    String         @unique
+  password                 String
+  role                     String         @default("student")
+  mustChangePassword       Boolean        @default(false) @map("must_change_password")
+  status                   String         @default("pending_activation")
+  temporaryPasswordExpiresAt DateTime?    @map("temporary_password_expires_at")
+  createdAt                DateTime       @default(now()) @map("created_at")
+  applications             Application[]
+  announcementReads        AnnouncementRead[]
 }
 
 model Admin {

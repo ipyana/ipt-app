@@ -78,6 +78,7 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (data?.code === "USER_EXISTS" || res.status === 409) {
+        setError(data?.error || "User Already Exists");
         setExistsOpen(true);
         return;
       }
@@ -229,11 +230,13 @@ export default function HomePage() {
           </div>
         </DialogHeader>
         <DialogBody>
-          <p className="text-sm text-slate-600 dark:text-slate-300">Contact your facilitator or Admin, or reset password.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            An account with these details already exists. Use the credentials that were sent to your email to activate and sign in.
+          </p>
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => setExistsOpen(false)}>Close</Button>
-          <Button onClick={() => { setExistsOpen(false); switchMode("login"); }}>Reset Password</Button>
+          <Button onClick={() => { setExistsOpen(false); switchMode("login"); }}>Go to Sign In</Button>
         </DialogFooter>
       </Dialog>
     </div>

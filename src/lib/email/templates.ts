@@ -407,6 +407,24 @@ export const DEFAULT_TEMPLATES: EmailTemplateDef[] = [
     variables: ["timestamp"],
     required: false,
   },
+  {
+    key: "account_cleanup",
+    name: "Unactivated Account Removed",
+    category: "auth",
+    subject: "Your IPT Portal registration could not be completed",
+    body: emailLayout(
+      "Registration Not Completed",
+      `<p>Dear <strong>{{name}}</strong>,</p>
+    <p>Your IPT Portal registration could not be completed because the account was <strong>not activated</strong> within the allowed time.</p>
+    <p style="color: #475569; line-height: 1.6;">To activate, you must sign in with the temporary password sent to your email and set a new password. Because the temporary password has expired, your account has been removed.</p>
+    <div style="text-align: center; margin: 20px 0;">
+      <a href="{{registerLink}}" style="${BTN_PRIMARY}">Start a Fresh Registration</a>
+    </div>
+    <p style="color: #94a3b8; font-size: 12px;">{{appName}}</p>`
+    ),
+    variables: ["name", "registerLink", "appName"],
+    required: false,
+  },
 ];
 
 const VAR_REGEX = /\{\{(\w+)\}\}/g;
