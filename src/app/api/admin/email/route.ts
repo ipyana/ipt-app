@@ -29,6 +29,23 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || undefined;
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
+    const idsOnly = searchParams.get("idsOnly") === "1";
+
+    if (idsOnly) {
+      const where: any = {};
+      if (status) where.status = status;
+      if (search) {
+        where.OR = [
+          { recipient: { contains: search, mode: "insensitive" } },
+          { subject: { contains: search, mode: "insensitive" } },
+        ];
+      }
+      const [rows, total] = await Promise.all([
+        prisma.emailLog.findMany({ where, select: { id: true }, orderBy: { createdAt: "desc" } }),
+        prisma.emailLog.count({ where }),
+      ]);
+      return NextResponse.json({ ids: rows.map((r) => r.id), total });
+    }
 
     const result = await listEmailLogs({ status, search, limit, offset });
     return NextResponse.json(result);

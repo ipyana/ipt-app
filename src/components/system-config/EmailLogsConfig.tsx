@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination } from "@/components/Pagination";
-import { Loader2, RefreshCw, Mail, CheckCircle2, AlertCircle } from "lucide-react";
+import { ResendProgressDialog } from "@/components/ResendProgressDialog";
+import { Loader2, RefreshCw, Mail, CheckSquare, X } from "lucide-react";
 
 const statusBadge: Record<string, any> = {
   sent: { variant: "success", label: "Sent" },
@@ -24,8 +25,9 @@ export function EmailLogsConfig() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [resending, setResending] = useState(false);
-  const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [selectingAll, setSelectingAll] = useState(false);
+  const [allIds, setAllIds] = useState<number[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   async function loadLogs() {
     setLoading(true);
@@ -61,49 +63,55 @@ export function EmailLogsConfig() {
     });
   }
 
-  async function handleResend() {
-    if (selected.size === 0) return;
-    setResending(true);
-    setResult(null);
+  async function handleSelectAll() {
+    if (selectingAll) return;
+    setSelectingAll(true);
     try {
-      const res = await fetch("/api/admin/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "resend", ids: Array.from(selected) }),
-      });
+      const params = new URLSearchParams();
+      if (logFilter) params.set("status", logFilter);
+      params.set("idsOnly", "1");
+      const res = await fetch(`/api/admin/email?${params}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Resend failed");
-      setResult({ type: "success", text: data.message || "Emails resent" });
+      const ids: number[] = data.ids || [];
+      setAllIds(ids);
+      setSelected(new Set(ids));
+    } catch {
       setSelected(new Set());
-      await loadLogs();
-    } catch (e: any) {
-      setResult({ type: "error", text: e.message });
     } finally {
-      setResending(false);
+      setSelectingAll(false);
     }
+  }
+
+  function handleDialogDone(failedIds: number[]) {
+    // Select the failed ones so "Resend Failed" can be re-triggered.
+    setSelected(new Set(failedIds));
+    setAllIds(failedIds);
   }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 items-center">
         {["", "sent", "failed", "pending"].map((s) => (
-          <Button key={s} variant={logFilter === s ? "primary" : "outline"} size="sm" onClick={() => { setLogFilter(s); setPage(1); }}>
+          <Button key={s} variant={logFilter === s ? "primary" : "outline"} size="sm" onClick={() => { setLogFilter(s); setPage(1); setSelected(new Set()); }}>
             {s || "All"}
           </Button>
         ))}
         <span className="text-sm text-slate-400 ml-auto self-center">{logTotal} total</span>
-        <Button size="sm" variant="accent" disabled={selected.size === 0 || resending} onClick={handleResend}>
-          {resending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          Resend Selected ({selected.size})
+        <Button size="sm" variant="outline" disabled={selectingAll} onClick={handleSelectAll}>
+          {selectingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckSquare className="h-3.5 w-3.5" />}
+          Select All ({logTotal})
+        </Button>
+        <Button size="sm" variant="accent" disabled={selected.size === 0} onClick={() => setDialogOpen(true)}>
+          <RefreshCw className="h-3.5 w-3.5" /> Resend Selected ({selected.size})
         </Button>
       </div>
 
-      {result && (
-        <div className={`flex items-center gap-2 rounded-lg border p-3 text-sm ${
-          result.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
-        }`}>
-          {result.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-          {result.text}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-700 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-400">
+          <span>{selected.size} selected</span>
+          <button onClick={() => setSelected(new Set())} className="ml-auto inline-flex items-center gap-1 text-xs font-medium hover:underline">
+            <X className="h-3 w-3" /> Clear
+          </button>
         </div>
       )}
 
@@ -113,7 +121,7 @@ export function EmailLogsConfig() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
-                  <input type="checkbox" checked={logs.length > 0 && logs.every((l) => selected.has(l.id))} onChange={toggleAll} className="h-4 w-4 accent-primary-600" title="Select all" />
+                  <input type="checkbox" checked={logs.length > 0 && logs.every((l) => selected.has(l.id))} onChange={toggleAll} className="h-4 w-4 accent-primary-600" title="Select all on this page" />
                 </TableHead>
                 <TableHead>Recipient</TableHead>
                 <TableHead>Subject</TableHead>
@@ -159,6 +167,13 @@ export function EmailLogsConfig() {
         onPageChange={setPage}
         onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
         pageSizes={PAGE_SIZES}
+      />
+
+      <ResendProgressDialog
+        open={dialogOpen}
+        ids={Array.from(selected)}
+        onClose={() => setDialogOpen(false)}
+        onDone={handleDialogDone}
       />
     </div>
   );
