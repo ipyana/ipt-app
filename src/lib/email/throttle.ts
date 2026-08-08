@@ -5,8 +5,8 @@
  * because the app runs a single Next.js container.
  */
 
-const MAX_PER_MINUTE = 20;
-const MAX_PER_HOUR = 600;
+const MAX_PER_MINUTE = 10;
+const MAX_PER_HOUR = 240;
 const WINDOW_MIN_MS = 60 * 1000;
 const WINDOW_HOUR_MS = 60 * 60 * 1000;
 

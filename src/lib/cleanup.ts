@@ -3,8 +3,9 @@ import { sendAccountCleanupEmail } from "@/lib/email";
 
 /**
  * Remove unactivated student accounts (status = pending_activation) older than
- * `olderThanMs`. Each is emailed a "registration not completed" notice before
- * being deleted. Returns counts.
+ * `olderThanMs`. Deletion happens FIRST so students can re-register immediately;
+ * each is then emailed a "registration not completed" notice best-effort (logged
+ * in EmailLog, resendable via the admin Email Logs UI). Returns counts.
  */
 export async function cleanupUnactivatedStudents(olderThanMs: number): Promise<{ removed: number; emailed: number }> {
   const cutoff = new Date(Date.now() - olderThanMs);
@@ -19,19 +20,20 @@ export async function cleanupUnactivatedStudents(olderThanMs: number): Promise<{
 
   if (candidates.length === 0) return { removed: 0, emailed: 0 };
 
+  const ids = candidates.map((c) => c.id);
+  await prisma.$transaction([
+    prisma.announcementRead.deleteMany({ where: { studentId: { in: ids } } }),
+    prisma.application.deleteMany({ where: { studentId: { in: ids } } }),
+    prisma.student.deleteMany({ where: { id: { in: ids } } }),
+  ]);
+
   let emailed = 0;
   for (const s of candidates) {
     try {
       await sendAccountCleanupEmail({ name: s.fullName, email: s.email });
       emailed++;
-    } catch { /* keep going — deletion is still safe */ }
+    } catch { /* best-effort; failures are logged for later resend */ }
   }
-
-  await prisma.$transaction([
-    prisma.application.deleteMany({ where: { studentId: { in: candidates.map((c) => c.id) } } }),
-    prisma.announcementRead.deleteMany({ where: { studentId: { in: candidates.map((c) => c.id) } } }),
-    prisma.student.deleteMany({ where: { id: { in: candidates.map((c) => c.id) } } }),
-  ]);
 
   return { removed: candidates.length, emailed };
 }
