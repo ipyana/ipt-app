@@ -241,6 +241,7 @@ model EmailLog {
   recipient String
   subject   String
   template  String?
+  body      String?  @db.Text
   status    String   @default("pending")
   error     String?
   sentAt    DateTime? @map("sent_at")

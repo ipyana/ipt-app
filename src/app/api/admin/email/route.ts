@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireEmailAdmin } from "@/lib/auth";
 import { listEmailLogs } from "@/lib/email/logs";
 import { sendEmail } from "@/lib/email/service";
+import { resendEmail } from "@/lib/email/resend";
 import { testSmtpConnection } from "@/lib/email/smtp";
 import { testStorageConnection } from "@/lib/storage";
 
@@ -41,7 +42,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireEmailAdmin();
-    const { action, to } = await request.json();
+    const body = await request.json();
+    const { action, to } = body;
 
     if (action === "test") {
       if (!to) return err("Recipient email is required", 400);
@@ -71,6 +73,22 @@ export async function POST(request: NextRequest) {
     if (action === "test-storage") {
       const result = await testStorageConnection();
       return NextResponse.json(result);
+    }
+
+    if (action === "resend") {
+      const ids = Array.isArray(body?.ids) ? body.ids.map(Number).filter(Boolean) : [];
+      if (ids.length === 0) return err("No email IDs selected", 400);
+
+      const logs = await prisma.emailLog.findMany({ where: { id: { in: ids } } });
+      if (logs.length === 0) return err("No matching email logs", 404);
+
+      const results = [];
+      for (const log of logs) {
+        const r = await resendEmail({ id: log.id, recipient: log.recipient, subject: log.subject, template: log.template, body: log.body });
+        results.push({ id: log.id, ...r });
+      }
+      const ok = results.filter((r) => r.ok).length;
+      return NextResponse.json({ success: true, results, message: `Resent ${ok}/${results.length} emails` });
     }
 
     return err("Invalid action", 400);

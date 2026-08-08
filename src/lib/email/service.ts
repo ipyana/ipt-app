@@ -6,7 +6,7 @@ import { getEmailTemplate, applyTemplate } from "./templates";
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function sendEmail(to: string, subject: string, html: string, templateKey?: string) {
-  const log = await createEmailLog({ recipient: to, subject, template: templateKey });
+  const log = await createEmailLog({ recipient: to, subject, template: templateKey, body: html });
 
   const smtpResult = await sendViaSmtp(to, subject, html);
   if (smtpResult.success) {

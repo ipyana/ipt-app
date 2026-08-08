@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { ArrowRight, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { usePagination } from "@/lib/usePagination";
+import { Pagination } from "@/components/Pagination";
 
 interface Reapp {
   id: number;
@@ -70,6 +72,8 @@ export function ReapplicationsConfig() {
   }
 
   const filtered = items.filter((t) => filter === "all" || t.status === filter);
+  const pagination = usePagination(filtered, 25);
+  const pageItems = pagination.pageItems;
   const pendingCount = items.filter((t) => t.status === "pending").length;
 
   return (
@@ -108,7 +112,7 @@ export function ReapplicationsConfig() {
                 <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto text-slate-400" /></TableCell></TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-slate-400">No reapplication requests found</TableCell></TableRow>
-              ) : filtered.map((t) => (
+              ) : pageItems.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{t.application?.student?.fullName}</p>
@@ -148,6 +152,14 @@ export function ReapplicationsConfig() {
           </Table>
         </CardContent>
       </Card>
+
+      <Pagination
+        total={pagination.total}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.changePageSize}
+      />
 
       <Dialog open={!!reviewTarget} onClose={() => setReviewTarget(null)}>
         <DialogHeader>

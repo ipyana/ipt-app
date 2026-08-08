@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { CheckCircle, XCircle, ArrowRight, Loader2 } from "lucide-react";
+import { usePagination } from "@/lib/usePagination";
+import { Pagination } from "@/components/Pagination";
 
 interface Transfer {
   id: number;
@@ -74,6 +76,8 @@ export function TransfersConfig() {
 
   const transfersOnly = transfers.filter((t) => t.type === "transfer");
   const filtered = transfersOnly.filter((t) => filter === "all" || t.status === filter);
+  const pagination = usePagination(filtered, 25);
+  const pageItems = pagination.pageItems;
   const pendingCount = transfersOnly.filter((t) => t.status === "pending").length;
 
   return (
@@ -113,7 +117,7 @@ export function TransfersConfig() {
                 <TableRow><TableCell colSpan={8} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto text-slate-400" /></TableCell></TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-slate-400">No transfer requests found</TableCell></TableRow>
-              ) : filtered.map((t) => (
+              ) : pageItems.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{t.application?.student?.fullName}</p>
@@ -160,6 +164,14 @@ export function TransfersConfig() {
           </Table>
         </CardContent>
       </Card>
+
+      <Pagination
+        total={pagination.total}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.changePageSize}
+      />
 
       <Dialog open={!!reviewDialog} onClose={() => setReviewDialog(null)}>
         <DialogHeader>

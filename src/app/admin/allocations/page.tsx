@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Zap, User, Filter, CalendarDays, Bell, RefreshCw } from "lucide-react";
+import { usePagination } from "@/lib/usePagination";
+import { Pagination } from "@/components/Pagination";
 
 export default function AdminAllocations() {
   const router = useRouter();
@@ -116,6 +118,8 @@ export default function AdminAllocations() {
   }
 
   const departments = [...new Set(apps.map((a) => a.student?.department).filter(Boolean))].sort();
+  const pagination = usePagination(apps, 25);
+  const pageApps = pagination.pageItems;
   const filtered = apps.filter((a) => {
     if (filter === "pending" && a.status !== "pending") return false;
     if (filter === "allocated" && a.status !== "allocated") return false;
@@ -208,7 +212,7 @@ export default function AdminAllocations() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow><TableCell colSpan={5} className="text-center py-8 text-sm text-slate-400">No applications found</TableCell></TableRow>
-                ) : filtered.map((app) => (
+                ) : pageApps.map((app) => (
                   <TableRow key={app.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -267,7 +271,7 @@ export default function AdminAllocations() {
         <div className="space-y-3 lg:hidden pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           {filtered.length === 0 ? (
             <Card><CardContent className="p-6 text-center text-sm text-slate-400">No applications found</CardContent></Card>
-          ) : filtered.map((app) => (
+          ) : pageApps.map((app) => (
             <Card key={app.id}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -314,6 +318,13 @@ export default function AdminAllocations() {
             </Card>
           ))}
         </div>
+        <Pagination
+          total={filtered.length}
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.changePageSize}
+        />
       </div>
     </AppLayout>
   );

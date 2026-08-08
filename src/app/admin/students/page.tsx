@@ -11,6 +11,8 @@ import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, ConfirmDia
 import { Plus, Pencil, Trash2, Search, Users, CheckCircle, Clock, GraduationCap, Eye, MapPin, Layers } from "lucide-react";
 import { useBulkSelection } from "@/lib/useBulkSelection";
 import { BulkDeleteDialog } from "@/components/BulkDeleteDialog";
+import { usePagination } from "@/lib/usePagination";
+import { Pagination } from "@/components/Pagination";
 
 interface Allocation {
   id: number;
@@ -113,6 +115,9 @@ export default function AdminStudents() {
     return true;
   });
 
+  const pagination = usePagination(filtered, 25);
+  const pageStudents = pagination.pageItems;
+
   const stats = {
     total: students.length,
     applied: students.filter((s) => s.application).length,
@@ -175,7 +180,7 @@ export default function AdminStudents() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((s) => (
+                {pageStudents.map((s) => (
                   <TableRow key={s.id} className={bulk.selected.has(s.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""}>
                     <TableCell>
                       <input
@@ -217,7 +222,7 @@ export default function AdminStudents() {
           {filtered.length === 0 ? (
             <Card><CardContent className="p-6 text-center text-sm text-slate-400">No students found</CardContent></Card>
           ) : (
-            filtered.map((s) => {
+            pageStudents.map((s) => {
               const selected = bulk.selected.has(s.id);
               return (
                 <Card key={s.id} className={selected ? "border-primary-300 dark:border-primary-600" : ""}>
@@ -260,11 +265,19 @@ export default function AdminStudents() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                 </Card>
               );
             })
           )}
         </div>
+
+        <Pagination
+          total={pagination.total}
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.changePageSize}
+        />
 
         {bulk.someSelected && (
           <div className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-primary-200 bg-primary-600 px-4 py-3 text-white shadow-lg lg:bottom-4 lg:rounded-xl lg:border lg:mx-4 lg:px-4 lg:py-2.5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:pb-2.5">

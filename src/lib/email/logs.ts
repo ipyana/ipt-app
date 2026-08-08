@@ -4,12 +4,14 @@ export async function createEmailLog(params: {
   recipient: string;
   subject: string;
   template?: string;
+  body?: string;
 }) {
   return prisma.emailLog.create({
     data: {
       recipient: params.recipient,
       subject: params.subject,
       template: params.template || null,
+      body: params.body || null,
       status: "pending",
     },
   });

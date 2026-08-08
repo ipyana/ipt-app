@@ -13,6 +13,8 @@ import { Plus, Pencil, Trash2, Move, Users, RefreshCw, ClipboardCheck } from "lu
 import { DEPARTMENT_ABBREVIATIONS } from "@/lib/departments";
 import { StaffApproveDialog, StaffForReview } from "@/components/StaffApproveDialog";
 import { useBulkSelection } from "@/lib/useBulkSelection";
+import { usePagination } from "@/lib/usePagination";
+import { Pagination } from "@/components/Pagination";
 import { BulkDeleteDialog } from "@/components/BulkDeleteDialog";
 
 interface Cluster { id: number; name: string; }
@@ -39,6 +41,8 @@ export default function SuperAdminStaff() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkMsg, setBulkMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const bulk = useBulkSelection(items);
+  const pagination = usePagination(items, 25);
+  const pageItems = pagination.pageItems;
 
   async function load() {
     const [staffRes, clusterRes] = await Promise.all([
@@ -193,7 +197,7 @@ export default function SuperAdminStaff() {
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-slate-400">No facilitators registered yet. Facilitators can self-register, or you can add one.</TableCell></TableRow>
-                ) : items.map((s) => (
+                ) : pageItems.map((s) => (
                   <TableRow key={s.id} className={bulk.selected.has(s.id) ? "bg-primary-50/50 dark:bg-primary-900/10" : ""}>
                     <TableCell>
                       <input
@@ -255,7 +259,7 @@ export default function SuperAdminStaff() {
           {items.length === 0 ? (
             <Card><CardContent className="p-6 text-center text-sm text-slate-400">No staff registered yet</CardContent></Card>
           ) : (
-            items.map((s) => {
+            pageItems.map((s) => {
               const selected = bulk.selected.has(s.id);
               const statusLabel =
                 s.status === "pending_activation" ? "Awaiting Activation"
@@ -324,6 +328,14 @@ export default function SuperAdminStaff() {
             })
           )}
         </div>
+
+        <Pagination
+          total={pagination.total}
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.changePageSize}
+        />
 
         {bulk.someSelected && (
           <div className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-primary-200 bg-primary-600 px-4 py-3 text-white shadow-lg lg:bottom-4 lg:rounded-xl lg:border lg:mx-4 lg:px-4 lg:py-2.5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:pb-2.5">

@@ -8,6 +8,8 @@ import { Input, Label } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Megaphone, Trash2, Loader2, Paperclip, Plus } from "lucide-react";
+import { usePagination } from "@/lib/usePagination";
+import { Pagination } from "@/components/Pagination";
 
 interface Announcement {
   id: number;
@@ -43,6 +45,8 @@ export function AnnouncementsConfig() {
   const [postCluster, setPostCluster] = useState("");
   const [postFile, setPostFile] = useState<File | null>(null);
   const [postError, setPostError] = useState("");
+  const pagination = usePagination(items, 25);
+  const pageItems = pagination.pageItems;
   const [posting, setPosting] = useState(false);
 
   async function load() {
@@ -134,7 +138,7 @@ export function AnnouncementsConfig() {
                 <TableRow><TableCell colSpan={8} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
               ) : items.length === 0 ? (
                 <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-slate-400">No announcements posted yet</TableCell></TableRow>
-              ) : items.map((a) => (
+              ) : pageItems.map((a) => (
                 <TableRow key={a.id}>
                   <TableCell>
                     <p className="font-medium text-sm text-slate-900 dark:text-white">{a.title}</p>
@@ -161,6 +165,14 @@ export function AnnouncementsConfig() {
           </Table>
         </CardContent>
       </Card>
+
+      <Pagination
+        total={pagination.total}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.changePageSize}
+      />
 
       <Dialog open={postOpen} onClose={() => setPostOpen(false)}>
         <DialogHeader>
