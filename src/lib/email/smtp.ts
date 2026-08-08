@@ -28,10 +28,12 @@ async function loadSmtpConfig(): Promise<SmtpConfig | null> {
   let port = parseInt(rawPort, 10);
   if (isNaN(port)) port = 587;
 
-  const secure = rawSecure === "true" || rawSecure === "1" || port === 465;
-  if (port === 465 && !rawSecure) {
-    port = 465;
-  }
+  // Auto-correct port/secure mismatches so a wrong saved value can't break email.
+  //  - 465 = implicit TLS (secure true)
+  //  - 587 / 25 = STARTTLS (secure false)
+  let secure = rawSecure === "true" || rawSecure === "1";
+  if (port === 465) secure = true;
+  if (port === 587 || port === 25) secure = false;
 
   return {
     host,

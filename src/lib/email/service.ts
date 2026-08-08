@@ -14,6 +14,12 @@ export async function sendEmail(to: string, subject: string, html: string, templ
     return { success: true, provider: "smtp" };
   }
 
+  // SMTP was configured but failed — surface the real error immediately.
+  if (smtpResult.error !== "SMTP not configured") {
+    await markEmailFailed(log.id, smtpResult.error || "SMTP send failed");
+    return { success: false, error: smtpResult.error || "SMTP send failed" };
+  }
+
   if (resend) {
     try {
       await resend.emails.send({
@@ -30,7 +36,7 @@ export async function sendEmail(to: string, subject: string, html: string, templ
     }
   }
 
-  if (!smtpResult.success && !resend) {
+  if (!resend) {
     const msg = "No email provider configured (SMTP/Resend)";
     await markEmailFailed(log.id, msg);
     return { success: false, error: msg };
