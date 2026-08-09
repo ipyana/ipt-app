@@ -20,7 +20,7 @@ export async function createEmailLog(params: {
 export async function markEmailSent(logId: number) {
   return prisma.emailLog.update({
     where: { id: logId },
-    data: { status: "sent", sentAt: new Date() },
+    data: { status: "sent", sentAt: new Date(), error: null },
   });
 }
 
