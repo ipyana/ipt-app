@@ -21,11 +21,11 @@ export async function POST() {
       include: { student: true, allocations: true },
     });
 
-    const phase2ByCluster = new Map<number, any>();
     const phases = await prisma.phase.findMany({
       where: { sessionId: session.id, phaseNumber: 2 },
     });
-    for (const ph of phases) phase2ByCluster.set(ph.clusterId, ph);
+    const phase2ByCluster = new Map<number, any>(phases.map((p) => [p.clusterId, p]));
+    const phase2Ids = new Set(phases.map((p) => p.id));
 
     const clusters = await prisma.cluster.findMany();
     const clusterMap = Object.fromEntries(clusters.map((c) => [c.id, c]));
@@ -37,25 +37,44 @@ export async function POST() {
     const payloads: { app: any; phase2: any; group: any }[] = [];
 
     for (const app of apps) {
-      const clusterId = app.allocatedCluster;
-      if (!clusterId) continue;
-      const phase2 = phase2ByCluster.get(clusterId);
-      if (!phase2) continue;
+      // Does this application already have a phase-2 allocation (in ANY cluster)?
+      // Self-service apps get one in their 2nd-preference cluster at apply time.
+      const existing = app.allocations.find((a: any) => phase2Ids.has(a.phaseId));
 
-      const existing = app.allocations.find((a: any) => a.phaseId === phase2.id);
-      let gid: number | null = existing?.groupId ?? null;
-      if (!existing) {
-        gid = await assignGroup(clusterId, phase2.id);
-        await prisma.phaseAllocation.create({
-          data: { phaseId: phase2.id, applicationId: app.id, clusterId, groupId: gid },
+      if (existing) {
+        // Only fill in the group if missing — never create a duplicate.
+        if (!existing.groupId) {
+          const gid = await assignGroup(existing.clusterId, existing.phaseId);
+          await prisma.phaseAllocation.update({
+            where: { id: existing.id },
+            data: { groupId: gid },
+          });
+        }
+        payloads.push({
+          app,
+          phase2: phases.find((p) => p.id === existing.phaseId),
+          group: existing.groupId ? groupMap.get(existing.groupId) : null,
         });
-      } else if (!existing.groupId) {
-        gid = await assignGroup(clusterId, phase2.id);
-        await prisma.phaseAllocation.update({
-          where: { id: existing.id },
-          data: { groupId: gid },
-        });
+        assigned++;
+        continue;
       }
+
+      // No phase-2 yet: place it in the student's 2nd preference cluster first,
+      // falling back to the allocated cluster (admin-allocated students).
+      let targetClusterId: number | null = null;
+      const pref2Phase = app.clusterPref2 ? phase2ByCluster.get(app.clusterPref2) : null;
+      if (pref2Phase) {
+        targetClusterId = app.clusterPref2;
+      } else if (app.allocatedCluster && phase2ByCluster.get(app.allocatedCluster)) {
+        targetClusterId = app.allocatedCluster;
+      }
+      if (!targetClusterId) continue;
+
+      const phase2 = phase2ByCluster.get(targetClusterId);
+      const gid = await assignGroup(targetClusterId, phase2.id);
+      await prisma.phaseAllocation.create({
+        data: { phaseId: phase2.id, applicationId: app.id, clusterId: targetClusterId, groupId: gid },
+      });
       assigned++;
 
       payloads.push({ app, phase2, group: gid ? groupMap.get(gid) : null });
@@ -66,7 +85,7 @@ export async function POST() {
         studentName: app.student.fullName,
         studentEmail: app.student.email,
         studentId: app.student.studentId,
-        clusterName: clusterMap[app.allocatedCluster]?.name || "Your cluster",
+        clusterName: clusterMap[phase2?.clusterId]?.name || "Your cluster",
         venue: group?.location || group?.venue?.name || group?.name || "",
         group: group?.name || "",
         phaseDates: `${phase2.startDate.toLocaleDateString("en-TZ")} – ${phase2.endDate.toLocaleDateString("en-TZ")}`,
