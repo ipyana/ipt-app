@@ -14,6 +14,8 @@ export async function cleanupUnactivatedStudents(olderThanMs: number): Promise<{
     where: {
       status: "pending_activation",
       createdAt: { lt: cutoff },
+      // Never remove a student who has submitted an application / been allocated.
+      applications: { none: {} },
     },
     select: { id: true, fullName: true, email: true, studentId: true },
   });

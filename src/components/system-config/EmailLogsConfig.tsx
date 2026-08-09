@@ -86,6 +86,8 @@ export function EmailLogsConfig() {
     // Select the failed ones so "Resend Failed" can be re-triggered.
     setSelected(new Set(failedIds));
     setAllIds(failedIds);
+    // Refresh the list so successfully-resent rows flip to "Sent".
+    loadLogs();
   }
 
   return (

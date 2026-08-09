@@ -32,6 +32,12 @@ export async function POST(request: NextRequest) {
     const { type } = parsed.data;
     const currentClusters = [application.clusterPref1, application.clusterPref2];
 
+    // A student who submits a reapplication/transfer has clearly activated their account.
+    const me = await prisma.student.findUnique({ where: { id: session.id } });
+    if (me && me.status !== "active") {
+      await prisma.student.update({ where: { id: me.id }, data: { status: "active" } });
+    }
+
     if (type === "reapplication") {
       const { pref1, pref2 } = parsed.data;
       if (!pref1 || !pref2 || pref1 === pref2) {

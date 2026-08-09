@@ -109,6 +109,11 @@ export async function POST(request: NextRequest) {
     const student = await prisma.student.findUnique({ where: { id: session.id } });
     if (!student) return err("Student not found", 404);
 
+    // A student who submits an application has clearly activated their account.
+    if (student.status !== "active") {
+      await prisma.student.update({ where: { id: student.id }, data: { status: "active" } });
+    }
+
     const clusters = await prisma.cluster.findMany({
       where: { id: { in: [pref1, pref2] } },
       include: {
@@ -229,6 +234,11 @@ export async function PUT(request: NextRequest) {
 
     const student = await prisma.student.findUnique({ where: { id: session.id } });
     if (!student) return err("Student not found", 404);
+
+    // A student who submits an application has clearly activated their account.
+    if (student.status !== "active") {
+      await prisma.student.update({ where: { id: student.id }, data: { status: "active" } });
+    }
 
     const clusters = await prisma.cluster.findMany({
       where: { id: { in: [pref1, pref2] } },
