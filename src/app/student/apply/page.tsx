@@ -11,6 +11,8 @@ import { Steps } from "@/components/ui/steps";
 import { MapPin, Users, Check, AlertTriangle, ArrowRight, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { useWindowStatus } from "@/hooks/useWindowStatus";
+import { WindowClosedModal } from "@/components/WindowClosedModal";
 
 interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number; phase2Enrolled?: number }
 interface Cluster {
@@ -33,6 +35,8 @@ export default function StudentApply() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [fullCluster, setFullCluster] = useState<Cluster | null>(null);
+  const { status: windowStatus, open: windowOpen } = useWindowStatus("application");
+  const [windowModalOpen, setWindowModalOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -104,6 +108,10 @@ export default function StudentApply() {
   }
 
   async function handleSubmit() {
+    if (!windowOpen) {
+      setWindowModalOpen(true);
+      return;
+    }
     if (!pref1 || !pref2) { setError("Select both preferences before submitting."); return; }
     if (pref1 === pref2) { setError("Preferences must be 2 distinct clusters."); return; }
     setError(""); setSuccess(""); setSubmitting(true);
@@ -264,6 +272,12 @@ export default function StudentApply() {
           <Button variant="outline" onClick={() => setFullCluster(null)}>Close</Button>
         </DialogFooter>
       </Dialog>
+
+      <WindowClosedModal
+        open={windowModalOpen}
+        message={windowStatus?.message || "The Application Window is closed. Check with your IPT Coordinator."}
+        onClose={() => setWindowModalOpen(false)}
+      />
     </AppLayout>
   );
 }

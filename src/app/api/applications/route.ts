@@ -5,6 +5,7 @@ import { applicationSchema } from "@/lib/validations";
 import { sendSubmissionEmail } from "@/lib/email";
 import { assignGroup } from "@/lib/groups";
 import { reservePhaseSlot } from "@/lib/allocate";
+import { isWindowOpen, windowMessage } from "@/lib/windows";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -167,6 +168,9 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return err(parsed.error.issues[0].message, 400);
 
     const { pref1, pref2 } = parsed.data;
+
+    const windowOpen = await isWindowOpen("application");
+    if (!windowOpen) return err(windowMessage("application"), 403);
 
     const student = await prisma.student.findUnique({ where: { id: session.id } });
     if (!student) return err("Student not found", 404);

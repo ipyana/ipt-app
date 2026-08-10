@@ -11,6 +11,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Check, AlertTriangle, Clock, MapPin, Users, CheckCircle,
 } from "lucide-react";
+import { useWindowStatus } from "@/hooks/useWindowStatus";
+import { WindowClosedModal } from "@/components/WindowClosedModal";
 
 interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number }
 interface Cluster {
@@ -34,6 +36,8 @@ export default function StudentReapply() {
   const [clusterMap, setClusterMap] = useState<Record<number, Cluster>>({});
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { status: windowStatus, open: windowOpen } = useWindowStatus("reapplication");
+  const [windowModalOpen, setWindowModalOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -65,6 +69,10 @@ export default function StudentReapply() {
   }
 
   async function handleSubmit() {
+    if (!windowOpen) {
+      setWindowModalOpen(true);
+      return;
+    }
     if (!pref1 || !pref2 || pref1 === pref2) {
       setError("Select two distinct clusters");
       return;
@@ -231,6 +239,12 @@ export default function StudentReapply() {
           </motion.div>
         )}
       </div>
+
+      <WindowClosedModal
+        open={windowModalOpen}
+        message={windowStatus?.message || "The Reapplication Window is closed. Check with your IPT Coordinator."}
+        onClose={() => setWindowModalOpen(false)}
+      />
     </AppLayout>
   );
 }

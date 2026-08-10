@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { reapplySchema } from "@/lib/validations";
+import { isWindowOpen, windowMessage } from "@/lib/windows";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -31,6 +32,11 @@ export async function POST(request: NextRequest) {
 
     const { type } = parsed.data;
     const currentClusters = [application.clusterPref1, application.clusterPref2];
+
+    // Hard gate on the relevant window for the request type.
+    const windowType = type === "reapplication" ? "reapplication" : "transfer";
+    const windowOpen = await isWindowOpen(windowType);
+    if (!windowOpen) return err(windowMessage(windowType), 403);
 
     // A student who submits a reapplication/transfer has clearly activated their account.
     const me = await prisma.student.findUnique({ where: { id: session.id } });

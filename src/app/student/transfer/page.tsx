@@ -11,6 +11,8 @@ import { motion } from "framer-motion";
 import {
   ArrowRight, Check, AlertTriangle, Clock, MapPin, Users, CheckCircle, ArrowLeftRight,
 } from "lucide-react";
+import { useWindowStatus } from "@/hooks/useWindowStatus";
+import { WindowClosedModal } from "@/components/WindowClosedModal";
 
 interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number }
 interface Cluster {
@@ -39,6 +41,8 @@ export default function StudentTransfer() {
   const [pref2, setPref2] = useState(0);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { status: windowStatus, open: windowOpen } = useWindowStatus("transfer");
+  const [windowModalOpen, setWindowModalOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -72,6 +76,11 @@ export default function StudentTransfer() {
 
   async function handleSubmit() {
     setError("");
+
+    if (!windowOpen) {
+      setWindowModalOpen(true);
+      return;
+    }
 
     if (mode === "swapOne") {
       if (!swapTarget || !toClusterId) { setError("Select which cluster to replace and the new cluster"); return; }
@@ -311,6 +320,12 @@ export default function StudentTransfer() {
           </motion.div>
         )}
       </div>
+
+      <WindowClosedModal
+        open={windowModalOpen}
+        message={windowStatus?.message || "The Transfer Window is closed. Check with your IPT Coordinator."}
+        onClose={() => setWindowModalOpen(false)}
+      />
     </AppLayout>
   );
 }
