@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
     await requireAdmin();
     const clusterId = Number(request.nextUrl.searchParams.get("clusterId") || "0");
     const status = request.nextUrl.searchParams.get("status") || undefined;
+    // Deep allocation data is only needed for the cluster student list and the
+    // per-student view dialog; the main table only needs status + cluster name.
+    const withAllocations = request.nextUrl.searchParams.get("withAllocations") === "1" || clusterId > 0;
     const where: any = status ? { status } : {};
     if (clusterId) {
       where.applications = { some: { status: "allocated", allocatedCluster: clusterId } };
@@ -21,13 +24,15 @@ export async function GET(request: NextRequest) {
           select: {
             id: true, status: true, allocatedCluster: true, submissionDate: true,
             clusterPref1: true, clusterPref2: true,
-            allocations: {
-              include: {
-                phase: true,
-                cluster: { select: { id: true, name: true, location: true } },
-                group: { include: { venue: true } },
-              },
-            },
+            allocations: withAllocations
+              ? {
+                  include: {
+                    phase: true,
+                    cluster: { select: { id: true, name: true, location: true } },
+                    group: { include: { venue: true } },
+                  },
+                }
+              : false,
           },
         },
       },

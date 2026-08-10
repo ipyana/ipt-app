@@ -43,6 +43,7 @@ export default function AdminStudents() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
   const [viewTarget, setViewTarget] = useState<Student | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkMsg, setBulkMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [cleanupOpen, setCleanupOpen] = useState(false);
@@ -103,6 +104,23 @@ export default function AdminStudents() {
     if (!deleteTarget) return;
     await fetch("/api/admin/students", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: deleteTarget.id }) });
     setDeleteTarget(null); load();
+  }
+
+  async function openView(s: Student) {
+    setViewLoading(true);
+    setViewTarget(s);
+    try {
+      const res = await fetch(`/api/admin/students?withAllocations=1`);
+      const all = await res.json();
+      if (Array.isArray(all)) {
+        const match = all.find((x: any) => x.id === s.id);
+        if (match) setViewTarget(match);
+      }
+    } catch {
+      /* keep the lightweight row */
+    } finally {
+      setViewLoading(false);
+    }
   }
 
   async function handleBulkDelete() {
@@ -247,7 +265,7 @@ export default function AdminStudents() {
                     <TableCell className="hidden md:table-cell text-xs">{s.allocatedName || <span className="text-slate-400">—</span>}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setViewTarget(s)} title="View details"><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => openView(s)} title="View details"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(s)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                       </div>
@@ -296,7 +314,7 @@ export default function AdminStudents() {
                           {s.allocatedName ? `Allocated: ${s.allocatedName}` : "Not allocated"}
                         </div>
                         <div className="mt-3 flex gap-2">
-                          <Button variant="outline" size="sm" className="flex-1" onClick={() => setViewTarget(s)}>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => openView(s)}>
                             <Eye className="h-3.5 w-3.5" /> View
                           </Button>
                           <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(s)}>
@@ -382,6 +400,11 @@ export default function AdminStudents() {
             </div>
           </DialogHeader>
           <DialogBody>
+            {viewLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+              </div>
+            ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
                 <span className="text-slate-500">Application</span>
@@ -432,6 +455,7 @@ export default function AdminStudents() {
                 );
               })}
             </div>
+            )}
           </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewTarget(null)}>Close</Button>
