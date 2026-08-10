@@ -162,13 +162,19 @@ async function restoreApplication(app: any, transfer: any) {
     if (!ok) {
       // Our bug forced these students out of their original phase-2 cluster, so we
       // expand that cluster's capacity to accommodate them rather than leaving them stuck.
+      // Some clusters are already over their old slots from the earlier overflow, so
+      // set slots to the current phase-2 occupancy + 1 (not just a +1 increment).
+      const current = await tx.clusterDepartment.findUnique({
+        where: { clusterId_departmentId: { clusterId: pref2, departmentId: pref2Cd.departmentId } },
+      });
+      const newSlots = (current?.phase2Enrolled ?? 0) + 1;
       await tx.clusterDepartment.update({
         where: { clusterId_departmentId: { clusterId: pref2, departmentId: pref2Cd.departmentId } },
-        data: { slots: { increment: 1 } },
+        data: { slots: newSlots },
       });
       await tx.cluster.update({
         where: { id: pref2 },
-        data: { capacity: { increment: 1 } },
+        data: { capacity: { increment: Math.max(1, newSlots - (current?.slots ?? 0)) } },
       });
       ok = await reservePhaseSlot(tx, pref2, pref2Cd.departmentId, 2);
       if (!ok) throw new Error(`Cluster ${pref2} is full for phase 2 even after capacity increase`);
