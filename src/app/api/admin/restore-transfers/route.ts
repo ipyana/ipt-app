@@ -97,7 +97,10 @@ async function listAffected() {
   const affected = [];
   for (const transfer of transfers) {
     const app = transfer.application;
-    if (!app || app.status !== "allocated") continue;
+    if (!app) continue;
+    // Allocated apps are the common case; "reapplying" apps may also still carry
+    // the broken allocations from a previously-approved transfer.
+    if (app.status !== "allocated" && app.status !== "reapplying") continue;
     if (app.allocatedCluster !== transfer.toClusterId) continue;
 
     // Broken state = phase-1 AND phase-2 allocations both in the target cluster.
