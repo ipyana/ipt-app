@@ -12,7 +12,7 @@ import { MapPin, Users, Check, AlertTriangle, ArrowRight, XCircle } from "lucide
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 
-interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number }
+interface ClusterDepartment { department: { id: number; name: string; abbreviation: string }; slots: number; enrolled: number; phase2Enrolled?: number }
 interface Cluster {
   id: number; name: string; description: string; capacity: number;
   currentEnrolled: number; location: string;
@@ -56,10 +56,14 @@ export default function StudentApply() {
     return cluster.allowedDepartments?.find((cd) => cd.department.abbreviation === user?.department) || null;
   }
 
+  // Phase-aware fullness: step 1 (first preference) uses phase-1 `enrolled`;
+  // step 2 (second preference) uses `phase2Enrolled`. Both are capped by `slots`.
   function isFull(cluster: Cluster): boolean {
     const cp = getProgramSlot(cluster);
     if (!cp) return true;
-    return cp.slots > 0 && cp.enrolled >= cp.slots;
+    if (cp.slots <= 0) return true;
+    const occupancy = step === 1 ? cp.enrolled : (cp.phase2Enrolled ?? cp.enrolled);
+    return occupancy >= cp.slots;
   }
 
   const selectedIds = [pref1, pref2].filter(Boolean);

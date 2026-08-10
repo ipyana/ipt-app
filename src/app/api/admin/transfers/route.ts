@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { sendTransferApprovedEmail, sendTransferRejectedEmail, sendReapplicationResultEmail } from "@/lib/email";
 import { assignGroup } from "@/lib/groups";
+import { reservePhaseSlot, releasePhaseSlot, getStudentDepartmentSlot } from "@/lib/allocate";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -63,28 +64,27 @@ export async function POST(request: NextRequest) {
     }
 
     const app = transfer.application;
+    const dept = app.student.department;
+
+    // Which phase is being replaced for a single-cluster transfer?
+    // replaceClusterId records the cluster the student chose to swap; when absent
+    // (older requests) we default to the phase-1 (first) cluster = fromClusterId.
+    const replaceClusterId = transfer.replaceClusterId ?? transfer.fromClusterId;
+    const swapIsPhase2 = app.clusterPref2 === replaceClusterId;
 
     if (action === "approve") {
       if (transfer.type === "reapplication") {
         const newPref1 = transfer.pref1New!;
         const newPref2 = transfer.pref2New!;
 
-        const cd1 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: newPref1, department: { abbreviation: app.student.department } },
-        });
-        const cd2 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: newPref2, department: { abbreviation: app.student.department } },
-        });
-        if (!cd1 || !cd2 || cd1.enrolled >= cd1.slots || cd2.enrolled >= cd2.slots) {
+        const cd1 = await getStudentDepartmentSlot(newPref1, dept);
+        const cd2 = await getStudentDepartmentSlot(newPref2, dept);
+        if (!cd1 || !cd2 || cd1.enrolled >= cd1.slots || cd2.phase2Enrolled >= cd2.slots) {
           return err("No available slots in one or both target clusters", 409);
         }
 
-        const oldCd1 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: app.clusterPref1, department: { abbreviation: app.student.department } },
-        });
-        const oldCd2 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: app.clusterPref2, department: { abbreviation: app.student.department } },
-        });
+        const oldCd1 = await getStudentDepartmentSlot(app.clusterPref1, dept);
+        const oldCd2 = await getStudentDepartmentSlot(app.clusterPref2, dept);
 
         await prisma.$transaction(async (tx) => {
           await tx.transferRequest.update({
@@ -96,27 +96,12 @@ export async function POST(request: NextRequest) {
             data: { status: "allocated", clusterPref1: newPref1, clusterPref2: newPref2, allocatedCluster: newPref1 },
           });
 
-          if (oldCd1) {
-            await tx.clusterDepartment.update({
-              where: { clusterId_departmentId: { clusterId: app.clusterPref1, departmentId: oldCd1.departmentId } },
-              data: { enrolled: { decrement: 1 } },
-            });
-          }
-          if (oldCd2) {
-            await tx.clusterDepartment.update({
-              where: { clusterId_departmentId: { clusterId: app.clusterPref2, departmentId: oldCd2.departmentId } },
-              data: { enrolled: { decrement: 1 } },
-            });
-          }
+          if (oldCd1) await releasePhaseSlot(tx, app.clusterPref1, oldCd1.departmentId, 1);
+          if (oldCd2) await releasePhaseSlot(tx, app.clusterPref2, oldCd2.departmentId, 2);
 
-          await tx.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: newPref1, departmentId: cd1.departmentId } },
-            data: { enrolled: { increment: 1 } },
-          });
-          await tx.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: newPref2, departmentId: cd2.departmentId } },
-            data: { enrolled: { increment: 1 } },
-          });
+          const p1 = await reservePhaseSlot(tx, newPref1, cd1.departmentId, 1);
+          const p2 = await reservePhaseSlot(tx, newPref2, cd2.departmentId, 2);
+          if (!p1 || !p2) throw new Error("Slot no longer available");
 
           await tx.phaseAllocation.deleteMany({ where: { applicationId: app.id } });
 
@@ -172,24 +157,16 @@ export async function POST(request: NextRequest) {
         const newPref1 = transfer.pref1New;
         const newPref2 = transfer.pref2New;
 
-        const cd1 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: newPref1, department: { abbreviation: app.student.department } },
-        });
-        const cd2 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: newPref2, department: { abbreviation: app.student.department } },
-        });
-        if (!cd1 || !cd2 || cd1.enrolled >= cd1.slots || cd2.enrolled >= cd2.slots) {
+        const cd1 = await getStudentDepartmentSlot(newPref1, dept);
+        const cd2 = await getStudentDepartmentSlot(newPref2, dept);
+        if (!cd1 || !cd2 || cd1.enrolled >= cd1.slots || cd2.phase2Enrolled >= cd2.slots) {
           return err("No available slots in one or both target clusters", 409);
         }
 
         const oldPref1 = app.clusterPref1;
         const oldPref2 = app.clusterPref2;
-        const oldCd1 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: oldPref1, department: { abbreviation: app.student.department } },
-        });
-        const oldCd2 = await prisma.clusterDepartment.findFirst({
-          where: { clusterId: oldPref2, department: { abbreviation: app.student.department } },
-        });
+        const oldCd1 = await getStudentDepartmentSlot(oldPref1, dept);
+        const oldCd2 = await getStudentDepartmentSlot(oldPref2, dept);
 
         await prisma.$transaction(async (tx) => {
           await tx.transferRequest.update({
@@ -201,23 +178,12 @@ export async function POST(request: NextRequest) {
             data: { status: "allocated", clusterPref1: newPref1, clusterPref2: newPref2, allocatedCluster: newPref1 },
           });
 
-          if (oldCd1) await tx.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: oldPref1, departmentId: oldCd1.departmentId } },
-            data: { enrolled: { decrement: 1 } },
-          });
-          if (oldCd2) await tx.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: oldPref2, departmentId: oldCd2.departmentId } },
-            data: { enrolled: { decrement: 1 } },
-          });
+          if (oldCd1) await releasePhaseSlot(tx, oldPref1, oldCd1.departmentId, 1);
+          if (oldCd2) await releasePhaseSlot(tx, oldPref2, oldCd2.departmentId, 2);
 
-          await tx.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: newPref1, departmentId: cd1.departmentId } },
-            data: { enrolled: { increment: 1 } },
-          });
-          await tx.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: newPref2, departmentId: cd2.departmentId } },
-            data: { enrolled: { increment: 1 } },
-          });
+          const p1 = await reservePhaseSlot(tx, newPref1, cd1.departmentId, 1);
+          const p2 = await reservePhaseSlot(tx, newPref2, cd2.departmentId, 2);
+          if (!p1 || !p2) throw new Error("Slot no longer available");
 
           await tx.phaseAllocation.deleteMany({ where: { applicationId: app.id } });
 
@@ -264,18 +230,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: "Transfer approved" });
       }
 
-      // Single cluster transfer
+      // Single cluster transfer — move ONLY the intended phase (default phase 1).
       const toClusterId = transfer.toClusterId!;
-      const cd = await prisma.clusterDepartment.findFirst({
-        where: { clusterId: toClusterId, department: { abbreviation: app.student.department } },
-      });
-      if (!cd || cd.enrolled >= cd.slots) {
+      const cd = await getStudentDepartmentSlot(toClusterId, dept);
+      if (!cd) return err("Your department is not eligible for that cluster", 403);
+      if (swapIsPhase2 ? cd.phase2Enrolled >= cd.slots : cd.enrolled >= cd.slots) {
         return err("No available slots in the target cluster", 409);
       }
 
-      const oldCd = await prisma.clusterDepartment.findFirst({
-        where: { clusterId: transfer.fromClusterId, department: { abbreviation: app.student.department } },
-      });
+      const oldCd = await getStudentDepartmentSlot(replaceClusterId, dept);
+      const newPref1 = swapIsPhase2 ? app.clusterPref1 : toClusterId;
+      const newPref2 = swapIsPhase2 ? toClusterId : app.clusterPref2;
 
       await prisma.$transaction(async (tx) => {
         await tx.transferRequest.update({
@@ -284,46 +249,40 @@ export async function POST(request: NextRequest) {
         });
         await tx.application.update({
           where: { id: app.id },
-          data: { status: "allocated", allocatedCluster: toClusterId },
+          data: {
+            status: "allocated",
+            allocatedCluster: newPref1,
+            clusterPref1: newPref1,
+            clusterPref2: newPref2,
+          },
         });
 
-        if (oldCd) {
-          await tx.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: transfer.fromClusterId, departmentId: oldCd.departmentId } },
-            data: { enrolled: { decrement: 1 } },
+        const replacedPhase = swapIsPhase2 ? 2 : 1;
+        const targetPhase = swapIsPhase2 ? 2 : 1;
+        if (oldCd) await releasePhaseSlot(tx, replaceClusterId, oldCd.departmentId, replacedPhase);
+        const reserved = await reservePhaseSlot(tx, toClusterId, cd.departmentId, targetPhase);
+        if (!reserved) throw new Error("Slot no longer available");
+
+        // Find the allocation of the replaced phase and move it to the target cluster.
+        const replacedAlloc = app.allocations.find((a: any) => {
+          return a.clusterId === replaceClusterId;
+        });
+        if (replacedAlloc) {
+          const phases = await tx.phase.findMany({
+            where: { session: { isActive: true }, clusterId: { in: [replaceClusterId, toClusterId] } },
           });
-          await tx.cluster.update({
-            where: { id: transfer.fromClusterId },
-            data: { currentEnrolled: { decrement: 1 } },
-          });
-        }
-
-        await tx.clusterDepartment.update({
-          where: { clusterId_departmentId: { clusterId: toClusterId, departmentId: cd.departmentId } },
-          data: { enrolled: { increment: 1 } },
-        });
-        await tx.cluster.update({
-          where: { id: toClusterId },
-          data: { currentEnrolled: { increment: 1 } },
-        });
-
-        const phases = await tx.phase.findMany({
-          where: { session: { isActive: true }, clusterId: { in: [transfer.fromClusterId, toClusterId] } },
-        });
-
-        const phaseByNumber = new Map<number, any>();
-        for (const ph of phases) {
-          if (ph.clusterId === toClusterId) phaseByNumber.set(ph.phaseNumber, ph);
-        }
-
-        for (const alloc of app.allocations) {
-          const origPhase = phases.find((p) => p.id === alloc.phaseId);
-          const targetPhase = origPhase ? phaseByNumber.get(origPhase.phaseNumber) : null;
-          const gid = targetPhase ? await assignGroup(toClusterId, targetPhase.id) : null;
-          const newPhaseId = targetPhase ? targetPhase.id : alloc.phaseId;
+          const origPhase = phases.find((p) => p.id === replacedAlloc.phaseId);
+          const targetPhaseRow = phases.find(
+            (p) => p.clusterId === toClusterId && p.phaseNumber === (origPhase?.phaseNumber ?? replacedPhase)
+          );
+          const gid = targetPhaseRow ? await assignGroup(toClusterId, targetPhaseRow.id) : null;
           await tx.phaseAllocation.update({
-            where: { id: alloc.id },
-            data: { clusterId: toClusterId, phaseId: newPhaseId, groupId: gid },
+            where: { id: replacedAlloc.id },
+            data: {
+              clusterId: toClusterId,
+              phaseId: targetPhaseRow ? targetPhaseRow.id : replacedAlloc.phaseId,
+              groupId: gid,
+            },
           });
         }
       });
@@ -347,41 +306,44 @@ export async function POST(request: NextRequest) {
         groupLocation: newGroup?.location || "",
         facilitators: targetCluster?.staff || [],
       });
+
+      return NextResponse.json({ success: true, message: "Transfer approved" });
+    }
+
+    // Reject — restore the student to their previous allocation (already intact).
+    await prisma.transferRequest.update({
+      where: { id },
+      data: { status: "rejected", reviewNotes: notes, reviewedById: admin.id, reviewedAt: new Date() },
+    });
+    await prisma.application.update({
+      where: { id: app.id },
+      data: { status: "allocated" },
+    });
+
+    const fromCluster = await prisma.cluster.findUnique({ where: { id: transfer.fromClusterId } });
+
+    if (transfer.type === "reapplication") {
+      const [cluster1, cluster2] = await Promise.all([
+        prisma.cluster.findUnique({ where: { id: transfer.pref1New || transfer.fromClusterId } }),
+        prisma.cluster.findUnique({ where: { id: transfer.pref2New || transfer.fromClusterId } }),
+      ]);
+      await sendReapplicationResultEmail({
+        studentName: app.student.fullName,
+        studentEmail: app.student.email,
+        studentId: app.student.studentId,
+        status: "rejected",
+        cluster1: cluster1?.name || "Unknown",
+        cluster2: cluster2?.name || "Unknown",
+        reason: notes || "No specific reason provided",
+      });
     } else {
-      await prisma.transferRequest.update({
-        where: { id },
-        data: { status: "rejected", reviewNotes: notes, reviewedById: admin.id, reviewedAt: new Date() },
+      await sendTransferRejectedEmail({
+        studentName: app.student.fullName,
+        studentEmail: app.student.email,
+        studentId: app.student.studentId,
+        clusterName: fromCluster?.name || "Unknown",
+        reason: notes || "No specific reason provided",
       });
-      await prisma.application.update({
-        where: { id: app.id },
-        data: { status: "allocated" },
-      });
-
-      const fromCluster = await prisma.cluster.findUnique({ where: { id: transfer.fromClusterId } });
-
-      if (transfer.type === "reapplication") {
-        const [cluster1, cluster2] = await Promise.all([
-          prisma.cluster.findUnique({ where: { id: transfer.pref1New || transfer.fromClusterId } }),
-          prisma.cluster.findUnique({ where: { id: transfer.pref2New || transfer.fromClusterId } }),
-        ]);
-        await sendReapplicationResultEmail({
-          studentName: app.student.fullName,
-          studentEmail: app.student.email,
-          studentId: app.student.studentId,
-          status: "rejected",
-          cluster1: cluster1?.name || "Unknown",
-          cluster2: cluster2?.name || "Unknown",
-          reason: notes || "No specific reason provided",
-        });
-      } else {
-        await sendTransferRejectedEmail({
-          studentName: app.student.fullName,
-          studentEmail: app.student.email,
-          studentId: app.student.studentId,
-          clusterName: fromCluster?.name || "Unknown",
-          reason: notes || "No specific reason provided",
-        });
-      }
     }
 
     return NextResponse.json({ success: true });

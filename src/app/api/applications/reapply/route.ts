@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "transfer") {
-      const { toClusterId, pref1, pref2, reason } = parsed.data;
+      const { toClusterId, pref1, pref2, reason, swapTarget } = parsed.data;
       if ((reason || "").trim().length < 10) {
         return err("Provide a reason (min 10 characters)", 400);
       }
@@ -113,7 +113,10 @@ export async function POST(request: NextRequest) {
           where: { clusterId: toClusterId, department: { abbreviation: student.department } },
         });
         if (!cd) return err("Your department is not eligible for that cluster", 403);
-        if (cd.enrolled >= cd.slots) return err("No available slots in that cluster", 409);
+        // The target slot is the phase of the cluster being swapped (default phase 1).
+        const swapIsPhase2 = (swapTarget || application.clusterPref1) === application.clusterPref2;
+        const occupancy = swapIsPhase2 ? cd.phase2Enrolled : cd.enrolled;
+        if (occupancy >= cd.slots) return err("No available slots in that cluster", 409);
       } else if (pref1 && pref2) {
         if (pref1 === pref2) return err("Select two distinct clusters", 400);
         if (currentClusters.includes(pref1) || currentClusters.includes(pref2)) {
@@ -126,7 +129,10 @@ export async function POST(request: NextRequest) {
         for (const cluster of clusters) {
           const cd = cluster.allowedDepartments?.find((ad) => ad.department?.abbreviation === student.department);
           if (!cd) return err(`Your department is not eligible for "${cluster.name}"`, 403);
-          if (cd.enrolled >= cd.slots) return err(`No available slots in "${cluster.name}"`, 409);
+          // pref1 is phase 1, pref2 is phase 2.
+          const phaseNumber = cluster.id === pref1 ? 1 : 2;
+          const occupancy = phaseNumber === 2 ? cd.phase2Enrolled : cd.enrolled;
+          if (occupancy >= cd.slots) return err(`No available slots in "${cluster.name}"`, 409);
         }
       } else {
         return err("Select either one cluster to swap or two distinct clusters to change both", 400);
@@ -151,6 +157,7 @@ export async function POST(request: NextRequest) {
             toClusterId: toClusterId ?? null,
             pref1New: pref1 ?? null,
             pref2New: pref2 ?? null,
+            replaceClusterId: swapTarget ?? application.clusterPref1,
             reason: reason || "",
             status: "pending",
           },

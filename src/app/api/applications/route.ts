@@ -4,12 +4,19 @@ import { requireAuth } from "@/lib/auth";
 import { applicationSchema } from "@/lib/validations";
 import { sendSubmissionEmail } from "@/lib/email";
 import { assignGroup } from "@/lib/groups";
-import { reserveDepartmentSlot } from "@/lib/allocate";
+import { reservePhaseSlot } from "@/lib/allocate";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
+/**
+ * Phase-aware allocation:
+ *  - Phase 1 uses pref1 (its `enrolled` counter vs slots)
+ *  - Phase 2 uses pref2 (its `phase2Enrolled` counter vs slots)
+ * Falls back to swapping (pref2 for phase 1) only when pref1 is full.
+ * Returns the phase-1/phase-2 cluster+department to reserve slots for, or null.
+ */
 async function tryAllocate(app: any, pref1: number, pref2: number, student: any) {
   const p1 = await prisma.clusterDepartment.findFirst({
     where: { clusterId: pref1, department: { abbreviation: student.department } },
@@ -32,44 +39,99 @@ async function tryAllocate(app: any, pref1: number, pref2: number, student: any)
   const p2Phase1 = phases.find((ph) => ph.clusterId === pref2 && ph.phaseNumber === 1);
   const p2Phase2 = phases.find((ph) => ph.clusterId === pref2 && ph.phaseNumber === 2);
 
+  // Phase-1 capacity = `enrolled`; phase-2 capacity = `phase2Enrolled`.
+  const p1HasPhase1 = p1.enrolled < p1.slots;
+  const p2HasPhase2 = p2.phase2Enrolled < p2.slots;
+  const p2HasPhase1 = p2.enrolled < p2.slots;
+  const p1HasPhase2 = p1.phase2Enrolled < p1.slots;
+
   let allocateInPref1 = false;
   let allocateInPref2 = false;
   let usePref2AsPhase1 = false;
 
-  if (p1.enrolled < p1.slots) {
+  if (p1HasPhase1) {
     allocateInPref1 = true;
-    allocateInPref2 = p2.enrolled < p2.slots;
-  } else if (p2.enrolled < p2.slots) {
+    allocateInPref2 = p2HasPhase2;
+  } else if (p2HasPhase1) {
     allocateInPref2 = true;
     usePref2AsPhase1 = true;
-    allocateInPref1 = p1.enrolled < p1.slots;
+    allocateInPref1 = p1HasPhase2;
   }
 
   if (!allocateInPref1 && !allocateInPref2) return null;
 
   const result: any = { status: "allocated", allocatedCluster: usePref2AsPhase1 ? pref2 : pref1 };
   const allocationData: any[] = [];
+  let phase1ClusterId: number | null = null;
+  let phase1DepartmentId: number | null = null;
+  let phase2ClusterId: number | null = null;
+  let phase2DepartmentId: number | null = null;
 
   if (usePref2AsPhase1) {
     if (p2Phase1 && allocateInPref2) {
       allocationData.push({ phaseId: p2Phase1.id, clusterId: pref2 });
+      phase1ClusterId = pref2;
+      phase1DepartmentId = p2.departmentId;
     }
-    if (p1Phase2 && p1.enrolled < p1.slots) {
+    if (p1Phase2 && p1HasPhase2) {
       allocationData.push({ phaseId: p1Phase2.id, clusterId: pref1 });
+      phase2ClusterId = pref1;
+      phase2DepartmentId = p1.departmentId;
     }
   } else {
     if (p1Phase1 && allocateInPref1) {
       allocationData.push({ phaseId: p1Phase1.id, clusterId: pref1 });
+      phase1ClusterId = pref1;
+      phase1DepartmentId = p1.departmentId;
     }
     if (p2Phase2 && allocateInPref2) {
       allocationData.push({ phaseId: p2Phase2.id, clusterId: pref2 });
+      phase2ClusterId = pref2;
+      phase2DepartmentId = p2.departmentId;
     }
   }
 
   const p1ClusterId = usePref2AsPhase1 ? pref2 : pref1;
   const p1DepartmentId = (usePref2AsPhase1 ? p2 : p1).departmentId;
 
-  return { result, allocationData, p1, p2, usePref2AsPhase1, p1ClusterId, p1DepartmentId };
+  return {
+    result,
+    allocationData,
+    p1,
+    p2,
+    usePref2AsPhase1,
+    p1ClusterId,
+    p1DepartmentId,
+    phase1ClusterId,
+    phase1DepartmentId,
+    phase2ClusterId,
+    phase2DepartmentId,
+  };
+}
+
+/** Reserve slots for both phases inside a transaction; throws when full so it rolls back. */
+async function reserveAllocationSlots(
+  tx: any,
+  allocation: any,
+  appId: number,
+  groupAssignments: Record<number, number | null>
+) {
+  for (const ph of allocation.allocationData) {
+    await tx.phaseAllocation.create({
+      data: { phaseId: ph.phaseId, applicationId: appId, clusterId: ph.clusterId, groupId: groupAssignments[ph.phaseId] },
+    });
+  }
+
+  const phase1Ok = allocation.phase1ClusterId && allocation.phase1DepartmentId
+    ? await reservePhaseSlot(tx, allocation.phase1ClusterId, allocation.phase1DepartmentId, 1)
+    : true;
+  const phase2Ok = allocation.phase2ClusterId && allocation.phase2DepartmentId
+    ? await reservePhaseSlot(tx, allocation.phase2ClusterId, allocation.phase2DepartmentId, 2)
+    : true;
+
+  if (!phase1Ok || !phase2Ok) {
+    throw new Error("Slot no longer available");
+  }
 }
 
 export async function GET() {
@@ -156,16 +218,7 @@ export async function POST(request: NextRequest) {
           data: { status: "allocated", allocatedCluster: allocation.result.allocatedCluster },
         });
 
-        for (const ph of allocation.allocationData) {
-          await tx.phaseAllocation.create({
-            data: { phaseId: ph.phaseId, applicationId: app.id, clusterId: ph.clusterId, groupId: groupAssignments[ph.phaseId] },
-          });
-        }
-
-        const reserved = await reserveDepartmentSlot(tx, allocation.p1ClusterId, allocation.p1DepartmentId);
-        if (!reserved) {
-          throw new Error("Slot no longer available");
-        }
+        await reserveAllocationSlots(tx, allocation, app.id, groupAssignments);
       });
 
       const full = await prisma.application.findUnique({
@@ -281,16 +334,7 @@ export async function PUT(request: NextRequest) {
           data: { status: "allocated", allocatedCluster: allocation.result.allocatedCluster },
         });
 
-        for (const ph of allocation.allocationData) {
-          await tx.phaseAllocation.create({
-            data: { phaseId: ph.phaseId, applicationId: updated.id, clusterId: ph.clusterId, groupId: groupAssignments[ph.phaseId] },
-          });
-        }
-
-        const reserved = await reserveDepartmentSlot(tx, allocation.p1ClusterId, allocation.p1DepartmentId);
-        if (!reserved) {
-          throw new Error("Slot no longer available");
-        }
+        await reserveAllocationSlots(tx, allocation, updated.id, groupAssignments);
       });
 
       const full = await prisma.application.findUnique({

@@ -94,6 +94,7 @@ export const reapplySchema = z
     pref1: z.number().int().positive().optional(),
     pref2: z.number().int().positive().optional(),
     toClusterId: z.number().int().positive().optional(),
+    swapTarget: z.number().int().positive().optional(),
     reason: z.string().min(1).optional(),
   })
   .refine((d) => (d.type === "reapplication" ? !!d.pref1 && !!d.pref2 && d.pref1 !== d.pref2 : true), {

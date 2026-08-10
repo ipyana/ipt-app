@@ -57,6 +57,7 @@ model ClusterDepartment {
   departmentId Int        @map("department_id")
   slots        Int        @default(0)
   enrolled     Int        @default(0)
+  phase2Enrolled Int      @default(0) @map("phase2_enrolled")
   cluster      Cluster    @relation(fields: [clusterId], references: [id], onDelete: Cascade)
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 
@@ -174,6 +175,7 @@ model TransferRequest {
   toClusterId   Int?        @map("to_cluster_id")
   pref1New      Int?        @map("pref1_new")
   pref2New      Int?        @map("pref2_new")
+  replaceClusterId Int?     @map("replace_cluster_id")
   reason        String
   status        String      @default("pending")
   reviewNotes   String?     @map("review_notes")

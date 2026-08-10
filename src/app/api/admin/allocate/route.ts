@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { allocationSchema } from "@/lib/validations";
 import { sendAllocationEmail } from "@/lib/email";
 import { assignGroup } from "@/lib/groups";
+import { reservePhaseSlot, releasePhaseSlot, getStudentDepartmentSlot } from "@/lib/allocate";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -38,35 +39,22 @@ export async function POST(request: NextRequest) {
       (ad) => ad.department.abbreviation === application.student.department
     );
     if (!cd) return err(`Student's department not assigned to this cluster`, 400);
-    if (cd.enrolled >= cd.slots) return err(`All ${cd.slots} slots for ${application.student.department} are full`, 409);
+    if (cd.enrolled >= cd.slots || cd.phase2Enrolled >= cd.slots) return err(`All ${cd.slots} slots for ${application.student.department} are full`, 409);
 
     // If already allocated elsewhere, release the old slot + old allocations first (reallocation)
     if (application.allocatedCluster && application.allocatedCluster !== clusterId) {
       const oldCd = await prisma.clusterDepartment.findFirst({
         where: { clusterId: application.allocatedCluster, department: { abbreviation: application.student.department } },
       });
-      if (oldCd && oldCd.enrolled > 0) {
-        await prisma.clusterDepartment.update({
-          where: { clusterId_departmentId: { clusterId: oldCd.clusterId, departmentId: oldCd.departmentId } },
-          data: { enrolled: { decrement: 1 } },
-        });
+      if (oldCd) {
+        await releasePhaseSlot(prisma, application.allocatedCluster, oldCd.departmentId, 1);
+        await releasePhaseSlot(prisma, application.allocatedCluster, oldCd.departmentId, 2);
       }
-      await prisma.cluster.update({
-        where: { id: application.allocatedCluster },
-        data: { currentEnrolled: { decrement: 1 } },
-      });
       await prisma.phaseAllocation.deleteMany({ where: { applicationId } });
     }
 
-    await prisma.clusterDepartment.update({
-      where: { clusterId_departmentId: { clusterId, departmentId: cd.departmentId } },
-      data: { enrolled: { increment: 1 } },
-    });
-
-    await prisma.cluster.update({
-      where: { id: clusterId },
-      data: { currentEnrolled: { increment: 1 } },
-    });
+    await reservePhaseSlot(prisma, clusterId, cd.departmentId, 1);
+    await reservePhaseSlot(prisma, clusterId, cd.departmentId, 2);
 
     const updated = await prisma.application.update({
       where: { id: applicationId },
@@ -115,7 +103,7 @@ export async function PUT() {
       include: { allowedDepartments: { include: { department: true } } },
     });
 
-    const slotMap = new Map<string, { clusterId: number; departmentId: number; slots: number; enrolled: number }>();
+    const slotMap = new Map<string, { clusterId: number; departmentId: number; slots: number; enrolled: number; phase2Enrolled: number }>();
     for (const c of clusters) {
       for (const ad of c.allowedDepartments) {
         slotMap.set(`${c.id}:${ad.department.abbreviation}`, {
@@ -123,6 +111,7 @@ export async function PUT() {
           departmentId: ad.departmentId,
           slots: ad.slots,
           enrolled: ad.enrolled,
+          phase2Enrolled: ad.phase2Enrolled,
         });
       }
     }
@@ -135,16 +124,9 @@ export async function PUT() {
       for (const clusterId of prefs) {
         const key = `${clusterId}:${app.student.department}`;
         const sd = slotMap.get(key);
-        if (sd && sd.enrolled < sd.slots) {
-          await prisma.clusterDepartment.update({
-            where: { clusterId_departmentId: { clusterId: sd.clusterId, departmentId: sd.departmentId } },
-            data: { enrolled: { increment: 1 } },
-          });
-
-          await prisma.cluster.update({
-            where: { id: sd.clusterId },
-            data: { currentEnrolled: { increment: 1 } },
-          });
+        if (sd && sd.enrolled < sd.slots && sd.phase2Enrolled < sd.slots) {
+          await reservePhaseSlot(prisma, sd.clusterId, sd.departmentId, 1);
+          await reservePhaseSlot(prisma, sd.clusterId, sd.departmentId, 2);
 
           await prisma.application.update({
             where: { id: app.id },
@@ -152,6 +134,7 @@ export async function PUT() {
           });
 
           sd.enrolled++;
+          sd.phase2Enrolled++;
 
           const phases = await prisma.phase.findMany({
             where: { session: { isActive: true }, clusterId: sd.clusterId },

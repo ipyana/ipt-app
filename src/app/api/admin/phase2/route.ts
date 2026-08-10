@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { assignGroup } from "@/lib/groups";
 import { sendPhase2ConfirmedEmail } from "@/lib/email";
 import { sendEmailsInBatches } from "@/lib/batch";
+import { reservePhaseSlot, getStudentDepartmentSlot } from "@/lib/allocate";
 
 function err(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -70,10 +71,18 @@ export async function POST() {
       }
       if (!targetClusterId) continue;
 
+      // Reserve a phase-2 slot; skip (leave waitlisted) if the cluster is full for phase 2.
+      const cd = await getStudentDepartmentSlot(targetClusterId, app.student.department);
+      if (!cd || cd.phase2Enrolled >= cd.slots) continue;
+
       const phase2 = phase2ByCluster.get(targetClusterId);
       const gid = await assignGroup(targetClusterId, phase2.id);
-      await prisma.phaseAllocation.create({
-        data: { phaseId: phase2.id, applicationId: app.id, clusterId: targetClusterId, groupId: gid },
+      await prisma.$transaction(async (tx) => {
+        await tx.phaseAllocation.create({
+          data: { phaseId: phase2.id, applicationId: app.id, clusterId: targetClusterId, groupId: gid },
+        });
+        const ok = await reservePhaseSlot(tx, targetClusterId, cd.departmentId, 2);
+        if (!ok) throw new Error("Phase 2 slot no longer available");
       });
       assigned++;
 

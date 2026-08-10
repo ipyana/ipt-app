@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { studentAdminSchema } from "@/lib/validations";
+import { getStudentDepartmentSlot, releasePhaseSlot } from "@/lib/allocate";
 import bcrypt from "bcryptjs";
 
 export async function GET(request: NextRequest) {
@@ -117,10 +118,31 @@ export async function DELETE(request: NextRequest) {
         : [];
     if (ids.length === 0) return NextResponse.json({ error: "ID or IDs required" }, { status: 400 });
 
-    await prisma.$transaction([
-      prisma.application.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.student.deleteMany({ where: { id: { in: ids } } }),
-    ]);
+    const studentsWithApps = await prisma.student.findMany({
+      where: { id: { in: ids } },
+      include: { applications: { include: { allocations: { include: { phase: true } } } } },
+    });
+
+    await prisma.$transaction(async (tx) => {
+      // Release occupied phase slots before deleting.
+      for (const s of studentsWithApps) {
+        for (const app of s.applications) {
+          const dept = s.department;
+          const released = new Set<string>();
+          for (const alloc of app.allocations) {
+            const cd = await getStudentDepartmentSlot(alloc.clusterId, dept);
+            if (!cd) continue;
+            const key = `${alloc.clusterId}:${cd.departmentId}:${alloc.phase?.phaseNumber ?? 1}`;
+            if (released.has(key)) continue;
+            released.add(key);
+            await releasePhaseSlot(tx, alloc.clusterId, cd.departmentId, alloc.phase?.phaseNumber ?? 1);
+          }
+        }
+      }
+
+      await tx.application.deleteMany({ where: { studentId: { in: ids } } });
+      await tx.student.deleteMany({ where: { id: { in: ids } } });
+    });
     return NextResponse.json({ success: true, deleted: ids.length });
   } catch (e: any) {
     if (e.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

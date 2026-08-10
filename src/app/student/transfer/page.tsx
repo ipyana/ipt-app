@@ -86,6 +86,7 @@ export default function StudentTransfer() {
       const body: any = {};
       if (mode === "swapOne") {
         body.type = "transfer";
+        body.swapTarget = swapTarget;
         body.toClusterId = toClusterId;
         body.reason = reason;
       } else {
